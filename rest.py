@@ -335,7 +335,7 @@ def get_distance_and_points(
             result_dict["max_distance"]['value'] = distance_km
             result_dict["max_distance"]['activity_id'] = ride.get('id')
 
-        if max_speed_ride_km > result_dict["max_velocity"]['value'] and not ignore_stats:
+        if max_speed_ride_km > result_dict["max_velocity"]['value'] and not ignore_stats and max_speed_ride_km < 80:
             result_dict["max_velocity"]['value'] = max_speed_ride_km
             result_dict["max_velocity"]['activity_id'] = ride.get('id')
 
@@ -617,8 +617,6 @@ def get_stats_str(group_id):
             ignore_stats_ids=ignore_stats_ids
         )
 
-        if distance["max_velocity"]["value"] > 80:        
-            continue
 
         if distance["max_distance"]["value"] > max_distance_geral["value"]:
             max_distance_geral["user"] = user
