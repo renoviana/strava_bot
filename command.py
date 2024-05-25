@@ -32,8 +32,6 @@ def send_ranking_ano_msg_command(message):
     """
     return get_ranking_str(str(message.chat.id), 'Ride',year_rank=True)
 
-
-
 def send_run_msg_command(message):
     """
     Envia ranking da corrida do strava
@@ -64,7 +62,7 @@ def send_point_msg_command(message):
     return pontos_msg
 
 
-def send_stats_comand(message):
+def send_stats_command(message):
     """
     Envia o status geral do strava
     Args:
@@ -94,10 +92,9 @@ def admin_command(message):
         ),
     }
 
-
-def del_strava_callback(call):
+def del_strava_user_callback(call):
     """
-    Del strava
+    Deleta usuário do strava
     """
     user_name = call.data.replace("del_strava_", "")
     group_id = str(call.message.chat.id)
@@ -105,7 +102,7 @@ def del_strava_callback(call):
     return remove_strava_user(user_name, group_id, user_name_admin)
 
 
-def add_link_command(message):
+def get_link_command(message):
     """
     Retorna link
     """

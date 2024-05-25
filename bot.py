@@ -2,11 +2,11 @@ import telebot
 from mongoengine import connect
 from model import add_strava_group
 from command import (
-    add_link_command,
+    get_link_command,
     admin_command,
     custom_meta_command,
     del_meta_command,
-    del_strava_callback,
+    del_strava_user_callback,
     get_menu_sports_msg,
     get_segments,
     get_sports_msg,
@@ -15,7 +15,7 @@ from command import (
     send_ranking_msg_command,
     send_run_ano_msg_command,
     send_run_msg_command,
-    send_stats_comand,
+    send_stats_command,
     metas_command,
     ignore_ativities_status_callback,
     
@@ -32,9 +32,9 @@ grupo_commands = {
     'ryear':send_run_ano_msg_command,
     "run": send_run_msg_command,
     "score": send_point_msg_command,
-    "stats": send_stats_comand,
+    "stats": send_stats_command,
     "admin": admin_command,
-    "link": add_link_command,
+    "link": get_link_command,
     "metas": metas_command,
     "ignore": ignore_ativities_status_callback,
     "sports": get_menu_sports_msg,
@@ -43,7 +43,7 @@ grupo_commands = {
 
 query_commands = {
     "del_meta": del_meta_command,
-    "del_strava": del_strava_callback,
+    "del_strava": del_strava_user_callback,
     "meta_": custom_meta_command,
     "strava_": get_sports_msg,
 }
@@ -60,7 +60,7 @@ def new_chat_handler(message):
     Handler para novos usuários e também a entrada do bot no grupo
     """
     new_user = message.json.get("new_chat_member")
-    link = add_link_command(message)
+    link = get_link_command(message)
 
     if new_user.get('id') == TELEGRAM_BOT_ID:
         bot.reply_to(
