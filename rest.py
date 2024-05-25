@@ -298,8 +298,8 @@ def get_distance_and_points(
         last_day=last_day,
     )
 
-    if not has_new_ride and "Ride" in sport_list and strava_config.membros[user].get("stats", {}).get(sport_type) and not ignore_cache:
-        return strava_config.membros[user].get("stats").get(sport_type)
+    # if not has_new_ride and "Ride" in sport_list and strava_config.membros[user].get("stats", {}).get(sport_type) and not ignore_cache:
+    #     return strava_config.membros[user].get("stats").get(sport_type)
 
     result_dict = {
         "total_distance": 0,
