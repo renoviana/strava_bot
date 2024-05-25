@@ -20,7 +20,7 @@ from command import (
     ignore_ativities_status_callback,
     
 )
-from tools import is_group_message, return_has_result
+from tools import is_group_message, return_has_result, start_bot
 from secure import BSB_PEDAL_BOT_TOKEN, MONGO_URI, TELEGRAM_BOT_ID
 
 connect(host=MONGO_URI, alias="assistant-db")
@@ -157,5 +157,4 @@ def commands_handler(message) -> None:
         "\nEsse bot foi desenvolvido para funcionar apenas em grupos do telegram"\
         ", para utiliza-lo crie um grupo e me adicione. :)")
 
-# start_bot(bot, "pedalbot")
-bot.polling()
+start_bot(bot, "pedalbot")
