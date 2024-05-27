@@ -118,6 +118,7 @@ def get_strava_api(
         per_page (int): quantidade de atividades por pagina
     """
     print("get_strava_api")
+    print(url)
     strava_group = StravaGroup(group_config)
     access_token, refresh_token = strava_group.get_user_access_and_refresh_token(user)
     params["access_token"] = access_token
@@ -195,15 +196,15 @@ def list_month_ride(
     last_activity_date = token.get("last_activity_date")
     is_month = not last_day
 
-    if last_activity_date and not last_day and sport_list and (len(sport_list) == 0 or "Ride" in sport_list):
-        first_day = datetime.fromtimestamp(last_activity_date)
+    # if last_activity_date and not last_day and sport_list and (len(sport_list) == 0 or "Ride" in sport_list):
+    #     first_day = datetime.fromtimestamp(last_activity_date)
 
-    if last_activity_date and sport_list and "Ride" in sport_list and first_day.month != datetime.now().month and not last_day:
-        activity_list = []
-        first_day = None
+    # if last_activity_date and sport_list and "Ride" in sport_list and first_day.month != datetime.now().month and not last_day:
+    #     activity_list = []
+    #     first_day = None
 
-    if  sport_list and "Ride" not in sport_list:
-        activity_list = []
+    # if  sport_list and "Ride" not in sport_list:
+    #     activity_list = []
 
     if not first_day:
         first_day = datetime.now().replace(
@@ -255,7 +256,7 @@ def list_month_ride(
             page=page,
         )
     
-    activity_list = new_activity_list + activity_list
+    activity_list = new_activity_list
 
     if new_activity_list and is_month:
         strava_config.membros[user]["activity_list"] = activity_list
@@ -701,7 +702,7 @@ def get_segments_str(group_id, min_distance=6000):
             nome
         )
 
-        activity_list = activity_list + data
+        activity_list = data
 
         for atividade in activity_list:
             if atividade['distance'] < min_distance:
@@ -713,7 +714,7 @@ def get_segments_str(group_id, min_distance=6000):
                 continue
 
 
-            atividade_data = get_strava_api(f"https://www.strava.com/api/v3/activities/{atividade_id}", {}, nome, group_id).json()
+            atividade_data = get_strava_api(f"https://www.strava.com/api/v3/activities/{atividade_id}", {}, nome, strava_config).json()
             segment_afforts = atividade_data['segment_efforts']
             for segment in segment_afforts:
                 if segment['distance'] < min_distance:
@@ -733,7 +734,7 @@ def get_segments_str(group_id, min_distance=6000):
 
     }
     for segment in all_segments:
-        segment_data = get_strava_api(f"https://www.strava.com/api/v3/segment_efforts/{segment['id']}", {}, segment['user'], group_id, segment['access_token'], segment['refresh_token']).json()
+        segment_data = get_strava_api(f"https://www.strava.com/api/v3/segment_efforts/{segment['id']}", {}, segment['user'], strava_config, segment['access_token'], segment['refresh_token']).json()
         atividade_id = segment_data['segment']['id']
         segment_data['user'] = segment['user']
         segment_data['atividade_id'] = segment['atividade_id']
