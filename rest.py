@@ -282,7 +282,10 @@ def get_distance_and_points(
         user (str): usuario
     """
 
-
+    sport_list = {
+        "Ride": ["Ride", "MountainBikeRide"],
+        "Run": ["Run", "TrailRun", "Walk", "Hike"],
+    }
 
     if not sport_type:
         sport_type = "Ride"

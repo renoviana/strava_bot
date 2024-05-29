@@ -15,13 +15,14 @@ from rest import (
 
 
 
+
 def send_ranking_msg_command(message):
     """
     Envia ranking do pedal do strava
     Args:
         message (Message): mensagem do telegram
     """
-    return get_ranking_str(str(message.chat.id), ["Ride", "MountainBikeRide"])
+    return get_ranking_str(str(message.chat.id), 'Ride')
 
 def send_ranking_ano_msg_command(message):
     """
@@ -29,7 +30,7 @@ def send_ranking_ano_msg_command(message):
     Args:
         message (Message): mensagem do telegram
     """
-    return get_ranking_str(str(message.chat.id), ["Ride", "MountainBikeRide"],year_rank=True)
+    return get_ranking_str(str(message.chat.id), 'Ride',year_rank=True)
 
 def send_run_msg_command(message):
     """
@@ -37,7 +38,7 @@ def send_run_msg_command(message):
     Args:
         message (Message): mensagem do telegram
     """
-    return get_ranking_str(str(message.chat.id),["Run", "TrailRun", "Walk", "Hike"])
+    return get_ranking_str(str(message.chat.id),'Run')
 
 def send_run_ano_msg_command(message):
     """
@@ -45,7 +46,7 @@ def send_run_ano_msg_command(message):
     Args:
         message (Message): mensagem do telegram
     """
-    return get_ranking_str(str(message.chat.id),["Run", "TrailRun", "Walk", "Hike"], year_rank=True)
+    return get_ranking_str(str(message.chat.id),'Run', year_rank=True)
 
 def send_point_msg_command(message):
     """
