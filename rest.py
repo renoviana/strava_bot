@@ -27,17 +27,13 @@ class StravaGroup:
         self,
         url,
         params,
-        user,):
+        user):
         """
         Retorna dados de atividades em formato json
         Args:
-            after_date (str): Data de inicio
-            before_date (str): Data de fim
-            user (str): usuario
-            access_token (str): access token
-            refresh_token (str): refresh token
-            page (int): pagina
-            per_page (int): quantidade de atividades por pagina
+            'url' (str): url da api
+            'params' (dict): parametros
+            'user' (str): usuario
         """
         access_token, refresh_token = self.get_user_access_and_refresh_token(user)
         params["access_token"] = access_token
@@ -58,6 +54,14 @@ class StravaGroup:
         return response
 
     def add_user(self, athlete_name, access_token, refresh_token, athlete_id):
+        """
+        Adiciona usuário
+        Args:
+            athlete_name (str): nome do atleta
+            access_token (str): access token
+            refresh_token (str): refresh token
+            athlete_id (str): id do atleta
+        """
         self.membros[athlete_name] = {
             "access_token": access_token,
             "refresh_token": refresh_token,
@@ -66,6 +70,12 @@ class StravaGroup:
         self.update_entity()
 
     def update_user_token(self, user, refresh_token):
+        """
+        Atualiza token do usuário
+        Args:
+            user (str): usuario
+            refresh_token (str): refresh token
+        """
         url = "https://www.strava.com/oauth/token"
         params = {
             "client_id": STRAVA_CLIENT_ID,
@@ -80,38 +90,31 @@ class StravaGroup:
         return new_token["access_token"], new_token["refresh_token"]
 
     def get_user_access_and_refresh_token(self, user):
+        """
+        Retorna access token e refresh token do usuário
+        Args:
+            user (str): usuario
+        """
         user_at = self.membros[user].get("access_token")
         user_rt = self.membros[user].get("refresh_token")
         return user_at, user_rt
     
     def list_month_activity(
         self,
-        user=None,
+        user,
         sport_list=None,
         first_day=None,
         last_day=None,):
         """
         Retorna lista de atividades do mês e filtra de acordo com o sport_list
         Args:
-            access_token (str): access token
-            refresh_token (str): refresh token
             user (str): usuario
-            sport_list (list): tipo de esporte
+            sport_list (list): lista de esportes
             first_day (datetime): data de inicio
             last_day (datetime): data de fim
         """
 
         token = self.membros[user]
-
-        # if last_activity_date and not last_day and sport_list and (len(sport_list) == 0 or "Ride" in sport_list):
-        #     first_day = datetime.fromtimestamp(last_activity_date)
-
-        # if last_activity_date and sport_list and "Ride" in sport_list and first_day.month != datetime.now().month and not last_day:
-        #     activity_list = []
-        #     first_day = None
-
-        # if  sport_list and "Ride" not in sport_list:
-        #     activity_list = []
 
         if not first_day:
             first_day = datetime.now().replace(
@@ -142,18 +145,16 @@ class StravaGroup:
             )
 
         new_activity_list = self.get_athlete_data(
+            user,
             after_date=first_day,
             before_date=last_day,
-            user=user,
         )
 
         page = 1
         while len(new_activity_list) % 100 == 0 and len(new_activity_list) != 0:
             page += 1
             new_activity_list += self.get_athlete_data(
-                token['access_token'],
-                token['refresh_token'],
-                user=user,
+                user,
                 after_date=first_day,
                 before_date=last_day,
                 page=page,
@@ -168,27 +169,25 @@ class StravaGroup:
         #     self.save()
 
         if not sport_list:
-            return new_activity_list, len(new_activity_list) > 0
+            return new_activity_list
 
-        return list(filter(lambda x: x["type"] in sport_list, new_activity_list)), len(new_activity_list) > 0
+        return list(filter(lambda x: x["type"] in sport_list, new_activity_list))
     
     def get_athlete_data(
         self,
+        user,
         after_date=None,
         before_date=None,
-        user=None,
         page=1,
         per_page=100):
         """
         Retorna dados ded atividades em formato json
         Args:
-            after_date (str): Data de inicio
-            before_date (str): Data de fim
+            after_date (datetime): data de inicio
+            before_date (datetime): data de fim
             user (str): usuario
-            access_token (str): access token
-            refresh_token (str): refresh token
             page (int): pagina
-            per_page (int): quantidade de atividades por pagina
+            per_page (int): itens por pagina
         """
         url = "https://www.strava.com/api/v3/athlete/activities"
         access_token, refresh_token = self.get_user_access_and_refresh_token(user)
@@ -204,20 +203,23 @@ class StravaGroup:
         return response.json()
     
     def update_entity(self):
+        """
+        Atualiza entidade do strava
+        """
         self.strava_entity.metas = self.metas
         self.strava_entity.membros = self.membros
         self.strava_entity.ignored_activities = self.ignored_activities
         self.strava_entity.save()
 
     def get_distance_and_points(
-    self, sport_type=None, user=None, ignore_stats_ids=None, ignore_cache=False, first_day=None, last_day=None):
+    self, user, sport_type=None, ignore_stats_ids=None, ignore_cache=False, first_day=None, last_day=None):
         """
         Calcula a distancia total e os pontos do usuário
         Args:
-            sport_type (str): tipo de esporte
             user (str): usuario
+            sport_type (str): tipo de esporte
             ignore_stats_ids (list): lista de ids de atividades ignoradas
-            ignore_cache (bool): ignora cache
+            ignore_cache (bool): ignorar cache
             first_day (datetime): data de inicio
             last_day (datetime): data de fim
         """
@@ -228,15 +230,13 @@ class StravaGroup:
 
         sport_list = [sport_type]
         
-        ride_list, has_new_ride = self.list_month_activity(
-            user=user,
+        activity_list = self.list_month_activity(
+            user,
             sport_list=sport_list,
             first_day=first_day,
             last_day=last_day,
         )
         
-        if not has_new_ride and "Ride" in sport_list and self.membros[user].get("stats", {}).get(sport_type) and not ignore_cache:
-            return self.membros[user].get("stats").get(sport_type)
 
         result_dict = {
             "total_distance": 0,
@@ -249,18 +249,18 @@ class StravaGroup:
             "max_moving_time": {"activity_id":None, "value":0},
         }
 
-        for ride in ride_list:
-            max_speed_ride_km = round(ride["max_speed"] * 3.6, 2)
-            max_average_speed_ride_km = round(ride["average_speed"] * 3.6, 2)
-            total_elevation_gain_ride = ride["total_elevation_gain"]
-            distance_km = ride["distance"] / 1000
-            moving_time_ride = ride["moving_time"] / 60
+        for activity in activity_list:
+            max_speed_ride_km = round(activity["max_speed"] * 3.6, 2)
+            max_average_speed_ride_km = round(activity["average_speed"] * 3.6, 2)
+            total_elevation_gain_ride = activity["total_elevation_gain"]
+            distance_km = activity["distance"] / 1000
+            moving_time_ride = activity["moving_time"] / 60
 
             if moving_time_ride < 5:
                 continue
 
-            manual_ride = ride["manual"]
-            ignore_stats = str(ride.get('id')) in ignore_stats_ids
+            manual_ride = activity["manual"]
+            ignore_stats = str(activity.get('id')) in ignore_stats_ids
 
             if distance_km > 400:
                 continue
@@ -270,11 +270,11 @@ class StravaGroup:
 
             if distance_km > result_dict["max_distance"]['value'] and not ignore_stats:
                 result_dict["max_distance"]['value'] = distance_km
-                result_dict["max_distance"]['activity_id'] = ride.get('id')
+                result_dict["max_distance"]['activity_id'] = activity.get('id')
 
             if max_speed_ride_km > result_dict["max_velocity"]['value'] and not ignore_stats and max_speed_ride_km < 80:
                 result_dict["max_velocity"]['value'] = max_speed_ride_km
-                result_dict["max_velocity"]['activity_id'] = ride.get('id')
+                result_dict["max_velocity"]['activity_id'] = activity.get('id')
 
             # Ignora atividades manuais no calculo de velocidade média maxima
             if (
@@ -282,15 +282,15 @@ class StravaGroup:
                 and not ignore_stats
             ):
                 result_dict["max_average_speed"]['value'] = max_average_speed_ride_km
-                result_dict["max_average_speed"]['activity_id'] = ride.get('id')
+                result_dict["max_average_speed"]['activity_id'] = activity.get('id')
 
             if total_elevation_gain_ride > result_dict["max_elevation_gain"]['value']  and not ignore_stats:
                 result_dict["max_elevation_gain"]['value'] = total_elevation_gain_ride
-                result_dict["max_elevation_gain"]['activity_id'] = ride.get('id')
+                result_dict["max_elevation_gain"]['activity_id'] = activity.get('id')
 
             if moving_time_ride > result_dict["max_moving_time"]['value'] and not ignore_stats:
                 result_dict["max_moving_time"]['value'] = moving_time_ride
-                result_dict["max_moving_time"]['activity_id'] = ride.get('id')
+                result_dict["max_moving_time"]['activity_id'] = activity.get('id')
 
             result_dict["total_user_points"] = self.calc_point_rank(
                 result_dict["total_user_points"], total_elevation_gain_ride, distance_km
@@ -304,9 +304,11 @@ class StravaGroup:
         """
         Retorna lista de distancias dos usuários
         Args:
-            group_id (str): id do grupo
             only_desafio (bool): apenas desafio
             sport_type (str): tipo de esporte
+            first_day (datetime): data de inicio
+            last_day (datetime): data de fim
+            sort_by (str): ordenar por
         """
         ignore_stats_ids = self.ignored_activities
         distance_list = []
@@ -315,8 +317,8 @@ class StravaGroup:
                 continue
 
             json_data = self.get_distance_and_points(
+                user,
                 sport_type,
-                user=user,
                 ignore_stats_ids=ignore_stats_ids,
                 ignore_cache=last_day is not None,
                 first_day=first_day,
@@ -346,24 +348,6 @@ class StravaGroup:
 
                 })
             
-            # if "stats" not in self.membros[user]:
-            #     self.membros[user]["stats"] = {}
-
-            # if not last_day:
-            #     self.membros[user]["stats"][sport_type] = {
-            #         "user": user,
-            #         "user_id": strava["athlete_id"],
-            #         "total_distance": total_distance,
-            #         "total_user_points": total_user_points,
-            #         "total_moving_time": total_moving_time,
-            #         "max_distance": json_data["max_distance"],
-            #         "max_velocity": json_data["max_velocity"],
-            #         "max_average_speed": json_data["max_average_speed"],
-            #         "max_elevation_gain": json_data["max_elevation_gain"],
-            #         "max_moving_time": json_data["max_moving_time"],
-
-            #     }
-
 
         sort_distance_list = sorted(
             distance_list, key=lambda k: k[sort_by], reverse=True
@@ -374,14 +358,12 @@ class StravaGroup:
     def get_point_str(self):
         """
         Retorna lista de pontos dos usuários
-        Args:
-            group_id (str): id do grupo
         """
         distance_list = []
         ignore_stats_ids = self.ignored_activities or []
         for user, strava in self.membros.items():
             distance = self.get_distance_and_points(
-                user=user,
+                user,
                 ignore_stats_ids=ignore_stats_ids
             )
             total_user_points = distance["total_user_points"]
@@ -402,8 +384,6 @@ class StravaGroup:
     def get_stats_str(self):
         """
         Retorna lista de pontos dos usuários
-        Args:
-            group_id (str): id do grupo
         """
         ignore_stats_ids = self.ignored_activities
         max_distance_geral = {"user": '', "value": 0, "activity_id": None}
@@ -413,7 +393,7 @@ class StravaGroup:
         max_moving_time_geral = {"user": '', "value": 0, "activity_id": None}
         for user, strava in self.membros.items():
             distance = self.get_distance_and_points(
-                user=user,
+                user,
                 ignore_stats_ids=ignore_stats_ids
             )
 
@@ -451,17 +431,13 @@ class StravaGroup:
     def list_type_activities(self):
         """
         Retorna lista de distancias dos usuários
-        Args:
-            group_id (str): id do grupo
-            only_desafio (bool): apenas desafio
-            sport_type (str): tipo de esporte
         """
         all_types = []
         for user, strava in self.membros.items():
-            ride_list, has_new_ride = self.list_month_activity(
+            activity_list = self.list_month_activity(
                 user
             )
-            all_types += list(map(lambda x: x["type"], ride_list))
+            all_types += list(map(lambda x: x["type"], activity_list))
         all_types = list(set(all_types))
         return all_types
 
@@ -469,9 +445,10 @@ class StravaGroup:
         """
         Formata o rank
         Args:
-            object_data (tuple): tupla com index e dados
-            group_id (str): id do grupo
+            object_data (tuple): tupla com index e data
             sport_type (str): tipo de esporte
+            rank_unit (str): unidade de medida
+            rank_params (str): parametro de rank
         """
         strava_month_distance = (
             self.metas.get(sport_type)
@@ -495,7 +472,10 @@ class StravaGroup:
         """
         Envia mensagem com o ranking do pedal
         Args:
-            grupo_id (str): id do grupo
+            sport_type (str): tipo de esporte
+            year_rank (bool): ranking do ano
+            first_day (datetime): data de inicio
+            last_day (datetime): data de fim
         """
         only_desafio = self.group_id == str(PEDAL_TELEGRAM_GROUP_ID)
 
@@ -563,7 +543,6 @@ class StravaGroup:
         Remove usuário do strava
         Args:
             user_name (str): nome do usuário
-            group_id (str): id do grupo
             user_name_admin (str): nome do admin
         """
         new_grupo_dict = {}
@@ -580,9 +559,8 @@ class StravaGroup:
         """
         Salva meta do grupo
         Args:
-            group_id (str): id do grupo
             tipo_meta (str): tipo de meta
-            km (int): km da meta
+            km (int): km
         """
         if km:
             km = int(km)
@@ -594,8 +572,8 @@ class StravaGroup:
         Calcula o rank de pontos
         Args:
             total_user_points (int): total de pontos
-            total_elevation_gain_ride (int): total de elevação
-            distance_km (int): distancia em km
+            total_elevation_gain_ride_m (int): total de elevação
+            distance_km (int): distancia
         """
         if distance_km > 5:
             total_user_points += 1
@@ -608,23 +586,31 @@ class StravaGroup:
         return total_user_points
 
     def add_ignore_activity(self, activity_id):
+        """
+        Ignora atividade
+        Args:
+            activity_id (str): id da atividade
+        """
         ignore_stats_ids = self.ignored_activities or []
         ignore_stats_ids.append(str(activity_id))
         self.ignored_activities = ignore_stats_ids
         self.update_entity()
         return "Atividade ignorada com sucesso!"
 
-    def get_segments_str(self, min_distance=6000):
+    def get_segments(self, min_distance=6000):
+        """
+        Retorna segmentos
+        Args:
+            min_distance (int): distancia minima
+        """
         ignore_stats_ids = self.ignored_activities
         grupo_members = list(self.membros.items())
         all_segments = []
         for nome,token in grupo_members:
 
-            data, has_new_ride = self.list_month_activity(
+            activity_list = self.list_month_activity(
                 nome
             )
-
-            activity_list = data
 
             for atividade in activity_list:
                 if atividade['distance'] < min_distance:
@@ -667,7 +653,16 @@ class StravaGroup:
 
             segment_dict[atividade_id].append(segment_data)
 
+        return segment_dict
+
+    def get_segments_str(self, min_distance=6000):
+        """
+        Retorna segmentos em formato de string
+        Args:
+            min_distance (int): distancia minima
+        """
         str_list = []
+        segment_dict = self.get_segments(min_distance)
         for atividade_id, segments in segment_dict.items():
             if len(segments) < 2:
                 continue
@@ -696,7 +691,7 @@ class StravaGroup:
                 segment_min = str(round(moving_time/60, 2))
                 segment_date = segment['start_date_local'].strftime('%d/%m/%Y %H:%M:%S')
                 segment_id = segment['id']
-                url = f"<a href=\"https://www.strava.com/activities/{str(segment['atividade_id'])}/segments/{str(segment_id)}\">{segment_min}min - {segment_date}</a>"
+                url = f"<a href=\"https://www.strava.com/activities/{str(atividade_id)}/segments/{str(segment_id)}\">{segment_min}min - {segment_date}</a>"
                 str_list.append('- '+segment_athlete+"\n"+url)
             str_list.append("")
 
