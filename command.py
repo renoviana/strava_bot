@@ -1,20 +1,5 @@
-from model import get_strava_group
 from tools import get_markup
-from rest import (
-    add_ignore_activity,
-    get_point_str,
-    get_ranking_str,
-    get_stats_str,
-    list_type_activities,
-    remove_strava_user,
-    save_group_meta,
-    get_segments_str,
-)
-
-
-
-
-
+from rest import StravaGroup
 
 def send_ranking_msg_command(message):
     """
@@ -22,7 +7,8 @@ def send_ranking_msg_command(message):
     Args:
         message (Message): mensagem do telegram
     """
-    return get_ranking_str(str(message.chat.id), 'Ride')
+
+    return StravaGroup(str(message.chat.id)).get_ranking_str('Ride')
 
 def send_ranking_ano_msg_command(message):
     """
@@ -30,7 +16,7 @@ def send_ranking_ano_msg_command(message):
     Args:
         message (Message): mensagem do telegram
     """
-    return get_ranking_str(str(message.chat.id), 'Ride',year_rank=True)
+    return StravaGroup(str(message.chat.id)).get_ranking_str('Ride',year_rank=True)
 
 def send_run_msg_command(message):
     """
@@ -38,7 +24,7 @@ def send_run_msg_command(message):
     Args:
         message (Message): mensagem do telegram
     """
-    return get_ranking_str(str(message.chat.id),'Run')
+    return StravaGroup(str(message.chat.id)).get_ranking_str('Run')
 
 def send_run_ano_msg_command(message):
     """
@@ -46,7 +32,7 @@ def send_run_ano_msg_command(message):
     Args:
         message (Message): mensagem do telegram
     """
-    return get_ranking_str(str(message.chat.id),'Run', year_rank=True)
+    return StravaGroup(str(message.chat.id)).get_ranking_str('Run', year_rank=True)
 
 def send_point_msg_command(message):
     """
@@ -54,9 +40,8 @@ def send_point_msg_command(message):
     Args:
         message (Message): mensagem do telegram
     """
-    group_id = str(message.chat.id)
     pontos_msg = (
-        "\n".join(get_point_str(group_id))
+        "\n".join(StravaGroup(str(message.chat.id)).get_point_str())
         + "\n\nComo funciona: \n1 ponto - Pedal a cima de 5km\n+1 ponto - Pedal a cima de 350m de elevação\n+1 ponto - Pedal a cima de 50km"
     )
     return pontos_msg
@@ -68,8 +53,7 @@ def send_stats_command(message):
     Args:
         message (Message): mensagem do telegram
     """
-    group_id = str(message.chat.id)
-    return get_stats_str(group_id)
+    return StravaGroup(str(message.chat.id)).get_stats_str()
 
 def admin_command(message):
     """
@@ -77,7 +61,7 @@ def admin_command(message):
     Args:
         message (Message): mensagem do telegram
     """
-    dict_user = get_strava_group(str(message.chat.id)).membros
+    dict_user = StravaGroup(str(message.chat.id)).membros
     lista_user = list(dict_user.keys())
 
     if len(lista_user) == 0:
@@ -99,7 +83,7 @@ def del_strava_user_callback(call):
     user_name = call.data.replace("del_strava_", "")
     group_id = str(call.message.chat.id)
     user_name_admin = call.from_user.first_name or call.from_user.username
-    return remove_strava_user(user_name, group_id, user_name_admin)
+    return StravaGroup(str(group_id)).remove_strava_user(user_name, user_name_admin)
 
 
 def get_link_command(message):
@@ -154,7 +138,7 @@ def add_meta_callback(message, data):
     if not meta_km.isnumeric():
         return "Valor invalido, informe apenas numeros"
 
-    save_group_meta(message.chat.id, tipo_meta, int(meta_km))
+    StravaGroup(str(message.chat.id)).save_group_meta(tipo_meta, int(meta_km))
 
     return "Meta adicionada com sucesso"
 
@@ -166,7 +150,7 @@ def del_meta_command(message):
         message (Message): mensagem do telegram
     """
     tipo_meta = message.data.replace("del_meta_meta_", "")
-    save_group_meta(message.json.get("message").get("chat").get("id"), tipo_meta, None)
+    StravaGroup(str(message.chat.id)).save_group_meta(tipo_meta, None)
     return f"Meta {tipo_meta.title()} removida com sucesso"
 
 
@@ -174,11 +158,11 @@ def ignore_ativities_status_callback(message):
     message_text = message.text
     atividade_link = message_text.replace("/ignore ", "")
     atividade_id = atividade_link.split("/")[-1]
-    return add_ignore_activity(message.chat.id, atividade_id)
+    return StravaGroup(str(message.chat.id)).add_ignore_activity(atividade_id)
 
 
 def get_menu_sports_msg(message):
-    all_type = list_type_activities(message.chat.id)
+    all_type = StravaGroup(str(message.chat.id)).list_type_activities()
 
     if not all_type:
         return "Nenhum atividade encontrada nesse mês"
@@ -190,8 +174,7 @@ def get_menu_sports_msg(message):
 
 def get_sports_msg(callback):
     sport_type = callback.data.replace("strava_", "")
-    return get_ranking_str(str(callback.message.chat.id), sport_type)
+    return StravaGroup(str(callback.message.chat.id)).get_ranking_str(sport_type)
 
 def get_segments(message):
-    group_id = str(message.chat.id)
-    return get_segments_str(group_id)
+    return StravaGroup(str(message.chat.id)).get_segments_str()
