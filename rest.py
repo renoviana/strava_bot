@@ -222,15 +222,11 @@ class StravaGroup:
             last_day (datetime): data de fim
         """
 
-        sport_list = {
-            "Ride": ["Ride", "MountainBikeRide"],
-            "Run": ["Run", "TrailRun", "Walk", "Hike"],
-        }
 
         if not sport_type:
             sport_type = "Ride"
 
-        sport_list = sport_list.get(sport_type, [sport_type])
+        sport_list = [sport_type]
         
         ride_list, has_new_ride = self.list_month_activity(
             user=user,
@@ -350,24 +346,24 @@ class StravaGroup:
 
                 })
             
-            if "stats" not in self.membros[user]:
-                self.membros[user]["stats"] = {}
+            # if "stats" not in self.membros[user]:
+            #     self.membros[user]["stats"] = {}
 
-            if not last_day:
-                self.membros[user]["stats"][sport_type] = {
-                    "user": user,
-                    "user_id": strava["athlete_id"],
-                    "total_distance": total_distance,
-                    "total_user_points": total_user_points,
-                    "total_moving_time": total_moving_time,
-                    "max_distance": json_data["max_distance"],
-                    "max_velocity": json_data["max_velocity"],
-                    "max_average_speed": json_data["max_average_speed"],
-                    "max_elevation_gain": json_data["max_elevation_gain"],
-                    "max_moving_time": json_data["max_moving_time"],
+            # if not last_day:
+            #     self.membros[user]["stats"][sport_type] = {
+            #         "user": user,
+            #         "user_id": strava["athlete_id"],
+            #         "total_distance": total_distance,
+            #         "total_user_points": total_user_points,
+            #         "total_moving_time": total_moving_time,
+            #         "max_distance": json_data["max_distance"],
+            #         "max_velocity": json_data["max_velocity"],
+            #         "max_average_speed": json_data["max_average_speed"],
+            #         "max_elevation_gain": json_data["max_elevation_gain"],
+            #         "max_moving_time": json_data["max_moving_time"],
 
-                }
-        self.update_entity()
+            #     }
+
 
         sort_distance_list = sorted(
             distance_list, key=lambda k: k[sort_by], reverse=True

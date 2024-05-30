@@ -13,8 +13,6 @@ from command import (
     send_point_msg_command,
     send_ranking_ano_msg_command,
     send_ranking_msg_command,
-    send_run_ano_msg_command,
-    send_run_msg_command,
     send_stats_command,
     metas_command,
     ignore_ativities_status_callback,
@@ -29,8 +27,6 @@ bot = telebot.TeleBot(BSB_PEDAL_BOT_TOKEN)
 grupo_commands = {
     "rank": send_ranking_msg_command,
     'year':send_ranking_ano_msg_command,
-    'ryear':send_run_ano_msg_command,
-    "run": send_run_msg_command,
     "score": send_point_msg_command,
     "stats": send_stats_command,
     "admin": admin_command,

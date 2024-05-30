@@ -18,22 +18,6 @@ def send_ranking_ano_msg_command(message):
     """
     return StravaGroup(str(message.chat.id)).get_ranking_str('Ride',year_rank=True)
 
-def send_run_msg_command(message):
-    """
-    Envia ranking da corrida do strava
-    Args:
-        message (Message): mensagem do telegram
-    """
-    return StravaGroup(str(message.chat.id)).get_ranking_str('Run')
-
-def send_run_ano_msg_command(message):
-    """
-    Envia ranking da corrida do strava
-    Args:
-        message (Message): mensagem do telegram
-    """
-    return StravaGroup(str(message.chat.id)).get_ranking_str('Run', year_rank=True)
-
 def send_point_msg_command(message):
     """
     Envia pontos do strava
