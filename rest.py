@@ -122,25 +122,6 @@ class StravaGroup:
                 microsecond=0,
             )
 
-        if not last_day:
-            final_month = datetime.now().month + 1
-            year = datetime.now().year
-
-            if datetime.now().month == 12:
-                final_month = 1
-                year = datetime.now().year + 1
-
-
-            last_day = datetime.now().replace(
-                day=1,
-                hour=0,
-                minute=0,
-                second=0,
-                microsecond=0,
-                month=final_month,
-                year=year
-            )
-
         new_activity_list = self.get_athlete_data(
             user,
             after_date=first_day,
@@ -414,7 +395,6 @@ class StravaGroup:
             first_day (datetime): data de inicio
             last_day (datetime): data de fim
         """
-        only_desafio = self.group_id == str(PEDAL_TELEGRAM_GROUP_ID)
 
         emoji_dict = {
             "Ride": "🚲",
@@ -461,9 +441,6 @@ class StravaGroup:
         distance_list = []
 
         for user, strava in self.membros.items():
-            if only_desafio and strava.get("beta"):
-                continue
-
             json_data = self.get_distance_and_points(
                 user,
                 sport_type,
