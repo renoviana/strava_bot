@@ -550,7 +550,7 @@ class StravaGroup:
         self.update_entity()
         return "Atividade ignorada com sucesso!"
 
-    def get_segments(self, min_distance=7000):
+    def get_segments(self, min_distance=9000):
         """
         Retorna segmentos
         Args:
@@ -614,7 +614,7 @@ class StravaGroup:
 
         return segment_dict
 
-    def get_segments_str(self, min_distance=7000):
+    def get_segments_str(self, min_distance=9000):
         """
         Retorna segmentos em formato de string
         Args:
