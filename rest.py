@@ -97,7 +97,7 @@ class StravaGroup:
         user_at = self.membros[user].get("access_token")
         user_rt = self.membros[user].get("refresh_token")
         return user_at, user_rt
-    
+
     def list_activity(
         self,
         user,
@@ -156,15 +156,14 @@ class StravaGroup:
                 before_date=last_day,
                 page=page,
             )
-            pass
-        
+
 
 
         if not sport_list:
             return new_activity_list
 
         return list(filter(lambda x: x["type"] in sport_list, new_activity_list))
-    
+
     def get_athlete_data(
         self,
         user,
@@ -193,7 +192,7 @@ class StravaGroup:
 
         response = self.get_strava_api(url, params, user)
         return response.json()
-    
+
     def update_entity(self):
         """
         Atualiza entidade do strava
@@ -221,14 +220,14 @@ class StravaGroup:
             sport_type = "Ride"
 
         sport_list = [sport_type]
-        
+
         activity_list = self.list_activity(
             user,
             sport_list=sport_list,
             first_day=first_day,
             last_day=last_day,
         )
-        
+
 
         result_dict = {
             "total_distance": 0,
@@ -245,8 +244,8 @@ class StravaGroup:
             max_speed_ride_km = round(activity["max_speed"] * 3.6, 2)
             max_average_speed_ride_km = round(activity["average_speed"] * 3.6, 2)
             total_elevation_gain_ride = activity["total_elevation_gain"]
-            distance_km = activity["distance"] / 1000
-            moving_time_ride = activity["moving_time"] / 60
+            distance_km = round(activity["distance"] / 1000, 2)
+            moving_time_ride = round(activity["moving_time"] / 60, 2)
 
             if moving_time_ride < 5:
                 continue
@@ -290,7 +289,7 @@ class StravaGroup:
             result_dict["total_moving_time"] += round(moving_time_ride, 2)
 
         return result_dict
- 
+
     def get_point_str(self):
         """
         Retorna lista de pontos dos usuários
@@ -316,13 +315,20 @@ class StravaGroup:
                 enumerate(sort_distance_list),
             )
         )
-    
+
     def update_max_metrics(self, metric, user, distance, max_metrics):
+        """
+        Atualiza metricas4
+        Args:
+            metric (str): metrica
+            user (str): usuario
+            distance (dict): distancia
+            max_metrics (dict): metricas
+        """
         if distance[metric]["value"] > max_metrics[metric]["value"]:
             max_metrics[metric]["user"] = user
             max_metrics[metric]["value"] = distance[metric]["value"]
             max_metrics[metric]["activity_id"] = distance[metric]["activity_id"]
-
 
     def get_stats_str(self):
         """
@@ -350,7 +356,7 @@ class StravaGroup:
 
             for metric in max_metrics:
                 self.update_max_metrics(metric, user, distance, max_metrics)
-        
+
         msg_texto = "🚲💨  Estatísticas do mês 🚲💨\n"
         msg_texto += f"Maior distância: <a href=\"https://www.strava.com/activities/{max_distance_geral['activity_id']}\">{round(max_distance_geral['value'],2)}km - {max_distance_geral['user'].capitalize()}</a>\n"
         msg_texto += f"Maior velocidade: <a href=\"https://www.strava.com/activities/{max_velocity_geral['activity_id']}\">{round(max_velocity_geral['value'],2)}km/h - {max_velocity_geral['user'].capitalize()}</a>\n"
@@ -384,7 +390,7 @@ class StravaGroup:
         strava_month_distance = (
             self.metas.get(sport_type)
         )
-        
+
         index_data, data = object_data
         rank_data = data.get(rank_params)
         emoji = ""
@@ -571,7 +577,7 @@ class StravaGroup:
                     continue
 
                 atividade_id = atividade['id']
-                
+
                 if str(atividade_id) in ignore_stats_ids:
                     continue
 
@@ -599,14 +605,14 @@ class StravaGroup:
 
         # segment with min 2 athletes
         all_segments = list(filter(lambda x: len(x[1]) > 2, all_segments.items()))
-        for _, segment in all_segments:
-            for segment in segment:
+        for _, segment_list in all_segments:
+            for segment in segment_list:
                 segment_data = self.get_strava_api(f"https://www.strava.com/api/v3/segment_efforts/{segment['id']}", {}, segment['user']).json()
                 atividade_id = segment_data['segment']['id']
                 segment_data['user'] = segment['user']
                 segment_data['atividade_id'] = segment['atividade_id']
                 athelete_id[segment['athlete']['id']] = True
-                
+
                 if atividade_id not in segment_dict:
                     segment_dict[atividade_id] = []
 
@@ -625,7 +631,7 @@ class StravaGroup:
         for atividade_id, segments in segment_dict.items():
             if len(segments) < 2:
                 continue
-            
+
             data = [
                 segments[0]['name'],
                 " - ",
@@ -633,7 +639,7 @@ class StravaGroup:
                 "km - ID: ",
                 f"{str(segments[0]['segment']['id'])}"
             ]
-            
+
             str_list.append(f"<a href=\"https://www.strava.com/segments/{str(segments[0]['segment']['id'])}\">{''.join(data)}</a>")
             segments = sorted(segments, key=lambda x: x['moving_time'])
             athelete_list = []

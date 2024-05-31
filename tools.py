@@ -309,15 +309,3 @@ def is_group_message(message):
     return hasattr(message,'chat') and message.chat.type in ["group", "supergroup"]
 
 
-def start_bot(bot_run, tipo: str) -> None:
-    """
-    Inicia bot
-    Args:
-        bot_run (Bot): Bot
-        tipo (str): Tipo de bot
-    """
-    while True:
-        try:
-            bot_run.polling(none_stop=True)
-        except Exception as exc:
-            bot_run.stop_polling()

@@ -15,10 +15,8 @@ from command import (
     send_ranking_msg_command,
     send_stats_command,
     metas_command,
-    ignore_ativities_status_callback,
-    
-)
-from tools import is_group_message, return_has_result, start_bot
+    ignore_ativities_status_callback,)
+from tools import is_group_message, return_has_result
 from secure import BSB_PEDAL_BOT_TOKEN, MONGO_URI, TELEGRAM_BOT_ID
 
 connect(host=MONGO_URI, alias="assistant-db")
@@ -91,7 +89,7 @@ def callback_query(call) -> None:
         if not command_list:
             return
 
-        command_text, command_function = command_list[0]
+        _, command_function = command_list[0]
         resultado = command_function(call)
         return_has_result(resultado, call.message, bot)
         try:
@@ -153,4 +151,8 @@ def commands_handler(message) -> None:
         "\nEsse bot foi desenvolvido para funcionar apenas em grupos do telegram"\
         ", para utiliza-lo crie um grupo e me adicione. :)")
 
-start_bot(bot, "pedalbot")
+while True:
+    try:
+        bot.polling(none_stop=True)
+    except Exception as exc:
+        bot.stop_polling()
