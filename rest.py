@@ -598,7 +598,7 @@ class StravaGroup:
         }
 
         # segment with min 2 athletes
-        all_segments = list(filter(lambda x: len(x[1]) > 1, all_segments.items()))
+        all_segments = list(filter(lambda x: len(x[1]) > 2, all_segments.items()))
         for _, segment in all_segments:
             for segment in segment:
                 segment_data = self.get_strava_api(f"https://www.strava.com/api/v3/segment_efforts/{segment['id']}", {}, segment['user']).json()
