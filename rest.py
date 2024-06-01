@@ -101,7 +101,6 @@ class StravaGroup:
     def list_activity(
         self,
         user,
-        sport_list=None,
         first_day=None,
         last_day=None,):
         """
@@ -138,12 +137,7 @@ class StravaGroup:
                 page=page,
             )
 
-
-
-        if not sport_list:
-            return new_activity_list
-
-        return list(filter(lambda x: x["type"] in sport_list, new_activity_list))
+        return new_activity_list
 
     def get_athlete_data(
         self,
@@ -208,6 +202,8 @@ class StravaGroup:
             first_day=first_day,
             last_day=last_day,
         )
+        
+        activity_list = list(filter(lambda x: x["type"] in sport_list, activity_list))
 
 
         result_dict = {
@@ -546,8 +542,8 @@ class StravaGroup:
 
             activity_list = self.list_activity(
                 nome,
-                'Ride'
             )
+            activity_list = list(filter(lambda x: x["type"] in ['Ride'], activity_list))
 
             for atividade in activity_list:
                 if atividade['distance'] < min_distance:
