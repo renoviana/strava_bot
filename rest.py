@@ -198,7 +198,6 @@ class StravaGroup:
 
         activity_list = self.list_activity(
             user,
-            sport_list=sport_list,
             first_day=first_day,
             last_day=last_day,
         )
