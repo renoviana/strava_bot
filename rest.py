@@ -2,7 +2,6 @@ from datetime import datetime
 import requests
 from model import add_strava_group, get_strava_group
 from secure import (
-    PEDAL_TELEGRAM_GROUP_ID,
     STRAVA_CLIENT_ID,
     STRAVA_CLIENT_SECRET,
 )
@@ -37,7 +36,7 @@ class StravaGroup:
         """
         access_token, refresh_token = self.get_user_access_and_refresh_token(user)
         params["access_token"] = access_token
-        response = requests.get(url, params=params)
+        response = requests.get(url, params=params, timeout=40)
 
         if response.status_code == 429:
             raise Exception("Erro ao acessar o strava muitas requisições, tente novamente mais tarde")
@@ -156,7 +155,7 @@ class StravaGroup:
             per_page (int): itens por pagina
         """
         url = "https://www.strava.com/api/v3/athlete/activities"
-        access_token, refresh_token = self.get_user_access_and_refresh_token(user)
+        access_token, _ = self.get_user_access_and_refresh_token(user)
         params = {"access_token": access_token, "page": page, "per_page": per_page}
 
         if after_date:
@@ -272,7 +271,7 @@ class StravaGroup:
         """
         distance_list = []
         ignore_stats_ids = self.ignored_activities or []
-        for user, strava in self.membros.items():
+        for user in self.membros.keys():
             distance = self.get_distance_and_points(
                 user,
                 ignore_stats_ids=ignore_stats_ids
@@ -324,7 +323,7 @@ class StravaGroup:
             "max_moving_time": max_moving_time_geral
         }
 
-        for user, strava in self.membros.items():
+        for user in self.membros.keys():
             distance = self.get_distance_and_points(
                 user,
                 ignore_stats_ids=ignore_stats_ids
@@ -346,7 +345,7 @@ class StravaGroup:
         Retorna lista de distancias dos usuários
         """
         all_types = []
-        for user, strava in self.membros.items():
+        for user in self.membros.keys():
             activity_list = self.list_activity(
                 user
             )
@@ -430,8 +429,8 @@ class StravaGroup:
         rank_unit="km"
 
         if sport_type.lower() in sport_rank_by_time_list:
-                rank_params = 'total_moving_time'
-                rank_unit = "min"
+            rank_params = 'total_moving_time'
+            rank_unit = "min"
         ignore_stats_ids = self.ignored_activities
         distance_list = []
 
@@ -600,7 +599,7 @@ class StravaGroup:
         """
         str_list = []
         segment_dict = self.get_segments(min_distance)
-        for atividade_id, segments in segment_dict.items():
+        for segments in segment_dict.values():
             if len(segments) < 2:
                 continue
 
@@ -627,7 +626,6 @@ class StravaGroup:
                 athelete_list.append(segment_athlete)
                 segment_min = str(round(moving_time/60, 2))
                 segment_date = segment['start_date_local'].strftime('%d/%m/%Y %H:%M:%S')
-                segment_id = segment['id']
                 url = f"{segment_min}min - {segment_date}"
                 str_list.append('- '+segment_athlete+"\n"+url)
             str_list.append("")
