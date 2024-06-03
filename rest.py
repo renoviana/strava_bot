@@ -219,7 +219,7 @@ class StravaGroup:
         for activity in activity_list:
             max_speed_ride_km = round(activity["max_speed"] * 3.6, 2)
             max_average_speed_ride_km = round(activity["average_speed"] * 3.6, 2)
-            total_elevation_gain_ride = activity["total_elevation_gain"]
+            total_elevation_gain_ride = round(activity["total_elevation_gain"], 2)
             distance_km = round(activity["distance"] / 1000, 2)
             moving_time_ride = round(activity["moving_time"] / 60, 2)
 
@@ -261,8 +261,8 @@ class StravaGroup:
             result_dict["total_user_points"] = round(self.calc_point_rank(
                 result_dict["total_user_points"], total_elevation_gain_ride, distance_km
             ), 2)
-            result_dict["total_distance"] += round(distance_km, 2)
-            result_dict["total_moving_time"] += round(moving_time_ride, 2)
+            result_dict["total_distance"] = round(result_dict["total_distance"] + distance_km, 2)
+            result_dict["total_moving_time"] = round(result_dict["total_moving_time"] + moving_time_ride, 2)
 
         return result_dict
 
