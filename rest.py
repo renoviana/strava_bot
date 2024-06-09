@@ -507,7 +507,7 @@ class StravaGroup:
             distance_km (int): distancia
         """
 
-        if distance_km > 5 and sport_type in ['Run', 'Walk']:
+        if distance_km > 2 and sport_type in ['Run', 'Walk']:
             total_user_points += 1
             return total_user_points
 
