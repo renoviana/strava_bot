@@ -177,12 +177,12 @@ class StravaGroup:
         self.strava_entity.save()
 
     def get_distance_and_points(
-    self, user, sport_type=None, ignore_stats_ids=None, first_day=None, last_day=None):
+    self, user, sport_list=None, ignore_stats_ids=None, first_day=None, last_day=None):
         """
         Calcula a distancia total e os pontos do usuário
         Args:
             user (str): usuario
-            sport_type (str): tipo de esporte
+            sport_list (str): tipo de esporte
             ignore_stats_ids (list): lista de ids de atividades ignoradas
             ignore_cache (bool): ignorar cache
             first_day (datetime): data de inicio
@@ -190,10 +190,9 @@ class StravaGroup:
         """
 
 
-        if not sport_type:
-            sport_type = "Ride"
+        if not sport_list:
+            sport_list = ["Ride"]
 
-        sport_list = [sport_type]
 
         activity_list = self.list_activity(
             user,
@@ -216,6 +215,7 @@ class StravaGroup:
         }
 
         for activity in activity_list:
+            activity_type = activity["type"]
             max_speed_ride_km = round(activity["max_speed"] * 3.6, 2)
             max_average_speed_ride_km = round(activity["average_speed"] * 3.6, 2)
             total_elevation_gain_ride = round(activity["total_elevation_gain"], 2)
@@ -258,7 +258,7 @@ class StravaGroup:
                 result_dict["max_moving_time"]['activity_id'] = activity.get('id')
 
             result_dict["total_user_points"] = round(self.calc_point_rank(
-                result_dict["total_user_points"], total_elevation_gain_ride, distance_km
+                result_dict["total_user_points"], total_elevation_gain_ride, distance_km, activity_type
             ), 2)
             result_dict["total_distance"] = round(result_dict["total_distance"] + distance_km, 2)
             result_dict["total_moving_time"] = round(result_dict["total_moving_time"] + moving_time_ride, 2)
@@ -274,6 +274,7 @@ class StravaGroup:
         for user in self.membros.keys():
             distance = self.get_distance_and_points(
                 user,
+                sport_list=["Ride", "Run", "Walk"],
                 ignore_stats_ids=ignore_stats_ids
             )
             total_user_points = distance["total_user_points"]
@@ -437,7 +438,7 @@ class StravaGroup:
         for user, strava in self.membros.items():
             json_data = self.get_distance_and_points(
                 user,
-                sport_type,
+                sport_list=[sport_type],
                 ignore_stats_ids=ignore_stats_ids,
                 first_day=first_day,
                 last_day=last_day,
@@ -497,7 +498,7 @@ class StravaGroup:
         self.metas[tipo_meta] = km
         self.update_entity()
 
-    def calc_point_rank(self, total_user_points, total_elevation_gain_ride_m, distance_km):
+    def calc_point_rank(self, total_user_points, total_elevation_gain_ride_m, distance_km, sport_type):
         """
         Calcula o rank de pontos
         Args:
@@ -505,7 +506,12 @@ class StravaGroup:
             total_elevation_gain_ride_m (int): total de elevação
             distance_km (int): distancia
         """
-        if distance_km > 5:
+
+        if distance_km > 5 and sport_type in ['Run', 'Walk']:
+            total_user_points += 1
+            return total_user_points
+
+        if distance_km > 10:
             total_user_points += 1
 
         if distance_km > 50:
