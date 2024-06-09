@@ -26,7 +26,7 @@ def send_point_msg_command(message):
     """
     pontos_msg = (
         "\n".join(StravaGroup(str(message.chat.id)).get_point_str())
-        + "\n\nComo funciona: \n1 ponto - Pedal a cima de 10km ou caminhada/corrida a cima de 5km\n+1 ponto - Pedal a cima de 350m de elevação\n+1 ponto - Pedal a cima de 50km"
+        + "\n\nComo funciona: \n1 ponto - Pedal a cima de 10km\n1 ponto - Caminhada/corrida a cima de 5km\n+1 ponto - Pedal a cima de 350m de elevação\n+1 ponto - Pedal a cima de 50km"
     )
     return pontos_msg
 
