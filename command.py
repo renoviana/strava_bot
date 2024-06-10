@@ -147,6 +147,7 @@ def ignore_ativities_status_callback(message):
 
 def get_menu_sports_msg(message):
     all_type = StravaGroup(str(message.chat.id)).list_type_activities()
+    all_type = sorted(all_type)
 
     if not all_type:
         return "Nenhum atividade encontrada nesse mês"
