@@ -6,7 +6,6 @@ class Strava_group(Document):
     ignored_activities = ListField()
     metas = DictField(default={})
     membros = DictField(default=[])
-    meta = {'db_alias': 'assistant-db'}
     segments_ids = ListField(required=False, default=[])
 
 
