@@ -5,7 +5,7 @@ from telebot.types import (
 )
 
 from secure import (
-    BSB_PEDAL_BOT_TOKEN,
+    TELEGRAM_BOT_TOKEN,
 )
 
 def return_has_result(result: dict, message: Message, telegram_bot) -> None:
@@ -19,7 +19,7 @@ def return_has_result(result: dict, message: Message, telegram_bot) -> None:
     if not result:
         return None
 
-    is_pedal_bot = telegram_bot.token == BSB_PEDAL_BOT_TOKEN
+    is_pedal_bot = telegram_bot.token == TELEGRAM_BOT_TOKEN
     if isinstance(result, dict):
         texto_result = result.get("texto", "")
         message_id = message.chat.id

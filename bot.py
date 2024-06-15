@@ -17,10 +17,10 @@ from command import (
     metas_command,
     ignore_ativities_status_callback,)
 from tools import is_group_message, return_has_result
-from secure import BSB_PEDAL_BOT_TOKEN, MONGO_URI, TELEGRAM_BOT_ID
+from secure import TELEGRAM_BOT_TOKEN, MONGO_URI, TELEGRAM_BOT_ID
 
-connect(host=MONGO_URI, alias="assistant-db")
-bot = telebot.TeleBot(BSB_PEDAL_BOT_TOKEN)
+connect(host=MONGO_URI)
+bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
 
 grupo_commands = {
     "rank": send_ranking_msg_command,
@@ -111,20 +111,10 @@ def handle_group_message(message) -> None:
     """
     try:
         command = message.text[1:].split(" ")[0]
-        chat_member = bot.get_chat_member(message.chat.id, message.from_user.id)
         bot_member = bot.get_chat_member(message.chat.id, bot.get_me().id)
         is_bot_admin = bot_member.status in ["administrator", "creator"]
-        is_group_admin = chat_member.status in ["administrator", "creator"]
 
         command = command.replace("@bsbpedalbot", "")
-
-        if command in grupo_commands_admin and not is_group_admin:
-            user_name = message.from_user.first_name
-            bot.reply_to(
-                message,
-                f"{user_name}, quem você pensa que é?, você não tem permissão de administrador.",
-            )
-            return
 
         if command not in grupo_commands:
             return

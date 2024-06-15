@@ -2,11 +2,11 @@ import datetime
 import logging
 from mongoengine import connect
 from rest import StravaGroup
-from secure import MONGO_URI, PEDAL_TELEGRAM_GROUP_ID
+from secure import MONGO_URI, TELEGRAM_GROUP_ID
 logger = logging.getLogger(__name__)
 
 connect(host=MONGO_URI, alias="assistant-db")
-strava_group = StravaGroup(PEDAL_TELEGRAM_GROUP_ID)
+strava_group = StravaGroup(TELEGRAM_GROUP_ID)
 
 def test_strava_commands():
     assert strava_group.strava_entity
