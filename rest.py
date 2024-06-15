@@ -603,7 +603,7 @@ class StravaGroup:
         Args:
             min_distance (int): distancia minima
         """
-        str_list = []
+        str_list = ["Segmentos do mês:"]
         segment_dict = self.get_segments(min_distance)
         for segments in segment_dict.values():
             if len(segments) < 2:
