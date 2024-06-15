@@ -1,7 +1,8 @@
+import datetime
 import logging
+from mongoengine import connect
 from rest import StravaGroup
 from secure import MONGO_URI, PEDAL_TELEGRAM_GROUP_ID
-from mongoengine import connect
 logger = logging.getLogger(__name__)
 
 connect(host=MONGO_URI, alias="assistant-db")
@@ -12,6 +13,9 @@ def test_strava_commands():
 
 def test_get_ranking_str():
     assert "Ranking June" in strava_group.get_ranking_str('Ride')
+
+def test_get_ranking_year():
+    assert str(datetime.datetime.now().year) in strava_group.get_ranking_str('Ride', year_rank=True)
 
 def test_get_point_str():
     assert isinstance(strava_group.get_point_str(), list)
