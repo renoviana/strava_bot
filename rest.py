@@ -4,7 +4,12 @@ from model import add_strava_group, get_strava_group
 from secure import (
     STRAVA_CLIENT_ID,
     STRAVA_CLIENT_SECRET,
+    VICTORY_MONTH_DICT,
 )
+
+
+VICTORY_MONTH_DICT = VICTORY_MONTH_DICT or {}
+
 
 class StravaGroup:
     membros = {}
@@ -22,6 +27,33 @@ class StravaGroup:
         self.membros = self.strava_entity.membros
         self.ignored_activities = self.strava_entity.ignored_activities
 
+    def get_victory_str(self, user_name):
+        """
+        Retorna mensagem de vitoria
+        Args:
+            user_name (str): nome do usuário
+        """
+        victory_dict = VICTORY_MONTH_DICT.get(user_name)
+        if not victory_dict:
+            return f""
+
+        lider = victory_dict.get("lider")
+        segundo = victory_dict.get("segundo")
+        terceiro = victory_dict.get("terceiro")
+
+        msg = ""
+
+        if lider:
+            msg += f"🥇{lider}"
+
+        if segundo:
+            msg += f"🥈{segundo}"
+
+        if terceiro:
+            msg += f"🥉{terceiro}"
+
+        return msg
+        
     def get_strava_api(
         self,
         url,
@@ -377,9 +409,9 @@ class StravaGroup:
         user_name = data.get('user').title()
 
         if user_id:
-            user_name = f"<a href=\"https://www.strava.com/athletes/{user_id}\">{data.get('user').title()}</a>"
+            user_name = f"<a href=\"https://www.strava.com/athletes/{user_id}\">{user_name}{self.get_victory_str(user_name)}</a>"
 
-        return f"{index_data+1}º - {user_name} - {rank_data}{rank_unit} {emoji}"
+        return f"{index_data+1}º - {user_name}{self.get_victory_str(user_name)} - {rank_data}{rank_unit} {emoji}"
 
     def get_ranking_str(self, sport_type , year_rank=False, first_day=None, last_day=None):
         """
