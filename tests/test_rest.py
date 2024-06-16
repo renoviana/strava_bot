@@ -5,7 +5,7 @@ from rest import StravaGroup
 from secure import MONGO_URI, TELEGRAM_GROUP_ID
 logger = logging.getLogger(__name__)
 
-connect(host=MONGO_URI, alias="assistant-db")
+connect(host=MONGO_URI)
 strava_group = StravaGroup(TELEGRAM_GROUP_ID)
 
 def test_strava_commands():
