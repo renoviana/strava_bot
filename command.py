@@ -1,4 +1,4 @@
-from secure import STRAVA_CLIENT_ID, REDIRECT_URI
+from secure import STRAVA_CLIENT_ID, STRAVA_REDIRECT_URI
 from tools import get_markup
 from rest import StravaGroup
 
@@ -76,10 +76,10 @@ def get_link_command(message):
     Retorna link
     """
     group_id = str(message.chat.id)
-    return f"https://www.strava.com/oauth/authorize?client_id={STRAVA_CLIENT_ID}&redirect_uri={REDIRECT_URI.format(group_id)}"
+    return f"https://www.strava.com/oauth/authorize?client_id={STRAVA_CLIENT_ID}&redirect_uri={STRAVA_REDIRECT_URI.format(group_id)}"
 
 
-def metas_command(message):
+def metas_command(_):
     """
     Retorna metas
     """
@@ -140,6 +140,9 @@ def del_meta_command(message):
 
 
 def ignore_ativities_status_callback(message):
+    """
+    Retorna menu de atividades ignoradas
+    """
     message_text = message.text
     atividade_link = message_text.replace("/ignore ", "")
     atividade_id = atividade_link.split("/")[-1]
@@ -147,6 +150,9 @@ def ignore_ativities_status_callback(message):
 
 
 def get_menu_sports_msg(message):
+    """
+    Retorna menu de esportes
+    """
     all_type = StravaGroup(str(message.chat.id)).list_type_activities()
     all_type = sorted(all_type)
 
@@ -155,12 +161,18 @@ def get_menu_sports_msg(message):
 
     return {
         "texto": "Selecione o tipo de esporte",
-        "markup": get_markup(all_type, f"strava_"),
+        "markup": get_markup(all_type, "strava_"),
     }
 
 def get_sports_msg(callback):
+    """
+    Retorna ranking do esporte
+    """
     sport_type = callback.data.replace("strava_", "")
     return StravaGroup(str(callback.message.chat.id)).get_ranking_str(sport_type)
 
 def get_segments(message):
+    """
+    Retorna os segmentos
+    """
     return StravaGroup(str(message.chat.id)).get_segments_str()
