@@ -35,7 +35,11 @@ STRAVA_CLIENT_SECRET = 'your-strava-client-secret'
 
 # Telegram bot ID
 TELEGRAM_BOT_ID = 'your-telegram-bot-id'
+
+# Strava APP Redirect URI
+STRAVA_REDIRECT_URI = 'your-strava-app-redirect-uri'
 ```
+
 ### Step 2: Install Dependencies
 
 Install the necessary Python packages using `pip`. You can do this by running the following command:
