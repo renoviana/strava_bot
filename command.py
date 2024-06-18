@@ -1,3 +1,4 @@
+from secure import STRAVA_CLIENT_ID, REDIRECT_URI
 from tools import get_markup
 from rest import StravaGroup
 
@@ -75,7 +76,7 @@ def get_link_command(message):
     Retorna link
     """
     group_id = str(message.chat.id)
-    return f"https://www.strava.com/oauth/authorize?client_id=36564&redirect_uri=http://www.renoviana.com.br/api/strava/{group_id}&response_type=code&scope=activity:read_all,profile:read_all,read_all"
+    return f"https://www.strava.com/oauth/authorize?client_id={STRAVA_CLIENT_ID}&redirect_uri={REDIRECT_URI.format(group_id)}"
 
 
 def metas_command(message):
