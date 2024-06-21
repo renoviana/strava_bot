@@ -4,11 +4,10 @@ from model import add_strava_group, get_strava_group
 from secure import (
     STRAVA_CLIENT_ID,
     STRAVA_CLIENT_SECRET,
-    VICTORY_MONTH_DICT,
 )
 
 
-VICTORY_MONTH_DICT = VICTORY_MONTH_DICT or {}
+VICTORY_MONTH_DICT = {'Ride': {'Pedro Boaventura': {'lider': 11, 'segundo': 0, 'terceiro': 0}, 'Igor Araujo': {'lider': 0, 'segundo': 7, 'terceiro': 1}, 'Joao Dale Dale': {'lider': 0, 'segundo': 4, 'terceiro': 7}, 'Felipe Oliveira': {'lider': 0, 'segundo': 1, 'terceiro': 2}, 'Guilherme Mariz': {'lider': 1, 'segundo': 0, 'terceiro': 0}, 'Kadu Bomfim': {'lider': 0, 'segundo': 0, 'terceiro': 1}, 'Reno Viana': {'lider': 0, 'segundo': 0, 'terceiro': 1}}, 'Run': {'Joao Dale Dale': {'lider': 8, 'segundo': 3, 'terceiro': 1}, 'Pedro Boaventura': {'lider': 0, 'segundo': 6, 'terceiro': 3}, 'João Victor Gonçalves Barbosa': {'lider': 3, 'segundo': 1, 'terceiro': 4}, 'Humberto Nasser': {'lider': 1, 'segundo': 2, 'terceiro': 2}, 'Kadu Bomfim': {'lider': 0, 'segundo': 0, 'terceiro': 1}, 'Felip Medeiros': {'lider': 0, 'segundo': 0, 'terceiro': 1}}, 'Swim': {'Joao Dale Dale': {'lider': 9, 'segundo': 3, 'terceiro': 0}, 'Pedro Boaventura': {'lider': 3, 'segundo': 3, 'terceiro': 0}}, 'Workout': {'Kadu Bomfim': {'lider': 2, 'segundo': 0, 'terceiro': 0}}, 'WeightTraining': {'Joao Dale Dale': {'lider': 12, 'segundo': 0, 'terceiro': 0}, 'João Brito': {'lider': 0, 'segundo': 7, 'terceiro': 0}, 'Reno Viana': {'lider': 0, 'segundo': 1, 'terceiro': 0}, 'João Victor Gonçalves Barbosa': {'lider': 0, 'segundo': 2, 'terceiro': 0}, 'Felip Medeiros': {'lider': 0, 'segundo': 0, 'terceiro': 3}}, 'Hike': {'Humberto Nasser': {'lider': 2, 'segundo': 0, 'terceiro': 0}, 'Reno Viana': {'lider': 6, 'segundo': 0, 'terceiro': 0}, 'João Brito': {'lider': 0, 'segundo': 2, 'terceiro': 0}}, 'Walk': {'Pedro Nunes': {'lider': 2, 'segundo': 0, 'terceiro': 0}, 'Guilherme Mariz': {'lider': 2, 'segundo': 0, 'terceiro': 0}, 'João Victor Gonçalves Barbosa': {'lider': 0, 'segundo': 2, 'terceiro': 0}, 'Igor Araujo': {'lider': 2, 'segundo': 0, 'terceiro': 0}, 'Pedro Boaventura': {'lider': 1, 'segundo': 2, 'terceiro': 0}}}
 
 
 class StravaGroup:
@@ -27,13 +26,13 @@ class StravaGroup:
         self.membros = self.strava_entity.membros
         self.ignored_activities = self.strava_entity.ignored_activities
 
-    def get_victory_str(self, user_name):
+    def get_victory_str(self, sport_type,  user_name):
         """
         Retorna mensagem de vitoria
         Args:
             user_name (str): nome do usuário
         """
-        victory_dict = VICTORY_MONTH_DICT.get(user_name)
+        victory_dict = VICTORY_MONTH_DICT.get(sport_type, {}).get(user_name)
         if not victory_dict:
             return f""
 
@@ -409,9 +408,9 @@ class StravaGroup:
         user_name = data.get('user').title()
 
         if user_id:
-            user_name = f"<a href=\"https://www.strava.com/athletes/{user_id}\">{user_name}{self.get_victory_str(user_name)}</a>"
+            user_name = f"<a href=\"https://www.strava.com/athletes/{user_id}\">{user_name}{self.get_victory_str(sport_type, user_name)}</a>"
 
-        return f"{index_data+1}º - {user_name}{self.get_victory_str(user_name)} - {rank_data}{rank_unit} {emoji}"
+        return f"{index_data+1}º - {user_name}{self.get_victory_str(sport_type ,user_name)} - {rank_data}{rank_unit} {emoji}"
 
     def get_ranking_str(self, sport_type , year_rank=False, first_day=None, last_day=None):
         """
