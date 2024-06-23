@@ -32,10 +32,7 @@ class StravaGroup:
         Args:
             user_name (str): nome do usuário
         """
-        victory_dict = self.medalhas.get(sport_type, {}).get(user_name.lower())
-        if not victory_dict:
-            return f""
-
+        victory_dict = self.medalhas.get(sport_type, {}).get(user_name.lower(), {})
         lider = victory_dict.get("lider")
         segundo = victory_dict.get("segundo")
         terceiro = victory_dict.get("terceiro")
