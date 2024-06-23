@@ -1,4 +1,5 @@
 from datetime import datetime
+import regex
 import requests
 from model import add_strava_group, get_strava_group
 from secure import (
@@ -6,17 +7,14 @@ from secure import (
     STRAVA_CLIENT_SECRET,
 )
 
-
-VICTORY_MONTH_DICT = {'Ride': {'Pedro Boaventura': {'lider': 8, 'segundo': 0, 'terceiro': 0}, 'Joao Dale Dale': {'lider': 0, 'segundo': 3, 'terceiro': 5}, 'Felipe Oliveira': {'lider': 0, 'segundo': 1, 'terceiro': 1}, 'Igor Araujo': {'lider': 0, 'segundo': 4, 'terceiro': 1}, 'Guilherme Mariz': {'lider': 1, 'segundo': 1, 'terceiro': 0}, 'Kadu Bomfim': {'lider': 0, 'segundo': 0, 'terceiro': 1}, 'Reno Viana': {'lider': 2, 'segundo': 0, 'terceiro': 1}, 'Felip Medeiros': {'lider': 0, 'segundo': 1, 'terceiro': 0}, 'Pedro Nunes': {'lider': 0, 'segundo': 1, 'terceiro': 1}, 'João Brito': {'lider': 0, 'segundo': 0, 'terceiro': 1}}, 'Run': {'João Victor Gonçalves Barbosa': {'lider': 2, 'segundo': 1, 'terceiro': 1}, 'Joao Dale Dale': {'lider': 6, 'segundo': 1, 'terceiro': 1}, 'Humberto Nasser': {'lider': 1, 'segundo': 0, 'terceiro': 1}, 'Pedro Boaventura': {'lider': 0, 'segundo': 3, 'terceiro': 0}, 'Kadu Bomfim': {'lider': 0, 'segundo': 0, 'terceiro': 1}, 'Felip Medeiros': {'lider': 0, 'segundo': 0, 'terceiro': 1}, 'João Brito': {'lider': 1, 'segundo': 0, 'terceiro': 0}, 'Pedro Nunes': {'lider': 1, 'segundo': 0, 'terceiro': 0}}, 'Walk': {'Guilherme Mariz': {'lider': 1, 'segundo': 0, 'terceiro': 0}, 'Igor Araujo': {'lider': 1, 'segundo': 0, 'terceiro': 0}}, 'Swim': {'Pedro Boaventura': {'lider': 2, 'segundo': 0, 'terceiro': 0}, 'Joao Dale Dale': {'lider': 2, 'segundo': 0, 'terceiro': 0}}, 'Hike': {'Reno Viana': {'lider': 2, 'segundo': 0, 'terceiro': 0}}, 'WeightTraining': {'Joao Dale Dale': {'lider': 8, 'segundo': 0, 'terceiro': 0}, 'João Victor Gonçalves Barbosa': {'lider': 0, 'segundo': 1, 'terceiro': 0}, 'Felip Medeiros': {'lider': 0, 'segundo': 0, 'terceiro': 1}}}
-
-
 class StravaGroup:
     membros = {}
     metas = {}
     ignored_activities = []
 
-    def __init__(self, group_id=None) -> None:
+    def __init__(self, group_id=None, use_cache=False) -> None:
         self.strava_entity = get_strava_group(group_id)
+        self.use_cache = use_cache
         self.group_id = self.strava_entity.telegram_group_id
         if not self.strava_entity:
             add_strava_group(self.group_id)
@@ -226,8 +224,8 @@ class StravaGroup:
         if not sport_list:
             sport_list = ["Ride"]
 
-        # if self.cache_dict.get(user) and first_day == self.cache_dict.get(user).get("first_day") and last_day == self.cache_dict.get(user).get("last_day"):
-        #     return self.cache_dict.get(user).get("data")
+        if self.use_cache and self.cache_dict.get(user) and first_day == self.cache_dict.get(user).get("first_day") and last_day == self.cache_dict.get(user).get("last_day"):
+            return self.cache_dict.get(user).get("data")
 
 
 
@@ -713,3 +711,37 @@ class StravaGroup:
             name, medalhas = i
             msg_list.append(f"{index+1}º - {name.title()} 🥇{medalhas['lider']} 🥈{medalhas['segundo']} 🥉{medalhas['terceiro']}")
         return "\n".join(msg_list)
+    
+    def update_medalhas(self):
+        medalhas = self.medalhas
+        for sport in self.list_type_activities():
+            rank =  self.get_ranking_str(sport)
+            member_list = regex.findall('>(.*?)<', rank)
+            if len(member_list) == 1:
+                    continue
+            
+            if len(member_list) < 4:
+                lista = enumerate(member_list[:1])
+            else:
+                lista = enumerate(member_list[:3])
+
+            for index, i in lista:
+                if sport.lower() not in medalhas:
+                    medalhas[sport.lower()] = {}
+
+                if i not in medalhas[sport.lower()]:
+                    medalhas[sport.lower()][i.lower()] = {
+                        'lider': 0,
+                        'segundo': 0,
+                        'terceiro': 0
+                    }
+
+                
+                if index == 0:
+                    medalhas[sport.lower()][i.lower()]['lider'] += 1
+                elif index == 1:
+                    medalhas[sport.lower()][i.lower()]['segundo'] += 1
+                elif index == 2:
+                    medalhas[sport.lower()][i.lower()]['terceiro'] += 1
+        self.strava_entity.medalhas = medalhas
+        self.strava_entity.save()
