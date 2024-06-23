@@ -373,6 +373,9 @@ class StravaGroup:
             )
             distance = distance.get("Ride")
 
+            if not distance:
+                continue
+
             for metric in max_metrics:
                 self.update_max_metrics(metric, user, distance, max_metrics)
 
