@@ -329,7 +329,7 @@ class StravaGroup:
 
         return list(
             map(
-                lambda x: f"{x[0]+1}º - {x[1].get('user').capitalize()} - {x[1].get('point')} {'ponto' if x[1].get('point') == 1 else 'pontos'}",
+                lambda x: f"{x[0]+1}º - {x[1].get('user').title()} - {x[1].get('point')} {'ponto' if x[1].get('point') == 1 else 'pontos'}",
                 enumerate(sort_distance_list),
             )
         )
@@ -377,11 +377,11 @@ class StravaGroup:
                 self.update_max_metrics(metric, user, distance, max_metrics)
 
         msg_texto = "🚲💨  Estatísticas do mês 🚲💨\n"
-        msg_texto += f"Maior distância: <a href=\"https://www.strava.com/activities/{max_distance_geral['activity_id']}\">{round(max_distance_geral['value'],2)}km - {max_distance_geral['user'].capitalize()}</a>\n"
-        msg_texto += f"Maior velocidade: <a href=\"https://www.strava.com/activities/{max_velocity_geral['activity_id']}\">{round(max_velocity_geral['value'],2)}km/h - {max_velocity_geral['user'].capitalize()}</a>\n"
-        msg_texto += f"Maior velocidade média: <a href=\"https://www.strava.com/activities/{max_average_speed_geral['activity_id']}\">{round(max_average_speed_geral['value'],2)}km/h - {max_average_speed_geral['user'].capitalize()}</a>\n"
-        msg_texto += f"Maior ganho de elevação: <a href=\"https://www.strava.com/activities/{max_elevation_gain_geral['activity_id']}\">{round(max_elevation_gain_geral['value'],2)}m - {max_elevation_gain_geral['user'].capitalize()}</a>\n"
-        msg_texto += f"Maior tempo de movimento: <a href=\"https://www.strava.com/activities/{max_moving_time_geral['activity_id']}\">{round(max_moving_time_geral['value'],2)}min - {max_moving_time_geral['user'].capitalize()}</a>\n"
+        msg_texto += f"Maior distância: <a href=\"https://www.strava.com/activities/{max_distance_geral['activity_id']}\">{round(max_distance_geral['value'],2)}km - {max_distance_geral['user'].title()}</a>\n"
+        msg_texto += f"Maior velocidade: <a href=\"https://www.strava.com/activities/{max_velocity_geral['activity_id']}\">{round(max_velocity_geral['value'],2)}km/h - {max_velocity_geral['user'].title()}</a>\n"
+        msg_texto += f"Maior velocidade média: <a href=\"https://www.strava.com/activities/{max_average_speed_geral['activity_id']}\">{round(max_average_speed_geral['value'],2)}km/h - {max_average_speed_geral['user'].title()}</a>\n"
+        msg_texto += f"Maior ganho de elevação: <a href=\"https://www.strava.com/activities/{max_elevation_gain_geral['activity_id']}\">{round(max_elevation_gain_geral['value'],2)}m - {max_elevation_gain_geral['user'].title()}</a>\n"
+        msg_texto += f"Maior tempo de movimento: <a href=\"https://www.strava.com/activities/{max_moving_time_geral['activity_id']}\">{round(max_moving_time_geral['value'],2)}min - {max_moving_time_geral['user'].title()}</a>\n"
         return msg_texto
 
     def list_type_activities(self):
