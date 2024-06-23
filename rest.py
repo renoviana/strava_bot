@@ -7,7 +7,7 @@ from secure import (
 )
 
 
-VICTORY_MONTH_DICT = {'ride': {'pedro boaventura': {'lider': 8, 'segundo': 0, 'terceiro': 0}, 'igor araujo': {'lider': 0, 'segundo': 7, 'terceiro': 1}, 'joao dale dale': {'lider': 0, 'segundo': 4, 'terceiro': 9}, 'felipe oliveira': {'lider': 0, 'segundo': 1, 'terceiro': 2}, 'guilherme mariz': {'lider': 1, 'segundo': 1, 'terceiro': 0}, 'kadu bomfim': {'lider': 0, 'segundo': 0, 'terceiro': 1}, 'reno viana': {'lider': 2, 'segundo': 0, 'terceiro': 1}, 'felip medeiros': {'lider': 0, 'segundo': 2, 'terceiro': 0}, 'pedro nunes': {'lider': 0, 'segundo': 1, 'terceiro': 1}, 'joão brito': {'lider': 0, 'segundo': 0, 'terceiro': 1}}, 'run': {'joao dale dale': {'lider': 10, 'segundo': 3, 'terceiro': 1}, 'pedro boaventura': {'lider': 0, 'segundo': 8, 'terceiro': 3}, 'joão victor gonçalves barbosa': {'lider': 3, 'segundo': 2, 'terceiro': 6}, 'humberto nasser': {'lider': 1, 'segundo': 2, 'terceiro': 2}, 'kadu bomfim': {'lider': 0, 'segundo': 0, 'terceiro': 1}, 'felip medeiros': {'lider': 0, 'segundo': 1, 'terceiro': 1}, 'joão brito': {'lider': 1, 'segundo': 0, 'terceiro': 0}, 'pedro nunes': {'lider': 1, 'segundo': 0, 'terceiro': 0}}, 'swim': {'joao dale dale': {'lider': 11, 'segundo': 3, 'terceiro': 0}, 'pedro boaventura': {'lider': 3, 'segundo': 3, 'terceiro': 0}, 'pedro nunes': {'lider': 1, 'segundo': 0, 'terceiro': 0}}, 'workout': {'kadu bomfim': {'lider': 2, 'segundo': 0, 'terceiro': 0}}, 'weighttraining': {'joao dale dale': {'lider': 14, 'segundo': 0, 'terceiro': 0}, 'joão brito': {'lider': 0, 'segundo': 9, 'terceiro': 0}, 'reno viana': {'lider': 0, 'segundo': 1, 'terceiro': 0}, 'joão victor gonçalves barbosa': {'lider': 0, 'segundo': 2, 'terceiro': 0}, 'felip medeiros': {'lider': 0, 'segundo': 0, 'terceiro': 3}, 'pedro nunes': {'lider': 2, 'segundo': 0, 'terceiro': 0}}, 'hike': {'humberto nasser': {'lider': 2, 'segundo': 0, 'terceiro': 0}, 'reno viana': {'lider': 8, 'segundo': 0, 'terceiro': 0}, 'joão brito': {'lider': 0, 'segundo': 3, 'terceiro': 0}}, 'walk': {'pedro nunes': {'lider': 2, 'segundo': 0, 'terceiro': 0}, 'guilherme mariz': {'lider': 2, 'segundo': 0, 'terceiro': 0}, 'joão victor gonçalves barbosa': {'lider': 1, 'segundo': 2, 'terceiro': 0}, 'igor araujo': {'lider': 2, 'segundo': 0, 'terceiro': 0}, 'pedro boaventura': {'lider': 3, 'segundo': 2, 'terceiro': 0}}}
+VICTORY_MONTH_DICT = {'Ride': {'Pedro Boaventura': {'lider': 8, 'segundo': 0, 'terceiro': 0}, 'Joao Dale Dale': {'lider': 0, 'segundo': 3, 'terceiro': 5}, 'Felipe Oliveira': {'lider': 0, 'segundo': 1, 'terceiro': 1}, 'Igor Araujo': {'lider': 0, 'segundo': 4, 'terceiro': 1}, 'Guilherme Mariz': {'lider': 1, 'segundo': 1, 'terceiro': 0}, 'Kadu Bomfim': {'lider': 0, 'segundo': 0, 'terceiro': 1}, 'Reno Viana': {'lider': 2, 'segundo': 0, 'terceiro': 1}, 'Felip Medeiros': {'lider': 0, 'segundo': 1, 'terceiro': 0}, 'Pedro Nunes': {'lider': 0, 'segundo': 1, 'terceiro': 1}, 'João Brito': {'lider': 0, 'segundo': 0, 'terceiro': 1}}, 'Run': {'João Victor Gonçalves Barbosa': {'lider': 2, 'segundo': 1, 'terceiro': 1}, 'Joao Dale Dale': {'lider': 6, 'segundo': 1, 'terceiro': 1}, 'Humberto Nasser': {'lider': 1, 'segundo': 0, 'terceiro': 1}, 'Pedro Boaventura': {'lider': 0, 'segundo': 3, 'terceiro': 0}, 'Kadu Bomfim': {'lider': 0, 'segundo': 0, 'terceiro': 1}, 'Felip Medeiros': {'lider': 0, 'segundo': 0, 'terceiro': 1}, 'João Brito': {'lider': 1, 'segundo': 0, 'terceiro': 0}, 'Pedro Nunes': {'lider': 1, 'segundo': 0, 'terceiro': 0}}, 'Walk': {'Guilherme Mariz': {'lider': 1, 'segundo': 0, 'terceiro': 0}, 'Igor Araujo': {'lider': 1, 'segundo': 0, 'terceiro': 0}}, 'Swim': {'Pedro Boaventura': {'lider': 2, 'segundo': 0, 'terceiro': 0}, 'Joao Dale Dale': {'lider': 2, 'segundo': 0, 'terceiro': 0}}, 'Hike': {'Reno Viana': {'lider': 2, 'segundo': 0, 'terceiro': 0}}, 'WeightTraining': {'Joao Dale Dale': {'lider': 8, 'segundo': 0, 'terceiro': 0}, 'João Victor Gonçalves Barbosa': {'lider': 0, 'segundo': 1, 'terceiro': 0}, 'Felip Medeiros': {'lider': 0, 'segundo': 0, 'terceiro': 1}}}
 
 
 class StravaGroup:
@@ -25,6 +25,8 @@ class StravaGroup:
         self.metas = self.strava_entity.metas
         self.membros = self.strava_entity.membros
         self.ignored_activities = self.strava_entity.ignored_activities
+        self.medalhas = self.strava_entity.medalhas or {}
+        self.cache_dict = {}
 
     def get_victory_str(self, sport_type,  user_name):
         """
@@ -32,7 +34,7 @@ class StravaGroup:
         Args:
             user_name (str): nome do usuário
         """
-        victory_dict = VICTORY_MONTH_DICT.get(sport_type, {}).get(user_name.lower())
+        victory_dict = self.medalhas.get(sport_type, {}).get(user_name.lower())
         if not victory_dict:
             return f""
 
@@ -224,6 +226,10 @@ class StravaGroup:
         if not sport_list:
             sport_list = ["Ride"]
 
+        # if self.cache_dict.get(user) and first_day == self.cache_dict.get(user).get("first_day") and last_day == self.cache_dict.get(user).get("last_day"):
+        #     return self.cache_dict.get(user).get("data")
+
+
 
         activity_list = self.list_activity(
             user,
@@ -295,6 +301,12 @@ class StravaGroup:
             ), 2)
             result_dict[activity_type]["total_distance"] = round(result_dict[activity_type]["total_distance"] + distance_km, 2)
             result_dict[activity_type]["total_moving_time"] = round(result_dict[activity_type]["total_moving_time"] + moving_time_ride, 2)
+
+        self.cache_dict[user] = {
+            "first_day": first_day,
+            "last_day": last_day,
+            "data": result_dict
+        }
 
         return result_dict
 

@@ -7,6 +7,7 @@ class Strava_group(Document):
     metas = DictField(default={})
     membros = DictField(default=[])
     segments_ids = ListField(required=False, default=[])
+    medalhas = DictField(default={}, required=False)
 
 
 def get_strava_group(telegram_group_id):
