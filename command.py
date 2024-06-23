@@ -176,3 +176,9 @@ def get_segments(message):
     Retorna os segmentos
     """
     return StravaGroup(str(message.chat.id)).get_segments_str()
+
+def get_medalhas(message):
+    """
+    Retorna as medalhas
+    """
+    return StravaGroup(str(message.chat.id)).get_medalhas_rank()

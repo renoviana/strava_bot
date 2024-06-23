@@ -7,6 +7,7 @@ from command import (
     custom_meta_command,
     del_meta_command,
     del_strava_user_callback,
+    get_medalhas,
     get_menu_sports_msg,
     get_segments,
     get_sports_msg,
@@ -33,6 +34,7 @@ grupo_commands = {
     "ignore": ignore_ativities_status_callback,
     "sports": get_menu_sports_msg,
     "segments": get_segments,
+    "medalhas": get_medalhas,
 }
 
 query_commands = {

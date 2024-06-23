@@ -687,3 +687,30 @@ class StravaGroup:
             str_list.append("")
 
         return "\n".join(str_list)
+    
+    def get_medalhas_rank(self):
+        """
+        Retorna o ranking geral de medalhas
+        """
+        medalhas = self.medalhas
+        user_dict = {}
+        for sport in medalhas:
+            for user in medalhas[sport]:
+                if user not in user_dict:
+                    user_dict[user] = {
+                        'lider': 0,
+                        'segundo': 0,
+                        'terceiro': 0,
+                        'pontos_total': 0,
+                    }
+                user_dict[user]['lider'] += medalhas[sport][user]['lider']
+                user_dict[user]['segundo'] += medalhas[sport][user]['segundo']
+                user_dict[user]['terceiro'] += medalhas[sport][user]['terceiro']
+                user_dict[user]['pontos_total'] += medalhas[sport][user]['lider'] * 3 + medalhas[sport][user]['segundo'] * 2 + medalhas[sport][user]['terceiro']
+        
+        rank = sorted(user_dict.items(), key=lambda x: x[1]['pontos_total'], reverse=True)
+        msg_list = []
+        for index, i in enumerate(rank):
+            name, medalhas = i
+            msg_list.append(f"{index+1}º - {name.title()} 🥇{medalhas['lider']} 🥈{medalhas['segundo']} 🥉{medalhas['terceiro']}")
+        return "\n".join(msg_list)
