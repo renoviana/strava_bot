@@ -231,10 +231,7 @@ class StravaGroup:
             last_day=last_day,
         )
         
-        activity_list = list(filter(lambda x: x["type"] in sport_list, activity_list))
-
-
-        result_dict = {
+        default_dict = {
             "total_distance": 0,
             "total_user_points": 0,
             "total_moving_time": 0,
@@ -244,9 +241,14 @@ class StravaGroup:
             "max_elevation_gain": {"activity_id":None, "value":0},
             "max_moving_time": {"activity_id":None, "value":0},
         }
+        result_dict = {}
 
         for activity in activity_list:
             activity_type = activity["type"]
+
+            if activity_type not in result_dict:
+                result_dict[activity_type] = default_dict.copy()
+
             max_speed_ride_km = round(activity["max_speed"] * 3.6, 2)
             max_average_speed_ride_km = round(activity["average_speed"] * 3.6, 2)
             total_elevation_gain_ride = round(activity["total_elevation_gain"], 2)
@@ -265,34 +267,34 @@ class StravaGroup:
             if manual_ride:
                 continue
 
-            if distance_km > result_dict["max_distance"]['value'] and not ignore_stats:
-                result_dict["max_distance"]['value'] = round(distance_km, 2)
-                result_dict["max_distance"]['activity_id'] = activity.get('id')
+            if distance_km > result_dict[activity_type]["max_distance"]['value'] and not ignore_stats:
+                result_dict[activity_type]["max_distance"]['value'] = round(distance_km, 2)
+                result_dict[activity_type]["max_distance"]['activity_id'] = activity.get('id')
 
-            if max_speed_ride_km > result_dict["max_velocity"]['value'] and not ignore_stats and max_speed_ride_km < 80:
-                result_dict["max_velocity"]['value'] = round(max_speed_ride_km, 2)
-                result_dict["max_velocity"]['activity_id'] = activity.get('id')
+            if max_speed_ride_km > result_dict[activity_type]["max_velocity"]['value'] and not ignore_stats and max_speed_ride_km < 80:
+                result_dict[activity_type]["max_velocity"]['value'] = round(max_speed_ride_km, 2)
+                result_dict[activity_type]["max_velocity"]['activity_id'] = activity.get('id')
 
             if (
-                max_average_speed_ride_km > result_dict["max_average_speed"]['value']
+                max_average_speed_ride_km > result_dict[activity_type]["max_average_speed"]['value']
                 and not ignore_stats
             ):
-                result_dict["max_average_speed"]['value'] = round(max_average_speed_ride_km, 2)
-                result_dict["max_average_speed"]['activity_id'] = activity.get('id')
+                result_dict[activity_type]["max_average_speed"]['value'] = round(max_average_speed_ride_km, 2)
+                result_dict[activity_type]["max_average_speed"]['activity_id'] = activity.get('id')
 
-            if total_elevation_gain_ride > result_dict["max_elevation_gain"]['value']  and not ignore_stats:
-                result_dict["max_elevation_gain"]['value'] = round(total_elevation_gain_ride, 2)
-                result_dict["max_elevation_gain"]['activity_id'] = activity.get('id')
+            if total_elevation_gain_ride > result_dict[activity_type]["max_elevation_gain"]['value']  and not ignore_stats:
+                result_dict[activity_type]["max_elevation_gain"]['value'] = round(total_elevation_gain_ride, 2)
+                result_dict[activity_type]["max_elevation_gain"]['activity_id'] = activity.get('id')
 
-            if moving_time_ride > result_dict["max_moving_time"]['value'] and not ignore_stats:
-                result_dict["max_moving_time"]['value'] = round(moving_time_ride, 2)
-                result_dict["max_moving_time"]['activity_id'] = activity.get('id')
+            if moving_time_ride > result_dict[activity_type]["max_moving_time"]['value'] and not ignore_stats:
+                result_dict[activity_type]["max_moving_time"]['value'] = round(moving_time_ride, 2)
+                result_dict[activity_type]["max_moving_time"]['activity_id'] = activity.get('id')
 
-            result_dict["total_user_points"] = round(self.calc_point_rank(
-                result_dict["total_user_points"], total_elevation_gain_ride, distance_km, activity_type
+            result_dict[activity_type]["total_user_points"] = round(self.calc_point_rank(
+                result_dict[activity_type]["total_user_points"], total_elevation_gain_ride, distance_km, activity_type
             ), 2)
-            result_dict["total_distance"] = round(result_dict["total_distance"] + distance_km, 2)
-            result_dict["total_moving_time"] = round(result_dict["total_moving_time"] + moving_time_ride, 2)
+            result_dict[activity_type]["total_distance"] = round(result_dict[activity_type]["total_distance"] + distance_km, 2)
+            result_dict[activity_type]["total_moving_time"] = round(result_dict[activity_type]["total_moving_time"] + moving_time_ride, 2)
 
         return result_dict
 
@@ -305,9 +307,9 @@ class StravaGroup:
         for user in self.membros.keys():
             distance = self.get_distance_and_points(
                 user,
-                sport_list=["Ride", "Run", "Walk"],
                 ignore_stats_ids=ignore_stats_ids
             )
+            distance = distance.get("Ride")
             total_user_points = distance["total_user_points"]
 
             if total_user_points == 0:
@@ -360,6 +362,7 @@ class StravaGroup:
                 user,
                 ignore_stats_ids=ignore_stats_ids
             )
+            distance = distance.get("Ride")
 
             for metric in max_metrics:
                 self.update_max_metrics(metric, user, distance, max_metrics)
@@ -469,11 +472,15 @@ class StravaGroup:
         for user, strava in self.membros.items():
             json_data = self.get_distance_and_points(
                 user,
-                sport_list=[sport_type],
                 ignore_stats_ids=ignore_stats_ids,
                 first_day=first_day,
                 last_day=last_day,
             )
+
+            if not json_data.get(sport_type):
+                continue
+
+            json_data = json_data[sport_type]
 
             json_data['user'] = user
             json_data['user_id'] = strava["athlete_id"]
