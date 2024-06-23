@@ -17,7 +17,23 @@ def send_ranking_ano_msg_command(message):
     Args:
         message (Message): mensagem do telegram
     """
-    return StravaGroup(str(message.chat.id)).get_ranking_str('Ride',year_rank=True)
+    all_type = StravaGroup(str(message.chat.id)).list_type_activities()
+    all_type = sorted(all_type)
+
+    if not all_type:
+        return "Nenhum atividade encontrada nesse mês"
+
+    return {
+        "texto": "Selecione o tipo de esporte",
+        "markup": get_markup(all_type, "syear_"),
+    }
+
+def get_sports_msg(callback):
+    """
+    Retorna ranking do esporte
+    """
+    sport = callback.data.replace("syear_", "")
+    return StravaGroup(str(callback.message.chat.id)).get_ranking_str(sport,year_rank=True)
 
 def send_point_msg_command(message):
     """

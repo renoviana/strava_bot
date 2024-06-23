@@ -42,6 +42,7 @@ query_commands = {
     "del_strava": del_strava_user_callback,
     "meta_": custom_meta_command,
     "strava_": get_sports_msg,
+    "syear_": get_sports_msg,
 }
 
 grupo_commands_admin = ["admin", "metas"]
