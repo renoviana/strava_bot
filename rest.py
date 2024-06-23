@@ -202,6 +202,7 @@ class StravaGroup:
         self.strava_entity.metas = self.metas
         self.strava_entity.membros = self.membros
         self.strava_entity.ignored_activities = self.ignored_activities
+        self.strava_entity.medalhas = self.medalhas
         self.strava_entity.save()
 
     def get_distance_and_points(
@@ -713,6 +714,9 @@ class StravaGroup:
         return "\n".join(msg_list)
     
     def update_medalhas(self):
+        """
+        Atualiza medalhas
+        """
         medalhas = self.medalhas
         for sport in self.list_type_activities():
             rank =  self.get_ranking_str(sport)
@@ -743,5 +747,4 @@ class StravaGroup:
                     medalhas[sport.lower()][i.lower()]['segundo'] += 1
                 elif index == 2:
                     medalhas[sport.lower()][i.lower()]['terceiro'] += 1
-        self.strava_entity.medalhas = medalhas
-        self.strava_entity.save()
+        self.update_entity()
