@@ -321,13 +321,12 @@ class StravaGroup:
                 user,
                 ignore_stats_ids=ignore_stats_ids
             )
-            distance = distance.get("Ride")
-            total_user_points = distance["total_user_points"]
+            total_points = distance.get("Ride", {}).get("total_user_points", 0) + distance.get("Run", {}).get("total_user_points", 0) + distance.get("Walk", {}).get("total_user_points", 0)
 
-            if total_user_points == 0:
+            if total_points == 0:
                 continue
 
-            distance_list.append({"user": user, "point": total_user_points})
+            distance_list.append({"user": user, "point": total_points})
         sort_distance_list = sorted(distance_list, key=lambda k: k["point"], reverse=True)
 
         return list(

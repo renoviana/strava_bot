@@ -28,7 +28,7 @@ def send_ranking_ano_msg_command(message):
         "markup": get_markup(all_type, "syear_"),
     }
 
-def get_sports_msg(callback):
+def get_ranking_year_msg(callback):
     """
     Retorna ranking do esporte
     """
