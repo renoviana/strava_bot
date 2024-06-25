@@ -59,16 +59,16 @@ def return_has_result(result: dict, message: Message, telegram_bot) -> None:
                     message, result.get("function", "")
                 )
 
-            return telegram_bot.reply_to(message, texto_result, parse_mode="HTML", disable_web_page_preview=is_pedal_bot)
+            return telegram_bot.send_message(message_id, texto_result, parse_mode="HTML", disable_web_page_preview=is_pedal_bot)
 
         if has_markup:
             markup_data = result.get("markup", "")
-            return telegram_bot.reply_to(
-                message, texto_result, reply_markup=markup_data, parse_mode="HTML", disable_web_page_preview=is_pedal_bot
+            return telegram_bot.send_message(
+                message_id, texto_result, reply_markup=markup_data, parse_mode="HTML", disable_web_page_preview=is_pedal_bot
             )
 
         if "texto" in result:
-            return telegram_bot.reply_to(message, texto_result, parse_mode = 'HTML', disable_web_page_preview=is_pedal_bot)
+            return telegram_bot.send_message(message_id, texto_result, parse_mode = 'HTML', disable_web_page_preview=is_pedal_bot)
 
     if isinstance(result, list):
         for item in result:
@@ -82,7 +82,7 @@ def return_has_result(result: dict, message: Message, telegram_bot) -> None:
 
     reply_id_list = []
     for item in array_result:
-        reply_id_list.append(telegram_bot.reply_to(message, item, parse_mode = "HTML", disable_web_page_preview=is_pedal_bot))
+        reply_id_list.append(telegram_bot.send_message(message_id, item, parse_mode = "HTML", disable_web_page_preview=is_pedal_bot))
     
     return reply_id_list[0] if len(reply_id_list) == 1 else reply_id_list
 
