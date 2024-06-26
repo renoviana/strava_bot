@@ -727,10 +727,10 @@ class StravaGroup:
             if len(member_list) == 1:
                     continue
             
+            lista = enumerate(member_list[:3])
+
             if len(member_list) < 4:
                 lista = enumerate(member_list[:1])
-            else:
-                lista = enumerate(member_list[:3])
 
             for index, i in lista:
                 if sport.lower() not in medalhas:
@@ -746,8 +746,12 @@ class StravaGroup:
                 
                 if index == 0:
                     medalhas[sport.lower()][i.lower()]['lider'] += 1
-                elif index == 1:
+                    continue
+
+                if index == 1:
                     medalhas[sport.lower()][i.lower()]['segundo'] += 1
-                elif index == 2:
+                    continue
+
+                if index == 2:
                     medalhas[sport.lower()][i.lower()]['terceiro'] += 1
         self.update_entity()
