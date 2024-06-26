@@ -719,6 +719,9 @@ class StravaGroup:
         """
         medalhas = self.medalhas
         for sport in self.list_type_activities():
+            if sport == 'Walk':
+                continue
+
             rank =  self.get_ranking_str(sport)
             member_list = regex.findall('>(.*?)<', rank)
             if len(member_list) == 1:
