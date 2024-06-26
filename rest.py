@@ -248,6 +248,9 @@ class StravaGroup:
         for activity in activity_list:
             activity_type = activity["type"]
 
+            if activity_type == 'Workout':
+                activity_type = 'WeightTraining'
+
             if activity_type not in result_dict:
                 result_dict[activity_type] = default_dict.copy()
 
@@ -396,6 +399,8 @@ class StravaGroup:
             )
             all_types += list(map(lambda x: x["type"], activity_list))
         all_types = list(set(all_types))
+
+        all_types = list(filter(lambda x: x not in ['Workout'], all_types))
         return all_types
 
     def rank_format(self, object_data, sport_type, rank_unit="km", rank_params='total_distance'):
