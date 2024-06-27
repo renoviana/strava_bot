@@ -246,6 +246,12 @@ class StravaGroup:
         response = self.get_strava_api(url, params, user)
         return response.json()
 
+    def remove_cache_data_duplicates(self):
+        """
+        Remove duplicatas do cache
+        """
+        self.cache_data = list({v['id']:v for v in self.cache_data}.values())
+
     def update_entity(self):
         """
         Atualiza entidade do strava
@@ -254,6 +260,7 @@ class StravaGroup:
         self.strava_entity.membros = self.membros
         self.strava_entity.ignored_activities = self.ignored_activities
         self.strava_entity.medalhas = self.medalhas
+        self.remove_cache_data_duplicates()
         self.strava_entity.cache_data = self.cache_data
         self.strava_entity.cache_data = sorted(self.cache_data, key=lambda x: datetime.strptime(x['start_date_local'], '%Y-%m-%dT%H:%M:%SZ'), reverse=True)
         self.strava_entity.save()
