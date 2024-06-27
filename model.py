@@ -14,5 +14,13 @@ class Strava_group(Document):
 def get_strava_group(telegram_group_id):
     return Strava_group.objects(telegram_group_id=telegram_group_id).first()
 
-def add_strava_group(telegram_group_id, membros={}, metas={}, ignored_activities=[]):
-    return Strava_group(telegram_group_id=telegram_group_id, membros=membros, metas=metas,ignored_activities=ignored_activities).save()
+def add_strava_group(telegram_group_id, membros={}, metas={}, ignored_activities=[], segments_ids=[], medalhas={'ride':{}}, cache_data=[]):
+    return Strava_group(
+        telegram_group_id=telegram_group_id,
+        membros=membros,
+        metas=metas,
+        ignored_activities=ignored_activities,
+        segments_ids=segments_ids,
+        medalhas=medalhas,
+        cache_data=cache_data
+    ).save()
