@@ -152,31 +152,35 @@ class StravaGroup:
                 microsecond=0,
             )
 
+        if not last_day:
+            last_day = datetime.now() + timedelta(minutes=1)
+
         new_activity_list = self.get_athlete_data(
             user,
             after_date=first_day,
             before_date=last_day,
         )
         
-        if self.cache_data:
-            last_activity = datetime.strptime(self.cache_data[0]['start_date_local'], '%Y-%m-%dT%H:%M:%SZ') + timedelta(hours=3)
-            old_activity = list(filter(lambda x: datetime.strptime(x['start_date_local'], '%Y-%m-%dT%H:%M:%SZ') + timedelta(hours=3) <= last_activity, new_activity_list))
-            if old_activity:
-                index = new_activity_list.index(old_activity[0])
-                new_activity_list = new_activity_list[:index]
+        if self.cache_data and new_activity_list:
+            last_activity_id = None
+            user_activity_list = list(filter(lambda x: x['athlete']['id'] == self.membros[user].get('athlete_id'), self.cache_data))
+            if user_activity_list:
+                last_activity_id = user_activity_list[0]
+                
                 if new_activity_list:
-                    self.cache_data = new_activity_list + self.cache_data
-                    self.update_entity()
-                athlete_id = self.membros[user].get('athlete_id')
-                activity_list = []
-                for i in new_activity_list + self.cache_data:
-                    if i['athlete']['id'] == athlete_id and datetime.strptime(i['start_date_local'], '%Y-%m-%dT%H:%M:%SZ') + timedelta(hours=3) >= first_day:
-                        if last_day and datetime.strptime(i['start_date_local'], '%Y-%m-%dT%H:%M:%SZ') + timedelta(hours=3) > last_day:
-                            continue
-                        activity_list.append(i)
-                return activity_list
-
-
+                    last_index = len(new_activity_list)
+                    if last_activity_id:
+                        last_index = new_activity_list.index(last_activity_id)
+                    if  last_index != 0:
+                        new_activity_list = new_activity_list[:last_index]
+                        self.cache_data = new_activity_list + self.cache_data
+                        self.update_entity()
+                return list(
+                        filter(
+                            lambda x: datetime.strptime(x['start_date_local'], '%Y-%m-%dT%H:%M:%SZ') >= first_day and datetime.strptime(x['start_date_local'], '%Y-%m-%dT%H:%M:%SZ') <= last_day,
+                            new_activity_list + user_activity_list
+                        )
+                    )
 
         page = 1
         while len(new_activity_list) % 100 == 0 and len(new_activity_list) != 0:
@@ -188,22 +192,27 @@ class StravaGroup:
                 page=page,
             )
             
-            if self.cache_data:
-                old_activity = list(filter(lambda x: datetime.strptime(x['start_date_local'], '%Y-%m-%dT%H:%M:%SZ') + timedelta(hours=3) <= last_activity, new_activity_list))
-                if old_activity:
-                    index = new_activity_list.index(old_activity[0])
-                    new_activity_list = new_activity_list[:index]
+            if self.cache_data and new_activity_list:
+                last_activity_id = None
+                user_activity_list = list(filter(lambda x: x['athlete']['id'] == self.membros[user].get('athlete_id'), self.cache_data))
+                if user_activity_list:
+                    last_activity_id = user_activity_list[0]
+                    
                     if new_activity_list:
-                        self.cache_data = new_activity_list + self.cache_data
-                        self.update_entity()
-                    athlete_id = self.membros[user].get('athlete_id')
-                    activity_list = []
-                    for i in new_activity_list + self.cache_data:
-                        if i['athlete']['id'] == athlete_id and datetime.strptime(i['start_date_local'], '%Y-%m-%dT%H:%M:%SZ') + timedelta(hours=3) >= first_day:
-                            if last_day and datetime.strptime(i['start_date_local'], '%Y-%m-%dT%H:%M:%SZ') + timedelta(hours=3) > last_day:
-                                continue
-                            activity_list.append(i)
-                    return activity_list
+                        last_index = len(new_activity_list)
+                        if last_activity_id:
+                            last_index = new_activity_list.index(last_activity_id)
+                        if  last_index != 0:
+                            new_activity_list = new_activity_list[:last_index]
+                            self.cache_data = new_activity_list + self.cache_data
+                            self.update_entity()
+                    return list(
+                            filter(
+                                lambda x: datetime.strptime(x['start_date_local'], '%Y-%m-%dT%H:%M:%SZ') >= first_day and datetime.strptime(x['start_date_local'], '%Y-%m-%dT%H:%M:%SZ') <= last_day,
+                                new_activity_list + user_activity_list
+                            )
+                        )
+
 
         self.list_activities += new_activity_list
         return new_activity_list
@@ -246,6 +255,7 @@ class StravaGroup:
         self.strava_entity.ignored_activities = self.ignored_activities
         self.strava_entity.medalhas = self.medalhas
         self.strava_entity.cache_data = self.cache_data
+        self.strava_entity.cache_data = sorted(self.cache_data, key=lambda x: datetime.strptime(x['start_date_local'], '%Y-%m-%dT%H:%M:%SZ'), reverse=True)
         self.strava_entity.save()
 
     def get_distance_and_points(
@@ -483,7 +493,6 @@ class StravaGroup:
             first_day (datetime): data de inicio
             last_day (datetime): data de fim
         """
-
         emoji_dict = {
             "Ride": "🚲",
             "Run": "🏃",
@@ -545,8 +554,8 @@ class StravaGroup:
             json_data['user_id'] = strava["athlete_id"]
             distance_list.append(json_data)
 
-        if not self.cache_data and self.list_activities:
-            self.cache_data = self.list_activities
+        if self.list_activities:
+            self.cache_data += self.list_activities
             self.update_entity()
 
         sort_distance_list = sorted(
