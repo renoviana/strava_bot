@@ -165,12 +165,15 @@ class StravaGroup:
             last_activity_id = None
             user_activity_list = list(filter(lambda x: x['athlete']['id'] == self.membros[user].get('athlete_id'), self.cache_data))
             if user_activity_list:
-                last_activity_id = user_activity_list[0]
+                last_activity_id = user_activity_list[0]['id']
                 
                 if new_activity_list:
                     last_index = len(new_activity_list)
                     if last_activity_id:
-                        last_index = new_activity_list.index(last_activity_id)
+                        for index, activity in enumerate(new_activity_list):
+                            if activity['id'] == last_activity_id:
+                                last_index = index
+                                break
                         new_activity_list = new_activity_list[:last_index]
 
                     if new_activity_list:
@@ -193,16 +196,20 @@ class StravaGroup:
                 page=page,
             )
             
+        
             if self.cache_data and new_activity_list:
                 last_activity_id = None
                 user_activity_list = list(filter(lambda x: x['athlete']['id'] == self.membros[user].get('athlete_id'), self.cache_data))
                 if user_activity_list:
-                    last_activity_id = user_activity_list[0]
+                    last_activity_id = user_activity_list[0]['id']
                     
                     if new_activity_list:
                         last_index = len(new_activity_list)
                         if last_activity_id:
-                            last_index = new_activity_list.index(last_activity_id)
+                            for index, activity in enumerate(new_activity_list):
+                                if activity['id'] == last_activity_id:
+                                    last_index = index
+                                    break
                             new_activity_list = new_activity_list[:last_index]
 
                         if new_activity_list:
@@ -214,6 +221,7 @@ class StravaGroup:
                                 new_activity_list + user_activity_list
                             )
                         )
+
 
 
         self.list_activities += new_activity_list
