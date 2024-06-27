@@ -205,8 +205,7 @@ class StravaGroup:
                             activity_list.append(i)
                     return activity_list
 
-        self.cache_data += new_activity_list
-        self.update_entity()
+        self.list_activities += new_activity_list
         return new_activity_list
 
     def get_athlete_data(
@@ -546,6 +545,9 @@ class StravaGroup:
             json_data['user_id'] = strava["athlete_id"]
             distance_list.append(json_data)
 
+        if not self.cache_data and self.list_activities:
+            self.cache_data = self.list_activities
+            self.update_entity()
 
         sort_distance_list = sorted(
             distance_list, key=lambda k: k[rank_params], reverse=True
