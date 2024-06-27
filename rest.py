@@ -205,7 +205,7 @@ class StravaGroup:
                             activity_list.append(i)
                     return activity_list
 
-        self.cache_data = new_activity_list
+        self.cache_data += new_activity_list
         self.update_entity()
         return new_activity_list
 
