@@ -788,6 +788,7 @@ class StravaGroup:
         Atualiza medalhas
         """
         medalhas = self.medalhas
+        novas_medalhas_str = "Novas medalhas:\n"
         for sport in self.list_type_activities():
             if sport == 'Walk':
                 continue
@@ -802,6 +803,7 @@ class StravaGroup:
             if len(member_list) < 4:
                 lista = enumerate(member_list[:1])
 
+            novas_medalhas_str += f"{sport}:\n"
             for index, i in lista:
                 if sport.lower() not in medalhas:
                     medalhas[sport.lower()] = {}
@@ -815,13 +817,19 @@ class StravaGroup:
 
                 
                 if index == 0:
+                    novas_medalhas_str += f"🥇{i}\n"
                     medalhas[sport.lower()][i.lower()]['lider'] += 1
                     continue
 
                 if index == 1:
+                    novas_medalhas_str += f"🥈{i}\n"
                     medalhas[sport.lower()][i.lower()]['segundo'] += 1
                     continue
 
                 if index == 2:
+                    novas_medalhas_str += f"🥉{i}\n"
                     medalhas[sport.lower()][i.lower()]['terceiro'] += 1
+        
+        self.medalhas = medalhas
         self.update_entity()
+        return novas_medalhas_str
