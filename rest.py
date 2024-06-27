@@ -171,8 +171,9 @@ class StravaGroup:
                     last_index = len(new_activity_list)
                     if last_activity_id:
                         last_index = new_activity_list.index(last_activity_id)
-                    if  last_index != 0:
                         new_activity_list = new_activity_list[:last_index]
+
+                    if new_activity_list:
                         self.cache_data = new_activity_list + self.cache_data
                         self.update_entity()
                 return list(
@@ -202,8 +203,9 @@ class StravaGroup:
                         last_index = len(new_activity_list)
                         if last_activity_id:
                             last_index = new_activity_list.index(last_activity_id)
-                        if  last_index != 0:
                             new_activity_list = new_activity_list[:last_index]
+
+                        if new_activity_list:
                             self.cache_data = new_activity_list + self.cache_data
                             self.update_entity()
                     return list(
