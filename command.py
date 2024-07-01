@@ -36,7 +36,6 @@ def send_ranking_ano_msg_command(message):
         year=datetime.now().year + 1
     )
     all_type = StravaGroup(str(message.chat.id)).list_type_activities(first_day=first_day, last_day=last_day)
-    all_type = sorted(all_type)
 
     if not all_type:
         return "Nenhum atividade encontrada nesse mês"
@@ -188,7 +187,6 @@ def get_menu_sports_msg(message):
     Retorna menu de esportes
     """
     all_type = StravaGroup(str(message.chat.id)).list_type_activities()
-    all_type = sorted(all_type)
 
     if not all_type:
         return "Nenhum atividade encontrada nesse mês"

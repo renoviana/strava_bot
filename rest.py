@@ -460,7 +460,7 @@ class StravaGroup:
         all_types = list(set(all_types))
 
         all_types = list(filter(lambda x: x not in ['Workout'], all_types))
-        return all_types
+        return sorted(all_types)
 
     def rank_format(self, object_data, sport_type, rank_unit="km", rank_params='total_distance'):
         """
