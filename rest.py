@@ -12,9 +12,8 @@ class StravaGroup:
     metas = {}
     ignored_activities = []
 
-    def __init__(self, group_id=None, use_cache=False) -> None:
+    def __init__(self, group_id=None) -> None:
         self.strava_entity = get_strava_group(group_id)
-        self.use_cache = use_cache
         self.group_id = self.strava_entity.telegram_group_id
         if not self.strava_entity:
             add_strava_group(self.group_id)
@@ -288,14 +287,8 @@ class StravaGroup:
             last_day (datetime): data de fim
         """
 
-
         if not sport_list:
             sport_list = ["Ride"]
-
-        # if self.use_cache and self.cache_dict.get(user) and first_day == self.cache_dict.get(user).get("first_day") and last_day == self.cache_dict.get(user).get("last_day"):
-        #     return self.cache_dict.get(user).get("data")
-
-
 
         activity_list = self.list_activity(
             user,
@@ -314,7 +307,6 @@ class StravaGroup:
             "max_moving_time": {"activity_id":None, "value":0},
         }
         result_dict = {}
-
 
         for activity in activity_list:
             activity_type = activity["type"]
@@ -371,12 +363,6 @@ class StravaGroup:
             ), 2)
             result_dict[activity_type]["total_distance"] = round(result_dict[activity_type]["total_distance"] + distance_km, 2)
             result_dict[activity_type]["total_moving_time"] = round(result_dict[activity_type]["total_moving_time"] + moving_time_ride, 2)
-
-        # self.cache_dict[user] = {
-        #     "first_day": first_day,
-        #     "last_day": last_day,
-        #     "data": result_dict
-        # }
 
         return result_dict
 
