@@ -50,7 +50,7 @@ class StravaGroup:
             msg += f"🥉{terceiro}"
 
         return msg
-        
+
     def get_strava_api(
         self,
         url,
@@ -140,7 +140,6 @@ class StravaGroup:
             last_day (datetime): data de fim
         """
 
-        
 
         if not first_day:
             first_day = datetime.now().replace(
@@ -159,7 +158,7 @@ class StravaGroup:
             after_date=first_day,
             before_date=last_day,
         )
-        
+
         if self.cache_data and new_activity_list:
             last_activity_id = None
             user_activity_list = list(filter(lambda x: x['athlete']['id'] == self.membros[user].get('athlete_id'), self.cache_data))
@@ -194,14 +193,13 @@ class StravaGroup:
                 before_date=last_day,
                 page=page,
             )
-            
-        
+
             if self.cache_data and new_activity_list:
                 last_activity_id = None
                 user_activity_list = list(filter(lambda x: x['athlete']['id'] == self.membros[user].get('athlete_id'), self.cache_data))
                 if user_activity_list:
                     last_activity_id = user_activity_list[0]['id']
-                    
+
                     if new_activity_list:
                         last_index = len(new_activity_list)
                         if last_activity_id:
@@ -287,6 +285,7 @@ class StravaGroup:
             last_day (datetime): data de fim
         """
 
+
         if not sport_list:
             sport_list = ["Ride"]
 
@@ -295,7 +294,7 @@ class StravaGroup:
             first_day=first_day,
             last_day=last_day,
         )
-        
+
         default_dict = {
             "total_distance": 0,
             "total_user_points": 0,
@@ -307,6 +306,7 @@ class StravaGroup:
             "max_moving_time": {"activity_id":None, "value":0},
         }
         result_dict = {}
+
 
         for activity in activity_list:
             activity_type = activity["type"]
@@ -769,14 +769,14 @@ class StravaGroup:
                 user_dict[user]['segundo'] += medalhas[sport][user]['segundo']
                 user_dict[user]['terceiro'] += medalhas[sport][user]['terceiro']
                 user_dict[user]['pontos_total'] += medalhas[sport][user]['lider'] * 3 + medalhas[sport][user]['segundo'] * 2 + medalhas[sport][user]['terceiro']
-        
+
         rank = sorted(user_dict.items(), key=lambda x: x[1]['pontos_total'], reverse=True)
         msg_list = []
         for index, i in enumerate(rank):
             name, medalhas = i
             msg_list.append(f"{index+1}º - {name.title()} 🥇{medalhas['lider']} 🥈{medalhas['segundo']} 🥉{medalhas['terceiro']}")
         return "\n".join(msg_list)
-    
+
     def update_medalhas(self):
         """
         Atualiza medalhas
@@ -788,10 +788,11 @@ class StravaGroup:
                 continue
 
             rank =  self.get_ranking_str(sport)
-            member_list = regex.findall('>(.*?)<', rank)
+            member_list = regex.findall(r'>(.*?)[🥇🥈🥉<]', rank)
+
             if len(member_list) == 1:
-                    continue
-            
+                continue
+
             lista = enumerate(member_list[:3])
 
             if len(member_list) < 4:
@@ -799,31 +800,33 @@ class StravaGroup:
 
             novas_medalhas_str += f"{sport}:\n"
             for index, i in lista:
-                if sport.lower() not in medalhas:
-                    medalhas[sport.lower()] = {}
+                sport_name = sport.lower()
+                user_name = i.lower()
+                if sport_name not in medalhas:
+                    medalhas[sport_name] = {}
 
-                if i not in medalhas[sport.lower()]:
-                    medalhas[sport.lower()][i.lower()] = {
+                if i not in medalhas[sport_name]:
+                    medalhas[sport_name][user_name] = {
                         'lider': 0,
                         'segundo': 0,
                         'terceiro': 0
                     }
 
-                
+
                 if index == 0:
                     novas_medalhas_str += f"🥇{i}\n"
-                    medalhas[sport.lower()][i.lower()]['lider'] += 1
+                    medalhas[sport_name][user_name]['lider'] += 1
                     continue
 
                 if index == 1:
                     novas_medalhas_str += f"🥈{i}\n"
-                    medalhas[sport.lower()][i.lower()]['segundo'] += 1
+                    medalhas[sport_name][user_name]['segundo'] += 1
                     continue
 
                 if index == 2:
                     novas_medalhas_str += f"🥉{i}\n"
-                    medalhas[sport.lower()][i.lower()]['terceiro'] += 1
-        
+                    medalhas[sport_name][user_name]['terceiro'] += 1
+
         self.medalhas = medalhas
         self.update_entity()
         return novas_medalhas_str
