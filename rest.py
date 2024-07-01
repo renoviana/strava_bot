@@ -799,13 +799,13 @@ class StravaGroup:
                 lista = enumerate(member_list[:1])
 
             novas_medalhas_str += f"{sport}:\n"
-            for index, i in lista:
+            for index, user in lista:
                 sport_name = sport.lower()
-                user_name = i.lower()
+                user_name = user.lower()
                 if sport_name not in medalhas:
                     medalhas[sport_name] = {}
 
-                if i not in medalhas[sport_name]:
+                if user_name not in medalhas[sport_name]:
                     medalhas[sport_name][user_name] = {
                         'lider': 0,
                         'segundo': 0,
@@ -814,17 +814,17 @@ class StravaGroup:
 
 
                 if index == 0:
-                    novas_medalhas_str += f"🥇{i}\n"
+                    novas_medalhas_str += f"🥇{user}\n"
                     medalhas[sport_name][user_name]['lider'] += 1
                     continue
 
                 if index == 1:
-                    novas_medalhas_str += f"🥈{i}\n"
+                    novas_medalhas_str += f"🥈{user}\n"
                     medalhas[sport_name][user_name]['segundo'] += 1
                     continue
 
                 if index == 2:
-                    novas_medalhas_str += f"🥉{i}\n"
+                    novas_medalhas_str += f"🥉{user}\n"
                     medalhas[sport_name][user_name]['terceiro'] += 1
 
         self.medalhas = medalhas
