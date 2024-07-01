@@ -1,3 +1,4 @@
+from datetime import datetime
 from secure import STRAVA_CLIENT_ID, STRAVA_REDIRECT_URI
 from tools import get_markup
 from rest import StravaGroup
@@ -17,7 +18,24 @@ def send_ranking_ano_msg_command(message):
     Args:
         message (Message): mensagem do telegram
     """
-    all_type = StravaGroup(str(message.chat.id)).list_type_activities()
+    first_day = datetime.now().replace(
+    day=1,
+    hour=0,
+    minute=0,
+    second=0,
+    microsecond=0,
+    month=1,
+    )
+    last_day = datetime.now().replace(
+        day=1,
+        hour=0,
+        minute=0,
+        second=0,
+        microsecond=0,
+        month=1,
+        year=datetime.now().year + 1
+    )
+    all_type = StravaGroup(str(message.chat.id)).list_type_activities(first_day=first_day, last_day=last_day)
     all_type = sorted(all_type)
 
     if not all_type:

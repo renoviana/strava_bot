@@ -445,14 +445,16 @@ class StravaGroup:
         msg_texto += f"Maior tempo de movimento: <a href=\"https://www.strava.com/activities/{max_moving_time_geral['activity_id']}\">{round(max_moving_time_geral['value'],2)}min - {max_moving_time_geral['user'].title()}</a>\n"
         return msg_texto
 
-    def list_type_activities(self):
+    def list_type_activities(self, first_day=None, last_day=None):
         """
         Retorna lista de distancias dos usuários
         """
         all_types = []
         for user in self.membros.keys():
             activity_list = self.list_activity(
-                user
+                user,
+                first_day=first_day,
+                last_day=last_day,
             )
             all_types += list(map(lambda x: x["type"], activity_list))
         all_types = list(set(all_types))
@@ -776,57 +778,3 @@ class StravaGroup:
             name, medalhas = i
             msg_list.append(f"{index+1}º - {name.title()} 🥇{medalhas['lider']} 🥈{medalhas['segundo']} 🥉{medalhas['terceiro']}")
         return "\n".join(msg_list)
-
-    def update_medalhas(self):
-        """
-        Atualiza medalhas
-        """
-        medalhas = self.medalhas
-        novas_medalhas_str = "Novas medalhas:\n"
-        for sport in self.list_type_activities():
-            if sport == 'Walk':
-                continue
-
-            rank =  self.get_ranking_str(sport)
-            member_list = regex.findall(r'>(.*?)[🥇🥈🥉<]', rank)
-
-            if len(member_list) == 1:
-                continue
-
-            lista = enumerate(member_list[:3])
-
-            if len(member_list) < 4:
-                lista = enumerate(member_list[:1])
-
-            novas_medalhas_str += f"{sport}:\n"
-            for index, user in lista:
-                sport_name = sport.lower()
-                user_name = user.lower()
-                if sport_name not in medalhas:
-                    medalhas[sport_name] = {}
-
-                if user_name not in medalhas[sport_name]:
-                    medalhas[sport_name][user_name] = {
-                        'lider': 0,
-                        'segundo': 0,
-                        'terceiro': 0
-                    }
-
-
-                if index == 0:
-                    novas_medalhas_str += f"🥇{user}\n"
-                    medalhas[sport_name][user_name]['lider'] += 1
-                    continue
-
-                if index == 1:
-                    novas_medalhas_str += f"🥈{user}\n"
-                    medalhas[sport_name][user_name]['segundo'] += 1
-                    continue
-
-                if index == 2:
-                    novas_medalhas_str += f"🥉{user}\n"
-                    medalhas[sport_name][user_name]['terceiro'] += 1
-
-        self.medalhas = medalhas
-        self.update_entity()
-        return novas_medalhas_str
