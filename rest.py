@@ -161,7 +161,7 @@ class StravaGroup:
 
         if self.cache_data and new_activity_list:
             last_activity_id = None
-            user_activity_list = list(filter(lambda x: x['athlete']['id'] == self.membros[user].get('athlete_id'), self.cache_data))
+            user_activity_list = list(filter(lambda x: x['athlete']['id'] == self.membros[user].get('athlete_id') and datetime.strptime(x['start_date_local'], '%Y-%m-%dT%H:%M:%SZ') >= first_day and datetime.strptime(x['start_date_local'], '%Y-%m-%dT%H:%M:%SZ') <= last_day, self.cache_data))
             if user_activity_list:
                 last_activity_id = user_activity_list[0]['id']
                 
@@ -456,6 +456,7 @@ class StravaGroup:
                 first_day=first_day,
                 last_day=last_day,
             )
+            activity_list = list(filter(lambda x: not x["manual"], activity_list))
             all_types += list(map(lambda x: x["type"], activity_list))
         all_types = list(set(all_types))
 
