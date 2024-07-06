@@ -307,7 +307,8 @@ class StravaGroup:
         }
         result_dict = {}
 
-
+        import pdb
+        pdb.set_trace()
         for activity in activity_list:
             activity_type = activity["type"]
 
