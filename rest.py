@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-import regex
 import requests
 from model import add_strava_group, get_strava_group
 from secure import (
@@ -307,7 +306,7 @@ class StravaGroup:
         }
         result_dict = {}
 
-
+        print(user, len(activity_list))
         for activity in activity_list:
             activity_type = activity["type"]
 
