@@ -456,7 +456,7 @@ class StravaGroup:
                 first_day=first_day,
                 last_day=last_day,
             )
-            activity_list = list(filter(lambda x: not x["manual"], activity_list))
+            activity_list = list(filter(lambda x: not x["manual"] or x['type'] != "WeightTraining", activity_list))
             all_types += list(map(lambda x: x["type"], activity_list))
         all_types = list(set(all_types))
 
