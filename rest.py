@@ -306,7 +306,7 @@ class StravaGroup:
         }
         result_dict = {}
 
-        print(user, len(activity_list))
+
         for activity in activity_list:
             activity_type = activity["type"]
 
