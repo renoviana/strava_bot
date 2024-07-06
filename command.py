@@ -5,26 +5,26 @@ from rest import StravaGroup
 
 def send_ranking_msg_command(message):
     """
-    Envia ranking do pedal do strava
+    Send ride rank
     Args:
-        message (Message): mensagem do telegram
+        message (Message): telegram message
     """
 
     return StravaGroup(str(message.chat.id)).get_ranking_str('Ride')
 
 def send_ranking_ano_msg_command(message):
     """
-    Envia ranking do pedal do strava
+    Send ride year rank
     Args:
-        message (Message): mensagem do telegram
+        message (Message): telegram message
     """
     first_day = datetime.now().replace(
-    day=1,
-    hour=0,
-    minute=0,
-    second=0,
-    microsecond=0,
-    month=1,
+        day=1,
+        hour=0,
+        minute=0,
+        second=0,
+        microsecond=0,
+        month=1,
     )
     last_day = datetime.now().replace(
         day=1,
@@ -47,16 +47,16 @@ def send_ranking_ano_msg_command(message):
 
 def get_ranking_year_msg(callback):
     """
-    Retorna ranking do esporte
+    Send year sport rank
     """
     sport = callback.data.replace("syear_", "")
     return StravaGroup(str(callback.message.chat.id)).get_ranking_str(sport,year_rank=True)
 
 def send_point_msg_command(message):
     """
-    Envia pontos do strava
+    Send score ride rank
     Args:
-        message (Message): mensagem do telegram
+        message (Message): telegram message
     """
     pontos_msg = (
         "\n".join(StravaGroup(str(message.chat.id)).get_point_str())
@@ -67,17 +67,17 @@ def send_point_msg_command(message):
 
 def send_stats_command(message):
     """
-    Envia o status geral do strava
+    Send ride stats
     Args:
-        message (Message): mensagem do telegram
+        message (Message): telegram message
     """
     return StravaGroup(str(message.chat.id)).get_stats_str()
 
 def admin_command(message):
     """
-    Retorna o menu de admin do strava
+    Send admin menu
     Args:
-        message (Message): mensagem do telegram
+        message (Message): telegram message
     """
     dict_user = StravaGroup(str(message.chat.id)).membros
     lista_user = list(dict_user.keys())
@@ -96,7 +96,7 @@ def admin_command(message):
 
 def del_strava_user_callback(call):
     """
-    Deleta usuário do strava
+    Remove strava user
     """
     user_name = call.data.replace("del_strava_", "")
     group_id = str(call.message.chat.id)
@@ -106,7 +106,7 @@ def del_strava_user_callback(call):
 
 def get_link_command(message):
     """
-    Retorna link
+    Send strava link
     """
     group_id = str(message.chat.id)
     return f"https://www.strava.com/oauth/authorize?client_id={STRAVA_CLIENT_ID}&redirect_uri={STRAVA_REDIRECT_URI.format(group_id)}"
@@ -114,7 +114,7 @@ def get_link_command(message):
 
 def metas_command(_):
     """
-    Retorna metas
+    Send goals menu
     """
     return {
         "texto": "Selecione o tipo de meta",
@@ -131,7 +131,7 @@ def metas_command(_):
 
 def custom_meta_command(message):
     """
-    Retorna perguntando o valor da meta
+    Send goal question
     """
     tipo_meta = message.data.replace("meta_", "")
     return {
@@ -145,9 +145,9 @@ def custom_meta_command(message):
 
 def add_meta_callback(message, data):
     """
-    Adiciona meta
+    Add sport goal
     Args:
-        message (Message): mensagem do telegram
+        message (Message): telegram message
         data (dict): dados da função
     """
     meta_km = message.text
@@ -163,9 +163,9 @@ def add_meta_callback(message, data):
 
 def del_meta_command(message):
     """
-    Deleta meta
+    Remove goal
     Args:
-        message (Message): mensagem do telegram
+        message (Message): telegram message
     """
     tipo_meta = message.data.replace("del_meta_meta_", "")
     StravaGroup(str(message.chat.id)).save_group_meta(tipo_meta, None)
@@ -174,7 +174,9 @@ def del_meta_command(message):
 
 def ignore_ativities_status_callback(message):
     """
-    Retorna menu de atividades ignoradas
+    Send ignored activitys
+    Args:
+        message (Message): telegram message
     """
     message_text = message.text
     atividade_link = message_text.replace("/ignore ", "")
@@ -184,7 +186,9 @@ def ignore_ativities_status_callback(message):
 
 def get_menu_sports_msg(message):
     """
-    Retorna menu de esportes
+    Send sport menu
+    Args:
+        message (Message): telegram message
     """
     all_type = StravaGroup(str(message.chat.id)).list_type_activities()
 
@@ -205,12 +209,16 @@ def get_sports_msg(callback):
 
 def get_segments(message):
     """
-    Retorna os segmentos
+    Send strava segments
+    Args:
+        message (Message): telegram message
     """
     return StravaGroup(str(message.chat.id)).get_segments_str()
 
 def get_medalhas(message):
     """
-    Retorna as medalhas
+    Send medal rank
+    Args:
+        message (Message): telegram message
     """
     return StravaGroup(str(message.chat.id)).get_medalhas_rank()

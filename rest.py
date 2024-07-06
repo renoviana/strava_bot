@@ -491,7 +491,7 @@ class StravaGroup:
 
     def get_ranking_str(self, sport_type , year_rank=False, first_day=None, last_day=None):
         """
-        Envia mensagem com o ranking do pedal
+        Envia mensagem com o ranking
         Args:
             sport_type (str): tipo de esporte
             year_rank (bool): ranking do ano
