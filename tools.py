@@ -11,7 +11,7 @@ def handler_parse_error(exc, telegram_bot, message, texto_result, disable_web_pa
     if "can't parse entities" in exc.description:
         return telegram_bot.reply_to(message, texto_result, disable_web_page_preview=disable_web_page_preview)
 
-def send_reply_return(message_return, message, telegram_bot, save_log=True, disable_web_page_preview=False) -> None:
+def send_reply_return(message_return, message, telegram_bot, save_log=True, disable_web_page_preview=False, reply_markup=None) -> None:
     """
     Retorna resultado da mensagem
     Args:
@@ -22,56 +22,47 @@ def send_reply_return(message_return, message, telegram_bot, save_log=True, disa
     """
     if not message_return:
         return None
+    try:
+        if isinstance(message_return, list):
+            return list(map(lambda item: send_reply_return(item, message, telegram_bot, save_log, disable_web_page_preview), message_return))
 
-    if isinstance(message_return, list):
-        return list(map(lambda item: send_reply_return(item, message, telegram_bot, save_log, disable_web_page_preview), message_return))
+        if isinstance(message_return, str):
+            if len(message_return) > 4000:
+                return list(map(lambda i: send_reply_return(message_return[i : i + 4000], message, telegram_bot, save_log, disable_web_page_preview), range(0, len(message_return), 4000)))
+            return telegram_bot.reply_to(message, message_return, reply_markup=reply_markup, parse_mode = "HTML", disable_web_page_preview=disable_web_page_preview)
 
-    if isinstance(message_return, str):
-        if len(message_return) > 4000:
-            return list(map(lambda i: send_reply_return(message_return[i : i + 4000], message, telegram_bot, save_log, disable_web_page_preview), range(0, len(message_return), 4000)))
+        if isinstance(message_return, dict):
+            texto_result = message_return.get("texto", "")
+            reply_markup = message_return.get("markup", None)
+            message_id = message.chat.id
 
-        try:
-            return telegram_bot.reply_to(message, message_return, parse_mode = "HTML", disable_web_page_preview=disable_web_page_preview)
-        except ApiTelegramException as exc:
-            handler_parse_error(exc, telegram_bot, message, message_return, disable_web_page_preview)
+            if "photo" in message_return:
+                    return telegram_bot.send_photo(
+                        message_id,
+                        message_return.get("photo", ""),
+                        caption=texto_result,
+                        reply_markup=reply_markup
+                    )
 
-    if isinstance(message_return, dict):
-        texto_result = message_return.get("texto", "")
-        message_id = message.chat.id
-        reply_markup = message_return.get("markup", None)
+            if "video" in message_return:
+                return telegram_bot.send_video(message_id, message_return.get("video", ""))
 
-        if "photo" in message_return:
-            return telegram_bot.send_photo(
-                message_id,
-                message_return.get("photo", ""),
-                caption=texto_result,
-                reply_markup=reply_markup
-            )
+            if "function" in message_return:
+                if message_return.get("function_data"):
+                    telegram_bot.register_next_step_handler(
+                        message,
+                        lambda m: message_return.get("function", "")(m, message_return.get("function_data")),
+                    )
+                else:
+                    telegram_bot.register_next_step_handler(
+                        message, message_return.get("function", "")
+                    )
+                return send_reply_return(texto_result, message, telegram_bot, save_log, disable_web_page_preview, reply_markup=reply_markup)
 
-        if "video" in message_return:
-            return telegram_bot.send_video(message_id, message_return.get("video", ""))
-
-        if "function" in message_return:
-            if message_return.get("function_data"):
-                telegram_bot.register_next_step_handler(
-                    message,
-                    lambda m: message_return.get("function", "")(m, message_return.get("function_data")),
-                )
-            else:
-                telegram_bot.register_next_step_handler(
-                    message, message_return.get("function", "")
-                )
-
-            try:
-                return telegram_bot.reply_to(message, texto_result, parse_mode="HTML", disable_web_page_preview=disable_web_page_preview)
-            except ApiTelegramException as exc:
-                handler_parse_error(exc, telegram_bot, message, texto_result, disable_web_page_preview)
-
-        if "texto" in message_return:
-            try:
-                return telegram_bot.reply_to(message, texto_result, reply_markup=reply_markup, parse_mode = 'HTML', disable_web_page_preview=disable_web_page_preview)
-            except ApiTelegramException as exc:
-                handler_parse_error(exc, telegram_bot, message, texto_result, disable_web_page_preview)
+            if "texto" in message_return:
+                return send_reply_return(texto_result, message, telegram_bot, save_log, disable_web_page_preview, reply_markup=reply_markup)
+    except ApiTelegramException as exc:
+        handler_parse_error(exc, telegram_bot, message, message_return, disable_web_page_preview)
 
 def add_edit_option_markup(query, name):
     """
