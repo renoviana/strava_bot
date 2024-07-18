@@ -55,7 +55,7 @@ def send_reply_return(message_return, message, telegram_bot, save_log=True, disa
             if message_return.get("function_data"):
                 telegram_bot.register_next_step_handler(
                     message,
-                    lambda m: message_return.get("function", "")(m, result.get("function_data")),
+                    lambda m: message_return.get("function", "")(m, message_return.get("function_data")),
                 )
             else:
                 telegram_bot.register_next_step_handler(
