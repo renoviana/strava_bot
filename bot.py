@@ -102,7 +102,7 @@ def callback_query(call) -> None:
             pass
     except Exception as exc:
         send_reply_return(
-            "Erro ao executar o comando, tente novamente.", call.message, bot
+            "Erro ao executar o comando, tente novamente.", call.message, bot, disable_web_page_preview=True
         )
 
     
@@ -124,10 +124,10 @@ def handle_group_message(message) -> None:
             return
 
         result = grupo_commands[command](message)
-        data = send_reply_return(result, message, bot)
+        data = send_reply_return(result, message, bot, disable_web_page_preview=True)
     except Exception as exc:
         send_reply_return(
-            "Erro ao executar o comando, tente novamente.", message, bot
+            "Erro ao executar o comando, tente novamente.", message, bot, disable_web_page_preview=True
         )
         return
 
