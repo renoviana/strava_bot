@@ -4,6 +4,8 @@ from telebot.types import (
 )
 from telebot.apihelper import ApiTelegramException
 
+from assistant_util.error_handler import tratar_erro
+
 def handler_parse_error(exc, telegram_bot, message, texto_result, disable_web_page_preview):
     """
     Error 
@@ -63,6 +65,7 @@ def send_reply_return(message_return, message, telegram_bot, save_log=True, disa
                 return send_reply_return(texto_result, message, telegram_bot, save_log, disable_web_page_preview, reply_markup=reply_markup)
     except ApiTelegramException as exc:
         handler_parse_error(exc, telegram_bot, message, message_return, disable_web_page_preview)
+        tratar_erro(exc, 'strava_send_reply_return')
 
 def add_edit_option_markup(query, name):
     """
