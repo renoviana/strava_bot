@@ -186,37 +186,23 @@ def get_markup_edit_delete(
         item (list): Item
         markup (InlineKeyboardMarkup): Markup
     """
-
+    markup.row_width = 2
     if len(item) == 1:
         item = item[0]
 
     if delete_option and edit_option:
         markup.row_width = 3
-        markup.add(
-            add_text_option_markup(item["nome"], callback_data=item["callback"]),
-            add_edit_option_markup(edit_data, item["nome"]),
-            add_del_option_markup(delete_data, item["callback"] or item["nome"]),
-        )
-        return markup
 
-    if delete_option:
-        markup.row_width = 2
-        markup.add(
-            add_text_option_markup(item["nome"], callback_data=item["callback"]),
-            add_del_option_markup(delete_data, item["callback"] or item["nome"]),
-        )
-        return markup
+    elements = [add_text_option_markup(item["nome"], callback_data=item["callback"])]
 
     if edit_option:
-        markup.row_width = 2
-        markup.add(
-            add_text_option_markup(item["nome"], callback_data=item["callback"]),
-            add_edit_option_markup(edit_data, item["nome"]),
-        )
-        return markup
+        elements.append(add_edit_option_markup(edit_data, item["nome"]))
 
-    return None
+    if delete_option:
+        elements.append(add_del_option_markup(delete_data, item["callback"] or item["nome"]))
 
+    markup.add(*elements)
+    return markup if elements else None
 
 def get_markup(
     array: list = None,
