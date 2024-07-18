@@ -1,97 +1,77 @@
 from telebot.types import (
     InlineKeyboardMarkup,
     InlineKeyboardButton,
-    Message,
 )
+from telebot.apihelper import ApiTelegramException
 
-from secure import (
-    TELEGRAM_BOT_TOKEN,
-)
+def handler_parse_error(exc, telegram_bot, message, texto_result, disable_web_page_preview):
+    """
+    Error 
+    """
+    if "can't parse entities" in exc.description:
+        return telegram_bot.reply_to(message, texto_result, disable_web_page_preview=disable_web_page_preview)
 
-def return_has_result(result: dict, message: Message, telegram_bot) -> None:
+def send_reply_return(message_return, message, telegram_bot, save_log=True, disable_web_page_preview=False) -> None:
     """
     Retorna resultado da mensagem
     Args:
-        result (dict): Resultado da mensagem
+        message_return (any): Resultado da mensagem
         message (Message): Mensagem recebida
         telegram_bot (telebot.TeleBot): Bot do telegram
+        save_log (bool, optional): Salvar log. Defaults to True.
     """
-    if not result:
+    if not message_return:
         return None
 
-    is_strava_bot = telegram_bot.token == TELEGRAM_BOT_TOKEN
-    if isinstance(result, dict):
-        texto_result = result.get("texto", "")
+    if isinstance(message_return, list):
+        return list(map(lambda item: send_reply_return(item, message, telegram_bot, save_log, disable_web_page_preview), message_return))
+
+    if isinstance(message_return, str):
+        if len(message_return) > 4000:
+            return list(map(lambda i: send_reply_return(message_return[i : i + 4000], message, telegram_bot, save_log, disable_web_page_preview), range(0, len(message_return), 4000)))
+
+        try:
+            return telegram_bot.reply_to(message, message_return, parse_mode = "HTML", disable_web_page_preview=disable_web_page_preview)
+        except ApiTelegramException as exc:
+            handler_parse_error(exc, telegram_bot, message, message_return, disable_web_page_preview)
+
+    if isinstance(message_return, dict):
+        texto_result = message_return.get("texto", "")
         message_id = message.chat.id
-        has_markup = "markup" in result
+        reply_markup = message_return.get("markup", None)
 
-        if "photo" in result:
-            photo = result.get("photo", "")
-            caption = texto_result if "texto" in result else None
-
-            if has_markup:
-                return telegram_bot.send_photo(
-                    message_id,
-                    photo,
-                    caption=caption,
-                    reply_markup=result.get("markup", ""),
-                )
-
+        if "photo" in message_return:
             return telegram_bot.send_photo(
                 message_id,
-                photo,
-                caption=caption,
+                message_return.get("photo", ""),
+                caption=texto_result,
+                reply_markup=reply_markup
             )
 
-        if "video" in result:
-            return telegram_bot.send_video(message_id, result.get("video", ""))
+        if "video" in message_return:
+            return telegram_bot.send_video(message_id, message_return.get("video", ""))
 
-        if "function" in result:
-            function_data = result.get("function_data")
-
-            if function_data:
+        if "function" in message_return:
+            if message_return.get("function_data"):
                 telegram_bot.register_next_step_handler(
                     message,
-                    lambda m: result.get("function", "")(m, function_data),
+                    lambda m: message_return.get("function", "")(m, result.get("function_data")),
                 )
             else:
                 telegram_bot.register_next_step_handler(
-                    message, result.get("function", "")
+                    message, message_return.get("function", "")
                 )
 
-            return telegram_bot.send_message(message.chat.id, texto_result, parse_mode="HTML", disable_web_page_preview=is_strava_bot)
+            try:
+                return telegram_bot.reply_to(message, texto_result, parse_mode="HTML", disable_web_page_preview=disable_web_page_preview)
+            except ApiTelegramException as exc:
+                handler_parse_error(exc, telegram_bot, message, texto_result, disable_web_page_preview)
 
-        if has_markup:
-            markup_data = result.get("markup", "")
-            return telegram_bot.send_message(
-                message.chat.id, texto_result, reply_markup=markup_data, parse_mode="HTML", disable_web_page_preview=is_strava_bot
-            )
-
-        if "texto" in result:
-            return telegram_bot.send_message(message.chat.id, texto_result, parse_mode = 'HTML', disable_web_page_preview=is_strava_bot)
-
-    if isinstance(result, list):
-        for item in result:
-            return_has_result(item, message, telegram_bot)
-        return
-    
-    array_result = [result]
-
-    if len(result) > 4000:
-        array_result = [result[i : i + 4000] for i in range(0, len(result), 4000)]
-
-    reply_id_list = []
-    for item in array_result:   
-        reply_id_list.append(telegram_bot.send_message(message.chat.id, item, parse_mode = "HTML", disable_web_page_preview=is_strava_bot))
-    
-    return reply_id_list[0] if len(reply_id_list) == 1 else reply_id_list
-
-
-
-
-
-
-
+        if "texto" in message_return:
+            try:
+                return telegram_bot.reply_to(message, texto_result, reply_markup=reply_markup, parse_mode = 'HTML', disable_web_page_preview=disable_web_page_preview)
+            except ApiTelegramException as exc:
+                handler_parse_error(exc, telegram_bot, message, texto_result, disable_web_page_preview)
 
 def add_edit_option_markup(query, name):
     """

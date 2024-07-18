@@ -18,7 +18,7 @@ from command import (
     send_stats_command,
     metas_command,
     ignore_ativities_status_callback,)
-from tools import is_group_message, return_has_result
+from tools import is_group_message, send_reply_return
 from secure import TELEGRAM_BOT_TOKEN, MONGO_URI, TELEGRAM_BOT_ID
 
 connect(host=MONGO_URI)
@@ -95,13 +95,13 @@ def callback_query(call) -> None:
 
         _, command_function = command_list[0]
         resultado = command_function(call)
-        return_has_result(resultado, call.message, bot)
+        send_reply_return(resultado, call.message, bot, disable_web_page_preview=True)
         try:
             bot.answer_callback_query(call.id)
         except Exception as exc:
             pass
     except Exception as exc:
-        return_has_result(
+        send_reply_return(
             "Erro ao executar o comando, tente novamente.", call.message, bot
         )
 
@@ -124,9 +124,9 @@ def handle_group_message(message) -> None:
             return
 
         result = grupo_commands[command](message)
-        data = return_has_result(result, message, bot)
+        data = send_reply_return(result, message, bot)
     except Exception as exc:
-        return_has_result(
+        send_reply_return(
             "Erro ao executar o comando, tente novamente.", message, bot
         )
         return
