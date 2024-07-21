@@ -462,11 +462,12 @@ class StravaGroup:
         all_types = list(filter(lambda x: x not in ['Workout'], all_types))
         return sorted(all_types)
 
-    def rank_format(self, object_data, sport_type, rank_unit="km", rank_params='total_distance'):
+    def rank_format(self,index_data, data, sport_type, rank_unit="km", rank_params='total_distance'):
         """
         Formata o rank
         Args:
-            object_data (tuple): tupla com index e data
+            index_data (int): index
+            data (list): lista de dados
             sport_type (str): tipo de esporte
             rank_unit (str): unidade de medida
             rank_params (str): parametro de rank
@@ -475,19 +476,21 @@ class StravaGroup:
             self.metas.get(sport_type)
         )
 
-        index_data, data = object_data
-        rank_data = data.get(rank_params)
-        emoji = ""
+        rank_list = []
+        for user in data:
+            rank_data = user.get(rank_params)
+            emoji = ""
 
-        if strava_month_distance and rank_data >= strava_month_distance:
-            emoji = "✅"
-        user_id = data.get("user_id")
-        user_name = data.get('user').title()
+            if strava_month_distance and rank_data >= strava_month_distance:
+                emoji = "✅"
+            user_id = user.get("user_id")
+            user_name = user.get('user').title()
 
-        if user_id:
-            user_name = f"<a href=\"https://www.strava.com/athletes/{user_id}\">{user_name}{self.get_victory_str(sport_type, user_name)}</a>"
+            if user_id:
+                user_name = f"<a href=\"https://www.strava.com/athletes/{user_id}\">{user_name}{self.get_victory_str(sport_type, user_name)}</a>"
 
-        return f"{index_data+1}º - {user_name}{self.get_victory_str(sport_type ,user_name)} - {rank_data}{rank_unit} {emoji}"
+            rank_list.append(f"{index_data+1}º - {user_name}{self.get_victory_str(sport_type ,user_name)} - {rank_data}{rank_unit} {emoji}")
+        return "\n".join(rank_list)
 
     def get_ranking_str(self, sport_type , year_rank=False, first_day=None, last_day=None):
         """
@@ -567,10 +570,28 @@ class StravaGroup:
             distance_list, key=lambda k: k[rank_params], reverse=True
         )
         distance_list = sort_distance_list
+
+        ranking_dict = {}
+
+        for data in distance_list:
+            if data.get(rank_params) < 0:
+                continue
+    
+            params = data.get(rank_params)
+            if params not in ranking_dict:
+                ranking_dict[params] = []
+            
+            ranking_dict[params].append(data)
+
+        sort_distance_list = sorted(
+            ranking_dict, reverse=True
+        )
+        
+
         rank_msg_list = list(
             map(
-                lambda i: self.rank_format(i, sport_type.lower(), rank_unit=rank_unit, rank_params=rank_params),
-                filter( lambda i: i[1].get(rank_params) > 0, enumerate(distance_list)),
+                lambda i: self.rank_format(i[0],ranking_dict[i[1]], sport_type.lower(), rank_unit=rank_unit, rank_params=rank_params),
+                enumerate(sort_distance_list),
             )
         )
         msg = "\n".join(rank_msg_list)
