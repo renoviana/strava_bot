@@ -10,7 +10,7 @@ def handler_parse_error(exc, telegram_bot, message, texto_result, disable_web_pa
     """
     Error 
     """
-    if "can't parse entities" in exc.description:
+    if "parse entities" in exc.description:
         return telegram_bot.reply_to(message, texto_result, disable_web_page_preview=disable_web_page_preview)
 
 def send_reply_return(message_return, message, telegram_bot, save_log=True, disable_web_page_preview=False, reply_markup=None) -> None:
