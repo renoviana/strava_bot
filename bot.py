@@ -1,5 +1,8 @@
+import time
 import telebot
+import threading
 from mongoengine import connect
+from assistant_scrap.tools import get_request
 from model import add_strava_group
 from command import (
     get_link_command,
@@ -145,6 +148,18 @@ def commands_handler(message) -> None:
         "\nEsse bot foi desenvolvido para funcionar apenas em grupos do telegram"\
         ", para utiliza-lo crie um grupo e me adicione. :)")
 
+def health_check():
+    while True:
+        # Coloque aqui a lógica do seu health check
+        print("Executando health check...")
+        get_request('https://hc-ping.com/5261c231-855d-4020-a287-77c990144452')
+        # Espera um tempo antes de executar novamente
+        time.sleep(300)  # 300 segundos = 5 minutos
+    
+    
+health_check_thread = threading.Thread(target=health_check)
+health_check_thread.daemon = True  # Daemon thread para finalizar junto com o programa principal
+health_check_thread.start()
 while True:
     try:
         bot.polling(none_stop=True)
