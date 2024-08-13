@@ -22,7 +22,7 @@ from command import (
     metas_command,
     ignore_ativities_status_callback,)
 from tools import is_group_message, send_reply_return
-from secure import TELEGRAM_BOT_TOKEN, MONGO_URI, TELEGRAM_BOT_ID
+from secure import HEALTH_CHECK_URL, TELEGRAM_BOT_TOKEN, MONGO_URI, TELEGRAM_BOT_ID
 
 connect(host=MONGO_URI)
 bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
@@ -150,7 +150,7 @@ def commands_handler(message) -> None:
 
 def health_check():
     while True:
-        requests.get('https://hc-ping.com/5261c231-855d-4020-a287-77c990144452')
+        requests.get(HEALTH_CHECK_URL)
         time.sleep(300)
     
     
