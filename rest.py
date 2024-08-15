@@ -492,6 +492,55 @@ class StravaGroup:
             rank_list.append(f"{index_data+1}º - {user_name}{self.get_victory_str(sport_type ,user_name)} - {rank_data}{rank_unit} {emoji}")
         return "\n".join(rank_list)
 
+    def get_rank(self, sport_type, year_rank=False, first_day=None, last_day=None):
+        """
+        Retorna lista de distancias dos usuários
+        Args:
+            sport_type (str): tipo de esporte
+            year_rank (bool): ranking do ano
+            first_day (datetime): data de inicio
+            last_day (datetime): data de fim
+        """
+        if year_rank:
+            first_day = datetime.now().replace(
+            day=1,
+            hour=0,
+            minute=0,
+            second=0,
+            microsecond=0,
+            month=1,
+            )
+            last_day = datetime.now().replace(
+                day=1,
+                hour=0,
+                minute=0,
+                second=0,
+                microsecond=0,
+                month=1,
+                year=datetime.now().year + 1
+            )
+        ignore_stats_ids = self.ignored_activities
+        distance_list = []
+
+        for user, strava in self.membros.items():
+            json_data = self.get_distance_and_points(
+                user,
+                ignore_stats_ids=ignore_stats_ids,
+                first_day=first_day,
+                last_day=last_day,
+            )
+
+            if not json_data.get(sport_type):
+                continue
+
+            json_data = json_data[sport_type]
+
+            json_data['user'] = user
+            json_data['user_id'] = strava["athlete_id"]
+            distance_list.append(json_data)
+        return distance_list
+
+
     def get_ranking_str(self, sport_type , year_rank=False, first_day=None, last_day=None):
         """
         Envia mensagem com o ranking
@@ -516,56 +565,21 @@ class StravaGroup:
 
         if year_rank:
             today_str = datetime.now().year
-            first_day = datetime.now().replace(
-            day=1,
-            hour=0,
-            minute=0,
-            second=0,
-            microsecond=0,
-            month=1,
-            )
-            last_day = datetime.now().replace(
-                day=1,
-                hour=0,
-                minute=0,
-                second=0,
-                microsecond=0,
-                month=1,
-                year=datetime.now().year + 1
-            )
 
         msg_template = f"Ranking {today_str} {emoji}:\n"
         sport_rank_by_time_list = ['workout', 'weighttraining']
         rank_params = 'total_distance'
         rank_unit="km"
-
+        
         if sport_type.lower() in sport_rank_by_time_list:
             rank_params = 'total_moving_time'
             rank_unit = "min"
-        ignore_stats_ids = self.ignored_activities
-        distance_list = []
-
-        for user, strava in self.membros.items():
-            json_data = self.get_distance_and_points(
-                user,
-                ignore_stats_ids=ignore_stats_ids,
-                first_day=first_day,
-                last_day=last_day,
-            )
-
-            if not json_data.get(sport_type):
-                continue
-
-            json_data = json_data[sport_type]
-
-            json_data['user'] = user
-            json_data['user_id'] = strava["athlete_id"]
-            distance_list.append(json_data)
 
         if self.list_activities:
             self.cache_data += self.list_activities
             self.update_entity()
 
+        distance_list = self.get_rank(sport_type, year_rank, first_day=None, last_day=None)
         sort_distance_list = sorted(
             distance_list, key=lambda k: k[rank_params], reverse=True
         )
