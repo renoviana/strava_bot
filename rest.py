@@ -331,7 +331,7 @@ class StravaGroup:
             if distance_km > 400:
                 continue
 
-            if manual_ride and activity_type != "WeightTraining":
+            if manual_ride and activity_type not in ["WeightTraining", "Swim"]:
                 continue
 
             if distance_km > result_dict[activity_type]["max_distance"]['value'] and not ignore_stats:
