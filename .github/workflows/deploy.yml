@@ -23,5 +23,5 @@ jobs:
           key: ${{ secrets.KEY }}
           user: ${{ secrets.USER }}
           command: |
-            chmod +x ~/stava_bot/start.sh
-            ~/stava_bot/start.sh
+            chmod +x ~/strava_bot/start.sh
+            ~/strava_bot/start.sh
