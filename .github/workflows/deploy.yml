@@ -1,0 +1,26 @@
+name: scp files
+on:
+  push:
+    branches:
+      - main
+
+env:
+  TARGET_DIR: /home/github/test
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v1
+
+      - name: Update app
+        uses: nekiro/ssh-job@main
+        with:
+          host: ${{ secrets.HOST }}
+          key: ${{ secrets.KEY }}
+          user: ${{ secrets.USER }}
+          command: |
+            ~/assistant_util/runner/start.sh
