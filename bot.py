@@ -15,6 +15,7 @@ from command import (
     get_ranking_year_msg,
     get_segments,
     get_sports_msg,
+    get_ticket_message,
     send_point_msg_command,
     send_ranking_ano_msg_command,
     send_ranking_msg_command,
@@ -39,6 +40,7 @@ grupo_commands = {
     "sports": get_menu_sports_msg,
     "segments": get_segments,
     "medalhas": get_medalhas,
+    "ticket": get_ticket_message,
 }
 
 query_commands = {
