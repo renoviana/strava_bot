@@ -1,4 +1,5 @@
 from datetime import datetime
+import random
 from secure import STRAVA_CLIENT_ID, STRAVA_REDIRECT_URI
 from tools import get_markup
 from rest import StravaGroup
@@ -227,4 +228,5 @@ def get_ticket_message(message):
     texto = message.text.replace("/ticket ", "")
     from_user= message.from_user
     first_name = from_user.first_name or from_user.username
-    return f"Oi {first_name}!\nParabéns, você foi sorteado para desenvolver o ticket  '{texto}'.\n\nVocê tem 48hrs a partir desse momento para desenvolver o ticket, caso não consiga basta fazer uma pequena colaboração de 5g do 🇨🇴."
+    hours = random.randint(0, 72)
+    return f"Oi {first_name}!\nParabéns, você foi sorteado para desenvolver o ticket  '{texto}'.\n\nVocê tem {hours}hrs a partir desse momento para desenvolver o ticket, caso não consiga basta fazer uma pequena colaboração de 5g do 🇨🇴."
