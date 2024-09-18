@@ -270,9 +270,9 @@ class StravaGroup:
         self.strava_entity.cache_data = self.cache_data
         self.strava_entity.cache_data = sorted(self.cache_data, key=lambda x: datetime.strptime(x['start_date_local'], '%Y-%m-%dT%H:%M:%SZ'), reverse=True)
         self.strava_entity.save()
-
-    def get_distance_and_points(
-    self, user, sport_list=None, ignore_stats_ids=None, first_day=None, last_day=None):
+    
+    def get_activity_list_by_type(
+        self, user, first_day=None, last_day=None):
         """
         Calcula a distancia total e os pontos do usuário
         Args:
@@ -284,15 +284,61 @@ class StravaGroup:
             last_day (datetime): data de fim
         """
 
-
-        if not sport_list:
-            sport_list = ["Ride"]
-
         activity_list = self.list_activity(
             user,
             first_day=first_day,
             last_day=last_day,
         )
+
+        default_dict = {}
+        date_dict = {}
+        for activity in activity_list:
+            date_activity = datetime.strptime(activity['start_date_local'], '%Y-%m-%dT%H:%M:%SZ').replace(hour=0, minute=0, second=0, microsecond=0)
+            distance_km = round(activity["distance"] / 1000, 2)
+            moving_time_ride = round(activity["moving_time"] / 60, 2)
+            activity_type = activity["type"]
+
+            if activity_type == 'Workout':
+                activity_type = 'WeightTraining'
+
+            if activity_type not in date_dict:
+                date_dict[activity_type] = {}
+
+            if date_activity not in date_dict[activity_type]:
+                date_dict[activity_type][date_activity] = activity
+            else:
+                old_distance_km = round(date_dict[activity_type][date_activity]["distance"] / 1000, 2)
+                old_moving_time_ride = round(date_dict[activity_type][date_activity]["moving_time"] / 60, 2)
+                if activity_type == 'WeightTraining':
+                    if old_moving_time_ride < moving_time_ride:
+                        date_dict[activity_type][date_activity] = activity
+                else:
+                    if old_distance_km < distance_km:
+                        date_dict[activity_type][date_activity] = activity
+
+            if activity_type not in default_dict:
+                default_dict[activity_type] = []
+
+            default_dict[activity_type].append(activity)
+        new_dict = {}
+        for activity_type in default_dict:
+            new_dict[activity_type] = list(date_dict[activity_type].values())
+        return new_dict
+
+
+    def get_distance_and_points(
+    self, user, ignore_stats_ids=None, first_day=None, last_day=None):
+        """
+        Calcula a distancia total e os pontos do usuário
+        Args:
+            user (str): usuario
+            ignore_stats_ids (list): lista de ids de atividades ignoradas
+            ignore_cache (bool): ignorar cache
+            first_day (datetime): data de inicio
+            last_day (datetime): data de fim
+        """
+
+        activity_dict = self.get_activity_list_by_type(user, first_day=first_day, last_day=last_day)
 
         default_dict = {
             "total_distance": 0,
@@ -307,61 +353,57 @@ class StravaGroup:
         result_dict = {}
 
 
-        for activity in activity_list:
-            activity_type = activity["type"]
-
-            if activity_type == 'Workout':
-                activity_type = 'WeightTraining'
+        for activity_type, activity_list in activity_dict.items():
 
             if activity_type not in result_dict:
                 result_dict[activity_type] = default_dict.copy()
+            for activity in activity_list:
+                max_speed_ride_km = round(activity["max_speed"] * 3.6, 2)
+                max_average_speed_ride_km = round(activity["average_speed"] * 3.6, 2)
+                total_elevation_gain_ride = round(activity["total_elevation_gain"], 2)
+                distance_km = round(activity["distance"] / 1000, 2)
+                moving_time_ride = round(activity["moving_time"] / 60, 2)
 
-            max_speed_ride_km = round(activity["max_speed"] * 3.6, 2)
-            max_average_speed_ride_km = round(activity["average_speed"] * 3.6, 2)
-            total_elevation_gain_ride = round(activity["total_elevation_gain"], 2)
-            distance_km = round(activity["distance"] / 1000, 2)
-            moving_time_ride = round(activity["moving_time"] / 60, 2)
+                if moving_time_ride < 5:
+                    continue
 
-            if moving_time_ride < 5:
-                continue
+                manual_ride = activity["manual"]
+                ignore_stats = str(activity.get('id')) in ignore_stats_ids
 
-            manual_ride = activity["manual"]
-            ignore_stats = str(activity.get('id')) in ignore_stats_ids
+                if distance_km > 400:
+                    continue
 
-            if distance_km > 400:
-                continue
+                if manual_ride and activity_type not in ["WeightTraining", "Swim"]:
+                    continue
 
-            if manual_ride and activity_type not in ["WeightTraining", "Swim"]:
-                continue
+                if distance_km > result_dict[activity_type]["max_distance"]['value'] and not ignore_stats:
+                    result_dict[activity_type]["max_distance"]['value'] = round(distance_km, 2)
+                    result_dict[activity_type]["max_distance"]['activity_id'] = activity.get('id')
 
-            if distance_km > result_dict[activity_type]["max_distance"]['value'] and not ignore_stats:
-                result_dict[activity_type]["max_distance"]['value'] = round(distance_km, 2)
-                result_dict[activity_type]["max_distance"]['activity_id'] = activity.get('id')
+                if max_speed_ride_km > result_dict[activity_type]["max_velocity"]['value'] and not ignore_stats and max_speed_ride_km < 80:
+                    result_dict[activity_type]["max_velocity"]['value'] = round(max_speed_ride_km, 2)
+                    result_dict[activity_type]["max_velocity"]['activity_id'] = activity.get('id')
 
-            if max_speed_ride_km > result_dict[activity_type]["max_velocity"]['value'] and not ignore_stats and max_speed_ride_km < 80:
-                result_dict[activity_type]["max_velocity"]['value'] = round(max_speed_ride_km, 2)
-                result_dict[activity_type]["max_velocity"]['activity_id'] = activity.get('id')
+                if (
+                    max_average_speed_ride_km > result_dict[activity_type]["max_average_speed"]['value']
+                    and not ignore_stats
+                ):
+                    result_dict[activity_type]["max_average_speed"]['value'] = round(max_average_speed_ride_km, 2)
+                    result_dict[activity_type]["max_average_speed"]['activity_id'] = activity.get('id')
 
-            if (
-                max_average_speed_ride_km > result_dict[activity_type]["max_average_speed"]['value']
-                and not ignore_stats
-            ):
-                result_dict[activity_type]["max_average_speed"]['value'] = round(max_average_speed_ride_km, 2)
-                result_dict[activity_type]["max_average_speed"]['activity_id'] = activity.get('id')
+                if total_elevation_gain_ride > result_dict[activity_type]["max_elevation_gain"]['value']  and not ignore_stats:
+                    result_dict[activity_type]["max_elevation_gain"]['value'] = round(total_elevation_gain_ride, 2)
+                    result_dict[activity_type]["max_elevation_gain"]['activity_id'] = activity.get('id')
 
-            if total_elevation_gain_ride > result_dict[activity_type]["max_elevation_gain"]['value']  and not ignore_stats:
-                result_dict[activity_type]["max_elevation_gain"]['value'] = round(total_elevation_gain_ride, 2)
-                result_dict[activity_type]["max_elevation_gain"]['activity_id'] = activity.get('id')
+                if moving_time_ride > result_dict[activity_type]["max_moving_time"]['value'] and not ignore_stats:
+                    result_dict[activity_type]["max_moving_time"]['value'] = round(moving_time_ride, 2)
+                    result_dict[activity_type]["max_moving_time"]['activity_id'] = activity.get('id')
 
-            if moving_time_ride > result_dict[activity_type]["max_moving_time"]['value'] and not ignore_stats:
-                result_dict[activity_type]["max_moving_time"]['value'] = round(moving_time_ride, 2)
-                result_dict[activity_type]["max_moving_time"]['activity_id'] = activity.get('id')
-
-            result_dict[activity_type]["total_user_points"] = round(self.calc_point_rank(
-                result_dict[activity_type]["total_user_points"], total_elevation_gain_ride, distance_km, activity_type
-            ), 2)
-            result_dict[activity_type]["total_distance"] = round(result_dict[activity_type]["total_distance"] + distance_km, 2)
-            result_dict[activity_type]["total_moving_time"] = round(result_dict[activity_type]["total_moving_time"] + moving_time_ride, 2)
+                result_dict[activity_type]["total_user_points"] = round(self.calc_point_rank(
+                    result_dict[activity_type]["total_user_points"], total_elevation_gain_ride, distance_km, activity_type
+                ), 2)
+                result_dict[activity_type]["total_distance"] = round(result_dict[activity_type]["total_distance"] + distance_km, 2)
+                result_dict[activity_type]["total_moving_time"] = round(result_dict[activity_type]["total_moving_time"] + moving_time_ride, 2)
 
         return result_dict
 
