@@ -321,7 +321,8 @@ class StravaGroup:
 
             default_dict[activity_type].append(activity)
 
-        default_dict["WeightTraining"] = list(date_dict["WeightTraining"].values())
+        if "WeightTraining" in date_dict:
+            default_dict["WeightTraining"] = list(date_dict["WeightTraining"].values())
         return default_dict
 
 
