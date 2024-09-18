@@ -320,10 +320,9 @@ class StravaGroup:
                 default_dict[activity_type] = []
 
             default_dict[activity_type].append(activity)
-        new_dict = {}
-        for activity_type in default_dict:
-            new_dict[activity_type] = list(date_dict[activity_type].values())
-        return new_dict
+
+        default_dict["WeightTraining"] = list(date_dict["WeightTraining"].values())
+        return default_dict
 
 
     def get_distance_and_points(
