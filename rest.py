@@ -295,7 +295,7 @@ class StravaGroup:
         for activity in activity_list:
             date_activity = datetime.strptime(activity['start_date_local'], '%Y-%m-%dT%H:%M:%SZ').replace(hour=0, minute=0, second=0, microsecond=0)
             distance_km = round(activity["distance"] / 1000, 2)
-            moving_time_ride = activity["moving_time"]
+            moving_time_ride = round(activity["moving_time"] / 60, 2)
             activity_type = activity["type"]
 
             if activity_type == 'Workout':
@@ -520,12 +520,7 @@ class StravaGroup:
 
         rank_list = []
         for user in data:
-            rank_str = ''
             rank_data = user.get(rank_params)
-            if rank_unit == 'km':
-                rank_str = f"{rank_data}{rank_unit}"
-            else:
-                rank_str = f"{str(timedelta(seconds=rank_data))}"
             emoji = ""
 
             if strava_month_distance and rank_data >= strava_month_distance:
@@ -536,7 +531,7 @@ class StravaGroup:
             if user_id:
                 user_name = f"<a href=\"https://www.strava.com/athletes/{user_id}\">{user_name}{self.get_victory_str(sport_type, user_name)}</a>"
 
-            rank_list.append(f"{index_data+1}º - {user_name}{self.get_victory_str(sport_type ,user_name)} - {rank_str} {emoji}")
+            rank_list.append(f"{index_data+1}º - {user_name}{self.get_victory_str(sport_type ,user_name)} - {rank_data}{rank_unit} {emoji}")
         return "\n".join(rank_list)
 
     def get_rank(self, sport_type, year_rank=False, first_day=None, last_day=None):
