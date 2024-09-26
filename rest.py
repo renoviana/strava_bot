@@ -418,8 +418,10 @@ class StravaGroup:
                 user,
                 ignore_stats_ids=ignore_stats_ids
             )
-            total_points = distance.get("Ride", {}).get("total_user_points", 0) + distance.get("Run", {}).get("total_user_points", 0) + distance.get("Walk", {}).get("total_user_points", 0)
-
+            total_points = 0
+            for category in distance:
+                total_points += distance[category].get("total_user_points", 0)
+ 
             if total_points == 0:
                 continue
 
@@ -497,7 +499,7 @@ class StravaGroup:
                 first_day=first_day,
                 last_day=last_day,
             )
-            activity_list = list(filter(lambda x: not x["manual"] or x['type'] == "WeightTraining", activity_list))
+            activity_list = list(filter(lambda x: not x["manual"] or x['type'] in ["WeightTraining", "Swim"], activity_list))
             all_types += list(map(lambda x: x["type"], activity_list))
         all_types = list(set(all_types))
 
@@ -698,7 +700,7 @@ class StravaGroup:
             distance_km (int): distancia
         """
 
-        if distance_km > 2 and sport_type in ['Run', 'Walk']:
+        if distance_km > 2 and sport_type in ['Run', 'Walk', 'Hike', 'Swim']:
             total_user_points += 1
             return total_user_points
 
