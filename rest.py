@@ -7,6 +7,7 @@ from secure import (
 )
 
 class StravaGroup:
+    last_list_activity_run = None
     membros = {}
     metas = {}
     ignored_activities = []
@@ -139,6 +140,8 @@ class StravaGroup:
             last_day (datetime): data de fim
         """
 
+        if datetime.now() - timedelta(minutes=1) < self.last_list_activity_run:
+            return self.cache_last_activity
 
         if not first_day:
             first_day = datetime.now().replace(
@@ -221,6 +224,8 @@ class StravaGroup:
 
 
         self.list_activities += new_activity_list
+        self.last_list_activity_run = datetime.now()
+        self.cache_last_activity = new_activity_list
         return new_activity_list
 
     def get_athlete_data(
