@@ -359,6 +359,9 @@ class StravaGroup:
             last_day (datetime): data de fim
         """
 
+        if not ignore_stats_ids:
+            ignore_stats_ids = []
+
         activity_dict = self.get_activity_list_by_type(user, first_day=first_day, last_day=last_day)
 
         default_dict = {
