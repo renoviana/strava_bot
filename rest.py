@@ -301,6 +301,9 @@ class StravaGroup:
             if activity_type == 'Workout':
                 activity_type = 'WeightTraining'
 
+            if activity_type == 'WeightTraining' and moving_time_ride > 120:
+                moving_time_ride = 120
+
             if activity_type not in date_dict:
                 date_dict[activity_type] = {}
 
