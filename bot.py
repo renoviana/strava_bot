@@ -4,51 +4,37 @@ import telebot
 import threading
 from mongoengine import connect
 from model import add_strava_group
-from command import (
-    get_link_command,
-    admin_command,
-    custom_meta_command,
-    del_meta_command,
-    del_strava_user_callback,
-    get_medalhas,
-    get_menu_sports_msg,
-    get_ranking_year_msg,
-    get_segments,
-    get_sports_msg,
-    get_ticket_message,
-    send_point_msg_command,
-    send_ranking_ano_msg_command,
-    send_ranking_msg_command,
-    send_stats_command,
-    metas_command,
-    ignore_ativities_status_callback,)
+from command import StravaCommands
 from tools import is_group_message, send_reply_return
 from secure import HEALTH_CHECK_URL, TELEGRAM_BOT_TOKEN, MONGO_URI, TELEGRAM_BOT_ID
 
 connect(host=MONGO_URI)
 bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
 
+strava_dict = {}
+
+
 grupo_commands = {
-    "rank": send_ranking_msg_command,
-    'year':send_ranking_ano_msg_command,
-    "score": send_point_msg_command,
-    "stats": send_stats_command,
-    "admin": admin_command,
-    "link": get_link_command,
-    "metas": metas_command,
-    "ignore": ignore_ativities_status_callback,
-    "sports": get_menu_sports_msg,
-    "segments": get_segments,
-    "medalhas": get_medalhas,
-    "ticket": get_ticket_message,
+    "rank": 'send_ranking_msg_command',
+    'year':'send_ranking_ano_msg_command',
+    "score": 'send_point_msg_command',
+    "stats": 'send_stats_command',
+    "admin": 'admin_command',
+    "link": 'get_link_command',
+    "metas": 'metas_command',
+    "ignore": 'ignore_ativities_status_callback',
+    "sports": 'get_menu_sports_msg',
+    "segments": 'get_segments',
+    "medalhas": 'get_medalhas',
+    "ticket": 'get_ticket_message',
 }
 
 query_commands = {
-    "del_meta": del_meta_command,
-    "del_strava": del_strava_user_callback,
-    "meta_": custom_meta_command,
-    "strava_": get_sports_msg,
-    "syear_": get_ranking_year_msg,
+    "del_meta": 'del_meta_command',
+    "del_strava": 'del_strava_user_callback',
+    "meta_": 'custom_meta_command',
+    "strava_": 'get_sports_msg',
+    "syear_": 'get_ranking_year_msg',
 }
 
 grupo_commands_admin = ["admin", "metas"]
@@ -62,8 +48,12 @@ def new_chat_handler(message):
     """
     Handler para novos usuários e também a entrada do bot no grupo
     """
+    if message.chat.id not in strava_dict:
+        strava_dict[message.chat.id] = StravaCommands(message.chat.id)
+
+    strava_command = strava_dict[message.chat.id]
     new_user = message.json.get("new_chat_member")
-    link = get_link_command(message)
+    link = strava_command.get_link_command(message)
 
     if new_user.get('id') == TELEGRAM_BOT_ID:
         bot.reply_to(
@@ -91,6 +81,9 @@ def callback_query(call) -> None:
     """
     
     try:
+        if call.message.chat.id not in strava_dict:
+            strava_dict[call.message.chat.id] = StravaCommands(call.message.chat.id)
+        strava_command = strava_dict[call.message.chat.id]
         command_list = list(
             filter(lambda command: command[0] in call.data, query_commands.items())
         )
@@ -98,8 +91,8 @@ def callback_query(call) -> None:
         if not command_list:
             return
 
-        _, command_function = command_list[0]
-        resultado = command_function(call)
+        _, command_function_name = command_list[0]
+        resultado = strava_command.__getattribute__(command_function_name)(call)
         send_reply_return(resultado, call.message, bot, disable_web_page_preview=True)
         try:
             bot.answer_callback_query(call.id)
@@ -119,6 +112,10 @@ def handle_group_message(message) -> None:
     Handler para escutar comandos de grupo
     """
     try:
+        if message.chat.id not in strava_dict:
+            strava_dict[message.chat.id] = StravaCommands(message.chat.id)
+
+        strava_command = strava_dict[message.chat.id]
         command = message.text[1:].split(" ")[0]
         bot_member = bot.get_chat_member(message.chat.id, bot.get_me().id)
         is_bot_admin = bot_member.status in ["administrator", "creator"]
@@ -127,8 +124,7 @@ def handle_group_message(message) -> None:
 
         if command not in grupo_commands:
             return
-
-        result = grupo_commands[command](message)
+        result = strava_command.__getattribute__(grupo_commands[command])(message)
         data = send_reply_return(result, message, bot, disable_web_page_preview=True)
     except Exception as exc:
         send_reply_return(
