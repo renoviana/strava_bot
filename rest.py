@@ -330,6 +330,7 @@ class StravaGroup:
         if "WeightTraining" in date_dict:
             default_dict["WeightTraining"] = list(date_dict["WeightTraining"].values())
         return default_dict
+
     def get_all_user_data(self, ignore_stats_ids=None, first_day=None, last_day=None):
         if self.last_list_activity_run and datetime.now() - timedelta(minutes=1) < self.last_list_activity_run:
             return self.cache_last_activity
@@ -513,16 +514,11 @@ class StravaGroup:
         Retorna lista de distancias dos usuários
         """
         all_types = []
+        user_dict = self.get_all_user_data(first_day=first_day, last_day=last_day)
         for user in self.membros.keys():
-            activity_list = self.list_activity(
-                user,
-                first_day=first_day,
-                last_day=last_day,
-            )
-            activity_list = list(filter(lambda x: not x["manual"] or x['type'] in ["WeightTraining", "Swim"], activity_list))
-            all_types += list(map(lambda x: x["type"], activity_list))
+            user_data = user_dict.get(user)
+            all_types += list(user_data.keys())
         all_types = list(set(all_types))
-
         all_types = list(filter(lambda x: x not in ['Workout'], all_types))
         return sorted(all_types)
 
@@ -600,8 +596,7 @@ class StravaGroup:
         
         return distance_list
 
-
-    def get_ranking_str(self, sport_type , year_rank=False, first_day=None, last_day=None):
+    def get_ranking_str(self, sport_type , year_rank=False):
         """
         Envia mensagem com o ranking
         Args:

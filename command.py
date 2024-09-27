@@ -8,7 +8,7 @@ class StravaCommands:
     def __init__(self, group_id):
         self.strava_group = StravaGroup(str(group_id))
 
-    def send_ranking_msg_command(self, message):
+    def send_ranking_msg_command(self, _):
         """
         Send ride rank
         Args:
@@ -17,7 +17,7 @@ class StravaCommands:
 
         return self.strava_group.get_ranking_str('Ride')
 
-    def send_ranking_ano_msg_command(self, message):
+    def send_ranking_ano_msg_command(self, _):
         """
         Send ride year rank
         Args:
@@ -57,7 +57,7 @@ class StravaCommands:
         sport = callback.data.replace("syear_", "")
         return self.strava_group.get_ranking_str(sport,year_rank=True)
 
-    def send_point_msg_command(self, message):
+    def send_point_msg_command(self, _):
         """
         Send score ride rank
         Args:
@@ -69,8 +69,7 @@ class StravaCommands:
         )
         return pontos_msg
 
-
-    def send_stats_command(self, message):
+    def send_stats_command(self, _):
         """
         Send ride stats
         Args:
@@ -78,7 +77,7 @@ class StravaCommands:
         """
         return self.strava_group.get_stats_str()
 
-    def admin_command(self, message):
+    def admin_command(self, _):
         """
         Send admin menu
         Args:
@@ -107,14 +106,12 @@ class StravaCommands:
         user_name_admin = call.from_user.first_name or call.from_user.username
         return self.strava_group.remove_strava_user(user_name, user_name_admin)
 
-
     def get_link_command(self, message):
         """
         Send strava link
         """
         group_id = str(message.chat.id)
         return f"https://www.strava.com/oauth/authorize?client_id={STRAVA_CLIENT_ID}&redirect_uri={STRAVA_REDIRECT_URI.format(group_id)}"
-
 
     def metas_command(self, _):
         """
@@ -132,7 +129,6 @@ class StravaCommands:
             ),
         }
 
-
     def custom_meta_command(self, message):
         """
         Send goal question
@@ -145,7 +141,6 @@ class StravaCommands:
                 "tipo_meta": tipo_meta,
             },
         }
-
 
     def add_meta_callback(self, message, data):
         """
@@ -164,7 +159,6 @@ class StravaCommands:
 
         return "Meta adicionada com sucesso"
 
-
     def del_meta_command(self, message):
         """
         Remove goal
@@ -174,7 +168,6 @@ class StravaCommands:
         tipo_meta = message.data.replace("del_meta_meta_", "")
         self.strava_group.save_group_meta(tipo_meta, None)
         return f"Meta {tipo_meta.title()} removida com sucesso"
-
 
     def ignore_ativities_status_callback(self, message):
         """
@@ -187,8 +180,7 @@ class StravaCommands:
         atividade_id = atividade_link.split("/")[-1]
         return self.strava_group.add_ignore_activity(atividade_id)
 
-
-    def get_menu_sports_msg(self, message):
+    def get_menu_sports_msg(self, _):
         """
         Send sport menu
         Args:
@@ -211,7 +203,7 @@ class StravaCommands:
         sport_type = callback.data.replace("strava_", "")
         return self.strava_group.get_ranking_str(sport_type)
 
-    def get_segments(self, message):
+    def get_segments(self, _):
         """
         Send strava segments
         Args:
@@ -219,7 +211,7 @@ class StravaCommands:
         """
         return self.strava_group.get_segments_str()
 
-    def get_medalhas(self, message):
+    def get_medalhas(self, _):
         """
         Send medal rank
         Args:
