@@ -140,7 +140,7 @@ class StravaGroup:
             last_day (datetime): data de fim
         """
 
-        if datetime.now() - timedelta(minutes=1) < self.last_list_activity_run:
+        if self.last_list_activity_run and datetime.now() - timedelta(minutes=1) < self.last_list_activity_run:
             return self.cache_last_activity
 
         if not first_day:
