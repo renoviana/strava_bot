@@ -140,8 +140,7 @@ class StravaGroup:
             last_day (datetime): data de fim
         """
 
-        if self.last_list_activity_run and datetime.now() - timedelta(minutes=1) < self.last_list_activity_run:
-            return self.cache_last_activity
+
 
         if not first_day:
             first_day = datetime.now().replace(
@@ -224,8 +223,6 @@ class StravaGroup:
 
 
         self.list_activities += new_activity_list
-        self.last_list_activity_run = datetime.now()
-        self.cache_last_activity = new_activity_list
         return new_activity_list
 
     def get_athlete_data(
@@ -332,7 +329,21 @@ class StravaGroup:
         if "WeightTraining" in date_dict:
             default_dict["WeightTraining"] = list(date_dict["WeightTraining"].values())
         return default_dict
-
+    def get_all_user_data(self, ignore_stats_ids=None, first_day=None, last_day=None):
+        if self.last_list_activity_run and datetime.now() - timedelta(minutes=1) < self.last_list_activity_run:
+            return self.cache_last_activity
+        user_dict = {}
+        for user, strava in self.membros.items():
+            json_data = self.get_distance_and_points(
+                user,
+                ignore_stats_ids=ignore_stats_ids,
+                first_day=first_day,
+                last_day=last_day,
+            )
+            user_dict[user] = json_data
+        self.cache_last_activity = user_dict
+        self.last_list_activity_run = datetime.now()
+        return user_dict
 
     def get_distance_and_points(
     self, user, ignore_stats_ids=None, first_day=None, last_day=None):
@@ -573,14 +584,9 @@ class StravaGroup:
             )
         ignore_stats_ids = self.ignored_activities
         distance_list = []
-
+        user_dict = self.get_all_user_data(ignore_stats_ids=ignore_stats_ids, first_day=first_day, last_day=last_day)
         for user, strava in self.membros.items():
-            json_data = self.get_distance_and_points(
-                user,
-                ignore_stats_ids=ignore_stats_ids,
-                first_day=first_day,
-                last_day=last_day,
-            )
+            json_data = user_dict.get(user)
 
             if not json_data.get(sport_type):
                 continue
@@ -590,6 +596,7 @@ class StravaGroup:
             json_data['user'] = user
             json_data['user_id'] = strava["athlete_id"]
             distance_list.append(json_data)
+        
         return distance_list
 
 
