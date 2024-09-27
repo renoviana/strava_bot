@@ -6,10 +6,7 @@ class StravaCommands:
     strava_group = None
 
     def __init__(self, group_id):
-        strava_group = StravaGroup(str(group_id))
-
-
-
+        self.strava_group = StravaGroup(str(group_id))
 
     def send_ranking_msg_command(self, message):
         """

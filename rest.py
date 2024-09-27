@@ -8,6 +8,7 @@ from secure import (
 
 class StravaGroup:
     last_list_activity_run = None
+    cache_last_activity = None
     membros = {}
     metas = {}
     ignored_activities = []
