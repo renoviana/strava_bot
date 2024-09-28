@@ -41,6 +41,7 @@ class StravaCommands:
             year=datetime.now().year + 1
         )
         all_type = self.strava_group.list_type_activities(first_day=first_day, last_day=last_day)
+        all_type = list(filter(lambda x: x != "activity_dict", all_type))
 
         if not all_type:
             return "Nenhum atividade encontrada nesse mês"
