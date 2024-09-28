@@ -7,7 +7,7 @@ from secure import (
 )
 
 class StravaGroup:
-    last_list_activity_run = None
+    last_run = None
     cache_last_activity = None
     membros = {}
     metas = {}
@@ -332,19 +332,20 @@ class StravaGroup:
         return default_dict
 
     def get_all_user_data(self, ignore_stats_ids=None, first_day=None, last_day=None):
-        if self.last_list_activity_run and datetime.now() - timedelta(minutes=1) < self.last_list_activity_run:
+        if self.last_run and datetime.now() - timedelta(minutes=1) < self.last_run:
             return self.cache_last_activity
         user_dict = {}
-        for user, strava in self.membros.items():
-            json_data = self.get_distance_and_points(
+        for user in self.membros:
+            json_data, activity_dict = self.get_distance_and_points(
                 user,
                 ignore_stats_ids=ignore_stats_ids,
                 first_day=first_day,
                 last_day=last_day,
             )
+            json_data["activity_dict"] = activity_dict
             user_dict[user] = json_data
         self.cache_last_activity = user_dict
-        self.last_list_activity_run = datetime.now()
+        self.last_run = datetime.now()
         return user_dict
 
     def get_distance_and_points(
@@ -429,7 +430,7 @@ class StravaGroup:
                 result_dict[activity_type]["total_distance"] = round(result_dict[activity_type]["total_distance"] + distance_km, 2)
                 result_dict[activity_type]["total_moving_time"] = round(result_dict[activity_type]["total_moving_time"] + moving_time_ride, 2)
 
-        return result_dict
+        return result_dict, activity_dict
 
     def get_point_str(self):
         """
@@ -437,11 +438,9 @@ class StravaGroup:
         """
         distance_list = []
         ignore_stats_ids = self.ignored_activities or []
+        user_data = self.get_all_user_data(ignore_stats_ids=ignore_stats_ids)
         for user in self.membros.keys():
-            distance = self.get_distance_and_points(
-                user,
-                ignore_stats_ids=ignore_stats_ids
-            )
+            distance = user_data.get(user)
             total_points = 0
             for category in distance:
                 total_points += distance[category].get("total_user_points", 0)
@@ -490,12 +489,10 @@ class StravaGroup:
             "max_elevation_gain": max_elevation_gain_geral,
             "max_moving_time": max_moving_time_geral
         }
+        user_data = self.get_all_user_data(ignore_stats_ids=ignore_stats_ids)
 
         for user in self.membros.keys():
-            distance = self.get_distance_and_points(
-                user,
-                ignore_stats_ids=ignore_stats_ids
-            )
+            distance = user_data.get(user)
             distance = distance.get("Ride")
 
             if not distance:
@@ -742,65 +739,126 @@ class StravaGroup:
 
     def get_segments(self, min_distance=9000):
         """
-        Retorna segmentos
+        Retrieves segments based on a minimum distance.
+
         Args:
-            min_distance (int): distancia minima
+            min_distance (int): The minimum distance for segments.
+
+        Returns:
+            dict: A dictionary containing segment data.
         """
         ignore_stats_ids = self.ignored_activities
-        grupo_members = list(self.membros.items())
+        group_members = list(self.membros.items())
+        user_data = self.get_all_user_data(ignore_stats_ids=ignore_stats_ids)
         all_segments = {}
-        for nome,token in grupo_members:
 
-            activity_list = self.list_activity(
-                nome,
+        for name, token in group_members:
+            # Get filtered activities for the user
+            activities = self._get_user_activities(
+                name, user_data, min_distance, ignore_stats_ids
             )
-            activity_list = list(filter(lambda x: x["type"] in ['Ride'], activity_list))
 
-            for atividade in activity_list:
-                if atividade['distance'] < min_distance:
-                    continue
+            # Process each activity to collect segment efforts
+            for activity in activities:
+                self._process_activity_segments(
+                    activity, name, token, min_distance, all_segments
+                )
 
-                atividade_id = atividade['id']
+        # Collect and filter segment data
+        segment_dict = self._collect_segment_data(all_segments)
 
-                if str(atividade_id) in ignore_stats_ids:
-                    continue
+        return segment_dict
 
+    def _get_user_activities(self, name, user_data, min_distance, ignore_stats_ids):
+        """
+        Retrieves activities for a user that meet the minimum distance criteria.
 
-                atividade_data = self.get_strava_api(f"https://www.strava.com/api/v3/activities/{atividade_id}", {}, nome).json()
-                segment_afforts = atividade_data['segment_efforts']
-                for segment_effort in segment_afforts:
-                    if segment_effort['distance'] < min_distance:
-                        continue
+        Args:
+            name (str): The user's name.
+            user_data (dict): The user data.
+            min_distance (int): The minimum distance.
+            ignore_stats_ids (set): Set of activity IDs to ignore.
 
-                    segment_effort['user'] = nome
-                    segment_effort['access_token'] = token['access_token']
-                    segment_effort['refresh_token'] = token['refresh_token']
-                    segment_effort['atividade_id'] = atividade_id
-                    if segment_effort['segment']['id'] not in all_segments:
-                        all_segments[segment_effort['segment']['id']] = []
+        Returns:
+            list: A list of filtered activities.
+        """
+        activity_list = user_data.get(name, {}).get('activity_dict', {}).get('Ride', [])
+        filtered_activities = []
 
-                    all_segments[segment_effort['segment']['id']].append(segment_effort)
+        for activity in activity_list:
+            if activity['distance'] < min_distance:
+                continue
+            activity_id = activity['id']
+            if str(activity_id) in ignore_stats_ids:
+                continue
+            activity['id'] = activity_id
+            filtered_activities.append(activity)
 
+        return filtered_activities
 
+    def _process_activity_segments(self, activity, name, token, min_distance, all_segments):
+        """
+        Processes an activity to collect segment efforts.
+
+        Args:
+            activity (dict): The activity data.
+            name (str): The user's name.
+            token (dict): The user's token.
+            min_distance (int): The minimum distance.
+            all_segments (dict): Dictionary to collect all segment efforts.
+        """
+        activity_id = activity['id']
+        activity_data = self.get_strava_api(
+            f"https://www.strava.com/api/v3/activities/{activity_id}", {}, name
+        ).json()
+        segment_efforts = activity_data.get('segment_efforts', [])
+
+        for segment_effort in segment_efforts:
+            if segment_effort['distance'] < min_distance:
+                continue
+
+            segment_effort.update({
+                'user': name,
+                'access_token': token['access_token'],
+                'refresh_token': token['refresh_token'],
+                'atividade_id': activity_id
+            })
+            segment_id = segment_effort['segment']['id']
+
+            all_segments.setdefault(segment_id, []).append(segment_effort)
+
+    def _collect_segment_data(self, all_segments):
+        """
+        Collects segment data from segment efforts.
+
+        Args:
+            all_segments (dict): Dictionary containing all segment efforts.
+
+        Returns:
+            dict: A dictionary containing segment data.
+        """
         segment_dict = {}
-        athelete_id = {
-
+        athlete_ids = {}
+        filtered_segments = {
+            k: v for k, v in all_segments.items() if len(v) > 2
         }
 
-        # segment with min 2 athletes
-        all_segments = list(filter(lambda x: len(x[1]) > 2, all_segments.items()))
-        for _, segment_list in all_segments:
+        for segment_list in filtered_segments.values():
             for segment in segment_list:
-                segment_data = self.get_strava_api(f"https://www.strava.com/api/v3/segment_efforts/{segment['id']}", {}, segment['user']).json()
-                atividade_id = segment_data['segment']['id']
-                segment_data['user'] = segment['user']
-                segment_data['atividade_id'] = segment['atividade_id']
-                athelete_id[segment['athlete']['id']] = True
+                segment_data = self.get_strava_api(
+                    f"https://www.strava.com/api/v3/segment_efforts/{segment['id']}",
+                    {},
+                    segment['user']
+                ).json()
 
-                if atividade_id not in segment_dict:
-                    segment_dict[atividade_id] = []
+                activity_id = segment_data['segment']['id']
+                segment_data.update({
+                    'user': segment['user'],
+                    'atividade_id': segment['atividade_id']
+                })
+                athlete_ids[segment['athlete']['id']] = True
 
-                segment_dict[atividade_id].append(segment_data)
+                segment_dict.setdefault(activity_id, []).append(segment_data)
 
         return segment_dict
 
