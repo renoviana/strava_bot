@@ -187,6 +187,7 @@ class StravaCommands:
             message (Message): telegram message
         """
         all_type = self.strava_group.list_type_activities()
+        all_type = list(filter(lambda x: x != "activity_dict", all_type))
 
         if not all_type:
             return "Nenhum atividade encontrada nesse mês"
