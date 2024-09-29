@@ -298,14 +298,14 @@ class StravaGroup:
         for activity in activity_list:
             date_activity = datetime.strptime(activity['start_date_local'], '%Y-%m-%dT%H:%M:%SZ').replace(hour=0, minute=0, second=0, microsecond=0)
             distance_km = round(activity["distance"] / 1000, 2)
-            moving_time_ride = round(activity["moving_time"] / 60, 2)
+            moving_time_ride = activity["moving_time"]
             activity_type = activity["type"]
 
             if activity_type == 'Workout':
                 activity_type = 'WeightTraining'
 
-            if activity_type == 'WeightTraining' and moving_time_ride > 120:
-                moving_time_ride = 120
+            # if activity_type == 'WeightTraining' and moving_time_ride > 120:
+            #     moving_time_ride = 120
 
             if activity_type not in date_dict:
                 date_dict[activity_type] = {}
@@ -314,7 +314,7 @@ class StravaGroup:
                 date_dict[activity_type][date_activity] = activity
             else:
                 old_distance_km = round(date_dict[activity_type][date_activity]["distance"] / 1000, 2)
-                old_moving_time_ride = round(date_dict[activity_type][date_activity]["moving_time"] / 60, 2)
+                old_moving_time_ride = date_dict[activity_type][date_activity]["moving_time"]
                 if activity_type == 'WeightTraining':
                     if old_moving_time_ride < moving_time_ride:
                         date_dict[activity_type][date_activity] = activity
