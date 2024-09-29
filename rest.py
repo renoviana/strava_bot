@@ -387,7 +387,7 @@ class StravaGroup:
                 max_average_speed_ride_km = round(activity["average_speed"] * 3.6, 2)
                 total_elevation_gain_ride = round(activity["total_elevation_gain"], 2)
                 distance_km = round(activity["distance"] / 1000, 2)
-                moving_time_ride = round(activity["moving_time"] / 60, 2)
+                moving_time_ride = activity["moving_time"]
 
                 if moving_time_ride < 5:
                     continue
