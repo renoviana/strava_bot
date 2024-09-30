@@ -298,14 +298,14 @@ class StravaGroup:
         for activity in activity_list:
             date_activity = datetime.strptime(activity['start_date_local'], '%Y-%m-%dT%H:%M:%SZ').replace(hour=0, minute=0, second=0, microsecond=0)
             distance_km = round(activity["distance"] / 1000, 2)
-            moving_time_ride = round(activity["moving_time"] / 60, 2)
+            moving_time_ride = activity["moving_time"]
             activity_type = activity["type"]
 
             if activity_type == 'Workout':
                 activity_type = 'WeightTraining'
 
-            if activity_type == 'WeightTraining' and moving_time_ride > 120:
-                moving_time_ride = 120
+            if activity_type == 'WeightTraining' and moving_time_ride > 7200:
+                moving_time_ride = 7200
 
             if activity_type not in date_dict:
                 date_dict[activity_type] = {}
@@ -314,7 +314,7 @@ class StravaGroup:
                 date_dict[activity_type][date_activity] = activity
             else:
                 old_distance_km = round(date_dict[activity_type][date_activity]["distance"] / 1000, 2)
-                old_moving_time_ride = round(date_dict[activity_type][date_activity]["moving_time"] / 60, 2)
+                old_moving_time_ride = date_dict[activity_type][date_activity]["moving_time"]
                 if activity_type == 'WeightTraining':
                     if old_moving_time_ride < moving_time_ride:
                         date_dict[activity_type][date_activity] = activity
@@ -387,13 +387,16 @@ class StravaGroup:
                 max_average_speed_ride_km = round(activity["average_speed"] * 3.6, 2)
                 total_elevation_gain_ride = round(activity["total_elevation_gain"], 2)
                 distance_km = round(activity["distance"] / 1000, 2)
-                moving_time_ride = round(activity["moving_time"] / 60, 2)
+                moving_time_ride = activity["moving_time"]
 
-                if moving_time_ride < 5:
+                if moving_time_ride < 300:
                     continue
 
                 manual_ride = activity["manual"]
                 ignore_stats = str(activity.get('id')) in ignore_stats_ids
+
+                if ignore_stats:
+                    pass
 
                 if distance_km > 400:
                     continue
@@ -421,17 +424,22 @@ class StravaGroup:
                     result_dict[activity_type]["max_elevation_gain"]['activity_id'] = activity.get('id')
 
                 if moving_time_ride > result_dict[activity_type]["max_moving_time"]['value'] and not ignore_stats:
-                    result_dict[activity_type]["max_moving_time"]['value'] = round(moving_time_ride, 2)
+                    result_dict[activity_type]["max_moving_time"]['value'] = moving_time_ride
                     result_dict[activity_type]["max_moving_time"]['activity_id'] = activity.get('id')
 
                 result_dict[activity_type]["total_user_points"] = round(self.calc_point_rank(
                     result_dict[activity_type]["total_user_points"], total_elevation_gain_ride, distance_km, activity_type
                 ), 2)
                 result_dict[activity_type]["total_distance"] = round(result_dict[activity_type]["total_distance"] + distance_km, 2)
-                result_dict[activity_type]["total_moving_time"] = round(result_dict[activity_type]["total_moving_time"] + moving_time_ride, 2)
+                result_dict[activity_type]["total_moving_time"] = round(result_dict[activity_type]["total_moving_time"] + moving_time_ride)
 
         return result_dict, activity_dict
 
+    def format_seconds_to_mm_ss(self, seconds):
+        hours = seconds // 3600
+        minutes = (seconds % 3600) // 60
+        seconds = seconds % 60
+        return f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
     def get_point_str(self):
         """
         Retorna lista de pontos dos usuários
@@ -506,7 +514,7 @@ class StravaGroup:
         msg_texto += f"Maior velocidade: <a href=\"https://www.strava.com/activities/{max_velocity_geral['activity_id']}\">{round(max_velocity_geral['value'],2)}km/h - {max_velocity_geral['user'].title()}</a>\n"
         msg_texto += f"Maior velocidade média: <a href=\"https://www.strava.com/activities/{max_average_speed_geral['activity_id']}\">{round(max_average_speed_geral['value'],2)}km/h - {max_average_speed_geral['user'].title()}</a>\n"
         msg_texto += f"Maior ganho de elevação: <a href=\"https://www.strava.com/activities/{max_elevation_gain_geral['activity_id']}\">{round(max_elevation_gain_geral['value'],2)}m - {max_elevation_gain_geral['user'].title()}</a>\n"
-        msg_texto += f"Maior tempo de movimento: <a href=\"https://www.strava.com/activities/{max_moving_time_geral['activity_id']}\">{round(max_moving_time_geral['value'],2)}min - {max_moving_time_geral['user'].title()}</a>\n"
+        msg_texto += f"Maior tempo de movimento: <a href=\"https://www.strava.com/activities/{max_moving_time_geral['activity_id']}\">{self.format_seconds_to_mm_ss(max_moving_time_geral['value'])} - {max_moving_time_geral['user'].title()}</a>\n"
         return msg_texto
 
     def list_type_activities(self, first_day=None, last_day=None):
@@ -540,6 +548,10 @@ class StravaGroup:
         for user in data:
             rank_data = user.get(rank_params)
             emoji = ""
+
+            if rank_params == 'total_moving_time':
+                rank_data = self.format_seconds_to_mm_ss(rank_data)
+                rank_unit = ""
 
             if strava_month_distance and rank_data >= strava_month_distance:
                 emoji = "✅"
