@@ -190,6 +190,7 @@ class StravaGroup:
             after_date=first_day,
             before_date=last_day,
         )
+        lista_geral += new_activity_list
 
         if activity_id:
             index_data = self.last_id_in_list(new_activity_list, activity_id)
@@ -201,8 +202,8 @@ class StravaGroup:
                     add_strava_activity(activity)
                 return new_activity_list + list(new_data)
 
-
-
+        
+        page = 1
         while len(new_activity_list) % 100 == 0 and len(new_activity_list) != 0:
             page += 1
             new_activity_list = self.get_athlete_data(
@@ -217,7 +218,7 @@ class StravaGroup:
                 for activity in new_activity_list:
                     activity['group_id'] = self.group_id
                     add_strava_activity(activity)
-                return new_activity_list + new_data, new_activity_list
+                return new_activity_list + new_data
             
             lista_geral += new_activity_list
 
@@ -225,7 +226,7 @@ class StravaGroup:
             activity['group_id'] = self.group_id
             add_strava_activity(activity)
         
-        return lista_geral, lista_geral
+        return lista_geral
 
     def get_athlete_data(
         self,

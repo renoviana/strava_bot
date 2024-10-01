@@ -90,7 +90,7 @@ def add_strava_group(telegram_group_id, membros={}, metas={}, ignored_activities
     ).save()
 
 def add_strava_activity(data):
-    if StravaActivity.objects(activity_id=data['id']).first():
+    if StravaActivity.objects(activity_id=data['id'], group_id=data['group_id']).first():
         return
 
     data_copy = data.copy()
