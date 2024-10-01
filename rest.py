@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 import requests
-from model import add_strava_group, get_strava_group
+from model import add_strava_activity, add_strava_group, get_last_strava_activity, get_strava_group, list_strava_activities
 from secure import (
     STRAVA_CLIENT_ID,
     STRAVA_CLIENT_SECRET,
@@ -26,8 +26,6 @@ class StravaGroup:
         self.membros = self.strava_entity.membros
         self.ignored_activities = self.strava_entity.ignored_activities
         self.medalhas = self.strava_entity.medalhas or {}
-        self.cache_data = self.strava_entity.cache_data or []
-        self.cache_data = sorted(self.cache_data, key=lambda x: datetime.strptime(x['start_date_local'], '%Y-%m-%dT%H:%M:%SZ'), reverse=True)
         self.list_activities = []
 
     def get_victory_str(self, sport_type,  user_name):
@@ -119,6 +117,14 @@ class StravaGroup:
         self.update_entity()
         return new_token["access_token"], new_token["refresh_token"]
 
+    def last_id_in_list(self, lista, last_id):
+        for index, data in enumerate(lista):
+            if last_id == data['id']:
+                return index
+        
+        return None
+
+
     def get_user_access_and_refresh_token(self, user):
         """
         Retorna access token e refresh token do usuário
@@ -143,8 +149,6 @@ class StravaGroup:
             last_day (datetime): data de fim
         """
 
-
-
         if not first_day:
             first_day = datetime.now().replace(
                 day=1,
@@ -156,77 +160,72 @@ class StravaGroup:
 
         if not last_day:
             last_day = datetime.now() + timedelta(minutes=1)
+        
+        query = {
+            "athlete.id":  self.membros[user].get('athlete_id'),
+            "start_date_local": {
+                "$gte": first_day,
+                "$lt": last_day,
+            }
+        }
 
+        data = list_strava_activities(self.group_id, query)
+        new_data = []
+        for i in data:
+            data_dict = i.to_mongo().to_dict()
+            data_dict['type'] = data_dict['activity_type']
+            data_dict['id'] = data_dict['activity_id']
+            data_dict['map'] = data_dict['activity_map']
+            del data_dict['activity_type']
+            del data_dict['activity_id']
+            del data_dict['activity_map']
+            new_data.append(data_dict)
+
+        activity_id = None
+        if data:
+            activity_id = data[0]['activity_id']
+        lista_geral = []
         new_activity_list = self.get_athlete_data(
             user,
             after_date=first_day,
             before_date=last_day,
         )
 
-        if self.cache_data and new_activity_list:
-            last_activity_id = None
-            user_activity_list = list(filter(lambda x: x['athlete']['id'] == self.membros[user].get('athlete_id') and datetime.strptime(x['start_date_local'], '%Y-%m-%dT%H:%M:%SZ') >= first_day and datetime.strptime(x['start_date_local'], '%Y-%m-%dT%H:%M:%SZ') <= last_day, self.cache_data))
-            if user_activity_list:
-                last_activity_id = user_activity_list[0]['id']
-                
-                if new_activity_list:
-                    last_index = len(new_activity_list)
-                    if last_activity_id:
-                        for index, activity in enumerate(new_activity_list):
-                            if activity['id'] == last_activity_id:
-                                last_index = index
-                                break
-                        new_activity_list = new_activity_list[:last_index]
+        if activity_id:
+            index_data = self.last_id_in_list(new_activity_list, activity_id)
+            if index_data is not None:
+                new_activity_list = new_activity_list[:index_data]
 
-                    if new_activity_list:
-                        self.cache_data = new_activity_list + self.cache_data
-                        self.update_entity()
-                return list(
-                        filter(
-                            lambda x: datetime.strptime(x['start_date_local'], '%Y-%m-%dT%H:%M:%SZ') >= first_day and datetime.strptime(x['start_date_local'], '%Y-%m-%dT%H:%M:%SZ') <= last_day,
-                            new_activity_list + user_activity_list
-                        )
-                    )
+                for activity in new_activity_list:
+                    activity['group_id'] = self.group_id
+                    add_strava_activity(activity)
+                return new_activity_list + list(new_data)
 
-        page = 1
+
+
         while len(new_activity_list) % 100 == 0 and len(new_activity_list) != 0:
             page += 1
-            new_activity_list += self.get_athlete_data(
+            new_activity_list = self.get_athlete_data(
                 user,
                 after_date=first_day,
                 before_date=last_day,
                 page=page,
             )
+            index_data = self.last_id_in_list(new_activity_list, activity_id)
+            if index_data:
+                new_activity_list = new_activity_list[:index_data]
+                for activity in new_activity_list:
+                    activity['group_id'] = self.group_id
+                    add_strava_activity(activity)
+                return new_activity_list + new_data, new_activity_list
+            
+            lista_geral += new_activity_list
 
-            if self.cache_data and new_activity_list:
-                last_activity_id = None
-                user_activity_list = list(filter(lambda x: x['athlete']['id'] == self.membros[user].get('athlete_id'), self.cache_data))
-                if user_activity_list:
-                    last_activity_id = user_activity_list[0]['id']
-
-                    if new_activity_list:
-                        last_index = len(new_activity_list)
-                        if last_activity_id:
-                            for index, activity in enumerate(new_activity_list):
-                                if activity['id'] == last_activity_id:
-                                    last_index = index
-                                    break
-                            new_activity_list = new_activity_list[:last_index]
-
-                        if new_activity_list:
-                            self.cache_data = new_activity_list + self.cache_data
-                            self.update_entity()
-                    return list(
-                            filter(
-                                lambda x: datetime.strptime(x['start_date_local'], '%Y-%m-%dT%H:%M:%SZ') >= first_day and datetime.strptime(x['start_date_local'], '%Y-%m-%dT%H:%M:%SZ') <= last_day,
-                                new_activity_list + user_activity_list
-                            )
-                        )
-
-
-
-        self.list_activities += new_activity_list
-        return new_activity_list
+        for activity in lista_geral:
+            activity['group_id'] = self.group_id
+            add_strava_activity(activity)
+        
+        return lista_geral, lista_geral
 
     def get_athlete_data(
         self,
@@ -257,11 +256,7 @@ class StravaGroup:
         response = self.get_strava_api(url, params, user)
         return response.json()
 
-    def remove_cache_data_duplicates(self):
-        """
-        Remove duplicatas do cache
-        """
-        self.cache_data = list({v['id']:v for v in self.cache_data}.values())
+
 
     def update_entity(self):
         """
@@ -271,9 +266,6 @@ class StravaGroup:
         self.strava_entity.membros = self.membros
         self.strava_entity.ignored_activities = self.ignored_activities
         self.strava_entity.medalhas = self.medalhas
-        self.remove_cache_data_duplicates()
-        self.strava_entity.cache_data = self.cache_data
-        self.strava_entity.cache_data = sorted(self.cache_data, key=lambda x: datetime.strptime(x['start_date_local'], '%Y-%m-%dT%H:%M:%SZ'), reverse=True)
         self.strava_entity.save()
     
     def get_activity_list_by_type(
@@ -298,7 +290,9 @@ class StravaGroup:
         default_dict = {}
         date_dict = {}
         for activity in activity_list:
-            date_activity = datetime.strptime(activity['start_date_local'], '%Y-%m-%dT%H:%M:%SZ').replace(hour=0, minute=0, second=0, microsecond=0)
+            if isinstance(activity["start_date_local"], str):
+                activity["start_date_local"] = datetime.strptime(activity["start_date_local"], '%Y-%m-%dT%H:%M:%SZ')
+            date_activity = activity['start_date_local'].replace(hour=0, minute=0, second=0, microsecond=0)
             distance_km = round(activity["distance"] / 1000, 2)
             moving_time_ride = activity["moving_time"]
             activity_type = activity["type"]
@@ -658,10 +652,6 @@ class StravaGroup:
         if sport_type.lower() in sport_rank_by_time_list:
             rank_params = 'total_moving_time'
             rank_unit = "min"
-
-        if self.list_activities:
-            self.cache_data += self.list_activities
-            self.update_entity()
 
         distance_list = self.get_rank(sport_type, year_rank, first_day=None, last_day=None)
         sort_distance_list = sorted(
