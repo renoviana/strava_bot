@@ -9,6 +9,8 @@ from secure import (
 class StravaGroup:
     last_run = None
     cache_last_activity = None
+    cache_first_day = None
+    cache_last_day = None
     membros = {}
     metas = {}
     ignored_activities = []
@@ -332,8 +334,21 @@ class StravaGroup:
         return default_dict
 
     def get_all_user_data(self, ignore_stats_ids=None, first_day=None, last_day=None):
-        if self.last_run and datetime.now() - timedelta(minutes=1) < self.last_run:
+        if not first_day:
+            first_day = datetime.now().replace(
+                day=1,
+                hour=0,
+                minute=0,
+                second=0,
+                microsecond=0,
+            )
+
+        if not last_day:
+            last_day = datetime.now() + timedelta(minutes=1)
+
+        if self.last_run and datetime.now() - timedelta(minutes=1) < self.last_run and self.cache_last_day == last_day and self.cache_first_day == first_day:
             return self.cache_last_activity
+
         user_dict = {}
         for user in self.membros:
             json_data, activity_dict = self.get_distance_and_points(
@@ -345,6 +360,8 @@ class StravaGroup:
             json_data["activity_dict"] = activity_dict
             user_dict[user] = json_data
         self.cache_last_activity = user_dict
+        self.cache_first_day = first_day
+        self.cache_last_day = last_day
         self.last_run = datetime.now()
         return user_dict
 
