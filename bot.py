@@ -15,7 +15,7 @@ strava_dict = {}
 
 
 grupo_commands = {
-    "rank": 'send_ranking_msg_command',
+    "rank": 'get_menu_sports_msg',
     'year':'send_ranking_ano_msg_command',
     "score": 'send_point_msg_command',
     "yscore": 'send_year_point_msg_command',

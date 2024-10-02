@@ -8,15 +8,6 @@ class StravaCommands:
     def __init__(self, group_id):
         self.strava_group = StravaGroup(str(group_id))
 
-    def send_ranking_msg_command(self, _):
-        """
-        Send ride rank
-        Args:
-            message (Message): telegram message
-        """
-
-        return self.strava_group.get_ranking_str('Ride')
-
     def send_ranking_ano_msg_command(self, _):
         """
         Send ride year rank
