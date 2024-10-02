@@ -269,9 +269,6 @@ class StravaGroup:
         Calcula a distancia total e os pontos do usuário
         Args:
             user (str): usuario
-            sport_list (str): tipo de esporte
-            ignore_stats_ids (list): lista de ids de atividades ignoradas
-            ignore_cache (bool): ignorar cache
             first_day (datetime): data de inicio
             last_day (datetime): data de fim
         """
@@ -282,45 +279,52 @@ class StravaGroup:
             last_day=last_day,
         )
 
-        default_dict = {}
-        date_dict = {}
+        activity_dict = {}
+        gym_dict = {}
         for activity in activity_list:
             if isinstance(activity["start_date_local"], str):
                 activity["start_date_local"] = datetime.strptime(activity["start_date_local"], '%Y-%m-%dT%H:%M:%SZ')
-            date_activity = activity['start_date_local'].replace(hour=0, minute=0, second=0, microsecond=0)
-            distance_km = round(activity["distance"] / 1000, 2)
-            moving_time_ride = activity["moving_time"]
+
             activity_type = activity["type"]
 
             if activity_type == 'Workout':
                 activity_type = 'WeightTraining'
 
-            if activity_type == 'WeightTraining' and moving_time_ride > 7200:
-                moving_time_ride = 7200
+            if activity_type == 'WeightTraining' and activity["moving_time"] > 7200:
+                activity["moving_time"] = 7200
+                
+            gym_dict = self.update_gym_dict(gym_dict, activity)
 
-            if activity_type not in date_dict:
-                date_dict[activity_type] = {}
+            if activity_type not in activity_dict:
+                activity_dict[activity_type] = []
 
-            if date_activity not in date_dict[activity_type]:
-                date_dict[activity_type][date_activity] = activity
-            else:
-                old_distance_km = round(date_dict[activity_type][date_activity]["distance"] / 1000, 2)
-                old_moving_time_ride = date_dict[activity_type][date_activity]["moving_time"]
-                if activity_type == 'WeightTraining':
-                    if old_moving_time_ride < moving_time_ride:
-                        date_dict[activity_type][date_activity] = activity
-                else:
-                    if old_distance_km < distance_km:
-                        date_dict[activity_type][date_activity] = activity
+            activity_dict[activity_type].append(activity)
 
-            if activity_type not in default_dict:
-                default_dict[activity_type] = []
+        if  gym_dict:
+            activity_dict["WeightTraining"] = list(gym_dict.values())
+        return activity_dict
 
-            default_dict[activity_type].append(activity)
+    def update_gym_dict(self, gym_dict, activity):
+        """
+        Atualiza dicionario de atividades
+        Args:
+            gym_dict (dict): dicionario de atividades
+            activity (dict): atividade
+        """
+        if activity["type"] != 'WeightTraining':
+            return gym_dict
+    
+        date_activity = activity['start_date_local'].replace(hour=0, minute=0, second=0, microsecond=0)
+        moving_time_ride = activity["moving_time"]
 
-        if "WeightTraining" in date_dict:
-            default_dict["WeightTraining"] = list(date_dict["WeightTraining"].values())
-        return default_dict
+        if date_activity not in gym_dict:
+            gym_dict[date_activity] = activity
+            return gym_dict
+
+        old_moving_time_ride = gym_dict[date_activity]["moving_time"]
+        if old_moving_time_ride < moving_time_ride:
+            gym_dict[date_activity] = activity
+        return gym_dict
 
     def get_all_user_data(self, ignore_stats_ids=None, first_day=None, last_day=None):
         if not first_day:
