@@ -163,6 +163,7 @@ class StravaCommands:
                 [
                     ("Bicicleta", "meta_ride"),
                     ("Corrida/Caminhada", "meta_run"),
+                    ("WeightTraining", "meta_weighttraining"),
                 ],
                 delete_option=True,
                 delete_data="meta",
