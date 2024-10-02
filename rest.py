@@ -33,6 +33,7 @@ class StravaGroup:
         """
         Retorna mensagem de vitoria
         Args:
+            sport_type (str): tipo de esporte
             user_name (str): nome do usuário
         """
         victory_dict = self.medalhas.get(sport_type, {}).get(user_name.lower(), {})
@@ -81,22 +82,6 @@ class StravaGroup:
             )
 
         return response
-
-    def add_user(self, athlete_name, access_token, refresh_token, athlete_id):
-        """
-        Adiciona usuário
-        Args:
-            athlete_name (str): nome do atleta
-            access_token (str): access token
-            refresh_token (str): refresh token
-            athlete_id (str): id do atleta
-        """
-        self.membros[athlete_name] = {
-            "access_token": access_token,
-            "refresh_token": refresh_token,
-            "athlete_id": athlete_id,
-        }
-        self.update_entity()
 
     def update_user_token(self, user, refresh_token):
         """
@@ -358,6 +343,14 @@ class StravaGroup:
         self.last_run = datetime.now()
         return user_dict
 
+    def ignore_activity_rules(self, activity):
+        """
+        Ignora atividades com menos de 5 minutos, mais de 400 km ou atividades manuais que não sejam de natação ou musculação
+        Args:
+            activity (dict): atividade
+        """
+        return activity["moving_time"] < 300 or round(activity["distance"] / 1000, 2) > 400 or activity["manual"] and activity["type"] not in ["WeightTraining", "Swim"]
+
     def get_distance_and_points(
     self, user, ignore_stats_ids=None, first_day=None, last_day=None):
         """
@@ -389,9 +382,9 @@ class StravaGroup:
 
 
         for activity_type, activity_list in activity_dict.items():
-
             if activity_type not in result_dict:
                 result_dict[activity_type] = default_dict.copy()
+
             for activity in activity_list:
                 max_speed_ride_km = round(activity["max_speed"] * 3.6, 2)
                 max_average_speed_ride_km = round(activity["average_speed"] * 3.6, 2)
@@ -399,21 +392,10 @@ class StravaGroup:
                 distance_km = round(activity["distance"] / 1000, 2)
                 moving_time_ride = activity["moving_time"]
 
-                if moving_time_ride < 300:
+                if self.ignore_activity_rules(activity):
                     continue
 
-                manual_ride = activity["manual"]
-                ignore_stats = str(activity.get('id')) in ignore_stats_ids
-
-                if ignore_stats:
-                    pass
-
-                if distance_km > 400:
-                    continue
-
-                if manual_ride and activity_type not in ["WeightTraining", "Swim"]:
-                    continue
-
+                ignore_stats = str(activity.get('id', activity.get('activity_id'))) in ignore_stats_ids
                 if distance_km > result_dict[activity_type]["max_distance"]['value'] and not ignore_stats:
                     result_dict[activity_type]["max_distance"]['value'] = round(distance_km, 2)
                     result_dict[activity_type]["max_distance"]['activity_id'] = activity.get('id')
@@ -596,7 +578,7 @@ class StravaGroup:
             rank_list.append(f"{index_data+1}º - {user_name}{self.get_victory_str(sport_type ,user_name)} - {rank_data}{rank_unit} {emoji}")
         return "\n".join(rank_list)
 
-    def get_rank(self, sport_type, year_rank=False, first_day=None, last_day=None):
+    def get_sport_rank(self, sport_type, year_rank=False, first_day=None, last_day=None):
         """
         Retorna lista de distancias dos usuários
         Args:
@@ -674,7 +656,7 @@ class StravaGroup:
             rank_params = 'total_moving_time'
             rank_unit = "min"
 
-        distance_list = self.get_rank(sport_type, year_rank, first_day=None, last_day=None)
+        distance_list = self.get_sport_rank(sport_type, year_rank, first_day=None, last_day=None)
         sort_distance_list = sorted(
             distance_list, key=lambda k: k[rank_params], reverse=True
         )
@@ -683,7 +665,7 @@ class StravaGroup:
         ranking_dict = {}
 
         for data in distance_list:
-            if data.get(rank_params) < 0:
+            if data.get(rank_params) <= 0:
                 continue
     
             params = data.get(rank_params)
@@ -699,17 +681,15 @@ class StravaGroup:
 
         rank_msg_list = list(
             map(
-                lambda i: self.rank_format(i[0],ranking_dict[i[1]], sport_type.lower(), rank_unit=rank_unit, rank_params=rank_params),
+                lambda index, data, : self.rank_format(index, ranking_dict[data], sport_type.lower(), rank_unit=rank_unit, rank_params=rank_params),
                 enumerate(sort_distance_list),
             )
         )
         msg = "\n".join(rank_msg_list)
         msg = msg_template + msg
 
-        if not year_rank:
-            strava_month_distance = self.metas.get(sport_type.lower())
-            if strava_month_distance:
-                msg += f"\n\n⚠️ Meta individual do mês: {strava_month_distance}km"
+        if not year_rank and self.metas.get(sport_type.lower()):
+            msg += f"\n\n⚠️ Meta individual do mês: {self.metas.get(sport_type.lower())}km"
 
         return msg
 
@@ -793,20 +773,16 @@ class StravaGroup:
         all_segments = {}
 
         for name, token in group_members:
-            # Get filtered activities for the user
             activities = self._get_user_activities(
                 name, user_data, min_distance, ignore_stats_ids
             )
 
-            # Process each activity to collect segment efforts
             for activity in activities:
                 self._process_activity_segments(
                     activity, name, token, min_distance, all_segments
                 )
 
-        # Collect and filter segment data
         segment_dict = self._collect_segment_data(all_segments)
-
         return segment_dict
 
     def _get_user_activities(self, name, user_data, min_distance, ignore_stats_ids):
