@@ -349,7 +349,7 @@ class StravaGroup:
         Args:
             activity (dict): atividade
         """
-        return activity["moving_time"] < 300 or round(activity["distance"] / 1000, 2) > 400 or activity["manual"] and activity["type"] not in ["WeightTraining", "Swim"]
+        return activity["moving_time"] < 300 or round(activity["distance"] / 1000, 2) > 400 or (activity["manual"] and activity["type"] not in ["WeightTraining", "Swim"])
 
     def get_distance_and_points(
     self, user, ignore_stats_ids=None, first_day=None, last_day=None):
