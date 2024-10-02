@@ -501,6 +501,7 @@ class StravaGroup:
         Retorna lista de pontos dos usuários
         """
         first_day, last_day = None, None
+        date_str = "mês"
         if year_stats:
             first_day = datetime.now().replace(
                 day=1,
@@ -519,6 +520,7 @@ class StravaGroup:
                 month=1,
                 year=datetime.now().year + 1
             )
+            date_str = "ano"
         ignore_stats_ids = self.ignored_activities
         max_distance_geral = {"user": '', "value": 0, "activity_id": None}
         max_velocity_geral = {"user": '', "value": 0, "activity_id": None}
@@ -544,7 +546,7 @@ class StravaGroup:
             for metric in max_metrics:
                 self.update_max_metrics(metric, user, distance, max_metrics)
 
-        msg_texto = "🚲💨  Estatísticas do mês 🚲💨\n"
+        msg_texto = f"🚲💨  Estatísticas do {date_str} 🚲💨\n"
         msg_texto += f"Maior distância: <a href=\"https://www.strava.com/activities/{max_distance_geral['activity_id']}\">{round(max_distance_geral['value'],2)}km - {max_distance_geral['user'].title()}</a>\n"
         msg_texto += f"Maior velocidade: <a href=\"https://www.strava.com/activities/{max_velocity_geral['activity_id']}\">{round(max_velocity_geral['value'],2)}km/h - {max_velocity_geral['user'].title()}</a>\n"
         msg_texto += f"Maior velocidade média: <a href=\"https://www.strava.com/activities/{max_average_speed_geral['activity_id']}\">{round(max_average_speed_geral['value'],2)}km/h - {max_average_speed_geral['user'].title()}</a>\n"
