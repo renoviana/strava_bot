@@ -705,7 +705,13 @@ class StravaGroup:
             if user_name_db == user_name:
                 continue
             new_grupo_dict[user_name_db] = strava_data
-
+        
+        athlete_id = self.membros[user_name].get('athlete_id')
+        query = {
+            "athlete.id":  athlete_id,
+            "group_id": self.group_id,
+        }
+        StravaActivity.objects(__raw__=query).delete()
         self.membros = new_grupo_dict
         self.update_entity()
         return f"Usuário {user_name} removido com sucesso pelo {user_name_admin}!"
@@ -945,3 +951,4 @@ class StravaGroup:
             name, medalhas = i
             msg_list.append(f"{index+1}º - {name.title()} 🥇{medalhas['lider']} 🥈{medalhas['segundo']} 🥉{medalhas['terceiro']}")
         return "\n".join(msg_list)
+    
