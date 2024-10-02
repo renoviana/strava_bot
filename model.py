@@ -107,10 +107,23 @@ def get_strava_activity(activity_id):
 
 def list_strava_activities(group_id, query=None, order_by='-start_date_local'):
     if not query:
-        return StravaActivity.objects(group_id=group_id).order_by(order_by).all()
-    
-    query['group_id'] = group_id
-    return StravaActivity.objects(__raw__=query).order_by(order_by).all()
+        data = StravaActivity.objects(group_id=group_id).order_by(order_by).all()
+    else:
+        query['group_id'] = group_id
+        data = StravaActivity.objects(__raw__=query).order_by(order_by).all()
+
+    new_data = []
+    for i in data:
+        data_dict = i.to_mongo().to_dict()
+        data_dict['type'] = data_dict['activity_type']
+        data_dict['id'] = data_dict['activity_id']
+        data_dict['map'] = data_dict['activity_map']
+        del data_dict['activity_type']
+        del data_dict['activity_id']
+        del data_dict['activity_map']
+        new_data.append(data_dict)
+    return new_data
+
 
 def get_last_strava_activity(group_id, athlete_id):
     query = {

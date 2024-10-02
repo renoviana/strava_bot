@@ -169,21 +169,10 @@ class StravaGroup:
             }
         }
 
-        data = list_strava_activities(self.group_id, query)
-        new_data = []
-        for i in data:
-            data_dict = i.to_mongo().to_dict()
-            data_dict['type'] = data_dict['activity_type']
-            data_dict['id'] = data_dict['activity_id']
-            data_dict['map'] = data_dict['activity_map']
-            del data_dict['activity_type']
-            del data_dict['activity_id']
-            del data_dict['activity_map']
-            new_data.append(data_dict)
-
+        new_data = list_strava_activities(self.group_id, query)
         activity_id = None
-        if data:
-            activity_id = data[0]['activity_id']
+        if new_data:
+            activity_id = new_data[0]['id']
         lista_geral = []
         new_activity_list = self.get_athlete_data(
             user,
@@ -208,11 +197,15 @@ class StravaGroup:
                 before_date=last_day,
                 page=page,
             )
+            
             index_data = self.last_id_in_list(new_activity_list, activity_id)
-            if index_data:
+            if index_data is not None:
                 new_activity_list = new_activity_list[:index_data]
-                self.process_activities(new_activity_list)
-                return new_activity_list + new_data
+                lista_geral += new_activity_list
+                self.process_activities(lista_geral)
+                return new_activity_list + list(new_data)
+            else:
+                lista_geral += new_activity_list
             
             lista_geral += new_activity_list
         self.process_activities(lista_geral)
