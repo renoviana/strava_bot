@@ -681,7 +681,7 @@ class StravaGroup:
 
         rank_msg_list = list(
             map(
-                lambda index, data, : self.rank_format(index, ranking_dict[data], sport_type.lower(), rank_unit=rank_unit, rank_params=rank_params),
+                lambda i : self.rank_format(i[0], ranking_dict[i[1]], sport_type.lower(), rank_unit=rank_unit, rank_params=rank_params),
                 enumerate(sort_distance_list),
             )
         )
