@@ -335,8 +335,14 @@ class StravaGroup:
                 first_day=first_day,
                 last_day=last_day,
             )
-            json_data["activity_dict"] = activity_dict
-            user_dict[user] = json_data
+            json_data_new = {}
+            for activity_name, activity_data in json_data.items():
+                if activity_data.get("total_distance") == 0 and activity_data.get("total_moving_time") == 0:
+                    continue
+                json_data_new[activity_name] = activity_data
+
+            json_data_new["activity_dict"] = activity_dict
+            user_dict[user] = json_data_new
         self.cache_last_activity = user_dict
         self.cache_first_day = first_day
         self.cache_last_day = last_day
