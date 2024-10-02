@@ -1,10 +1,11 @@
 from datetime import datetime, timedelta
 import requests
-from model import add_strava_activity, add_strava_group, get_last_strava_activity, get_strava_group, list_strava_activities
+from model import StravaActivity, add_strava_group, get_strava_group, list_strava_activities
 from secure import (
     STRAVA_CLIENT_ID,
     STRAVA_CLIENT_SECRET,
 )
+from dateutil.relativedelta import relativedelta
 
 class StravaGroup:
     last_run = None
@@ -124,7 +125,6 @@ class StravaGroup:
         
         return None
 
-
     def get_user_access_and_refresh_token(self, user):
         """
         Retorna access token e refresh token do usuário
@@ -196,13 +196,9 @@ class StravaGroup:
             index_data = self.last_id_in_list(new_activity_list, activity_id)
             if index_data is not None:
                 new_activity_list = new_activity_list[:index_data]
-
-                for activity in new_activity_list:
-                    activity['group_id'] = self.group_id
-                    add_strava_activity(activity)
+                self.process_activities(new_activity_list)
                 return new_activity_list + list(new_data)
 
-        
         page = 1
         while len(new_activity_list) % 100 == 0 and len(new_activity_list) != 0:
             page += 1
@@ -215,18 +211,27 @@ class StravaGroup:
             index_data = self.last_id_in_list(new_activity_list, activity_id)
             if index_data:
                 new_activity_list = new_activity_list[:index_data]
-                for activity in new_activity_list:
-                    activity['group_id'] = self.group_id
-                    add_strava_activity(activity)
+                self.process_activities(new_activity_list)
                 return new_activity_list + new_data
             
             lista_geral += new_activity_list
-
-        for activity in lista_geral:
-            activity['group_id'] = self.group_id
-            add_strava_activity(activity)
-        
+        self.process_activities(lista_geral)
         return lista_geral
+
+    def process_activities(self, new_activity_list):
+        mongo_lista = []
+        for activity in new_activity_list:
+            activity_dict = activity.copy()
+            activity_dict['group_id'] = self.group_id
+            activity_dict['activity_type'] = activity_dict['type']
+            activity_dict['activity_id'] = activity_dict['id']
+            activity_dict['activity_map'] = activity_dict['map']
+            del activity_dict['type']
+            del activity_dict['id']
+            del activity_dict['map']
+            mongo_lista.append(StravaActivity(**activity_dict))
+        if mongo_lista:
+            StravaActivity.objects.insert(mongo_lista)
 
     def get_athlete_data(
         self,
@@ -256,8 +261,6 @@ class StravaGroup:
 
         response = self.get_strava_api(url, params, user)
         return response.json()
-
-
 
     def update_entity(self):
         """
@@ -339,7 +342,7 @@ class StravaGroup:
             )
 
         if not last_day:
-            last_day = datetime.now() + timedelta(minutes=1)
+            last_day = first_day + relativedelta(months=+1)
 
         if self.last_run and datetime.now() - timedelta(minutes=1) < self.last_run and self.cache_last_day == last_day and self.cache_first_day == first_day:
             return self.cache_last_activity
@@ -452,6 +455,7 @@ class StravaGroup:
         minutes = (seconds % 3600) // 60
         seconds = seconds % 60
         return f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
+
     def get_point_str(self):
         """
         Retorna lista de pontos dos usuários
