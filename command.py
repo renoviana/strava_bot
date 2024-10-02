@@ -77,6 +77,14 @@ class StravaCommands:
             message (Message): telegram message
         """
         return self.strava_group.get_stats_str()
+    
+    def send_year_stats_command(self, _):
+        """
+        Send ride stats
+        Args:
+            message (Message): telegram message
+        """
+        return self.strava_group.get_stats_str(year_stats=True)
 
     def admin_command(self, _):
         """

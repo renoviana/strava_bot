@@ -496,10 +496,29 @@ class StravaGroup:
             max_metrics[metric]["value"] = distance[metric]["value"]
             max_metrics[metric]["activity_id"] = distance[metric]["activity_id"]
 
-    def get_stats_str(self):
+    def get_stats_str(self, year_stats=False):
         """
         Retorna lista de pontos dos usuários
         """
+        first_day, last_day = None, None
+        if year_stats:
+            first_day = datetime.now().replace(
+                day=1,
+                hour=0,
+                minute=0,
+                second=0,
+                microsecond=0,
+                month=1,
+            )
+            last_day = datetime.now().replace(
+                day=1,
+                hour=0,
+                minute=0,
+                second=0,
+                microsecond=0,
+                month=1,
+                year=datetime.now().year + 1
+            )
         ignore_stats_ids = self.ignored_activities
         max_distance_geral = {"user": '', "value": 0, "activity_id": None}
         max_velocity_geral = {"user": '', "value": 0, "activity_id": None}
@@ -513,7 +532,7 @@ class StravaGroup:
             "max_elevation_gain": max_elevation_gain_geral,
             "max_moving_time": max_moving_time_geral
         }
-        user_data = self.get_all_user_data(ignore_stats_ids=ignore_stats_ids)
+        user_data = self.get_all_user_data(ignore_stats_ids=ignore_stats_ids, first_day=first_day, last_day=last_day)
 
         for user in self.membros.keys():
             distance = user_data.get(user)
