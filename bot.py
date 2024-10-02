@@ -18,6 +18,7 @@ grupo_commands = {
     "rank": 'send_ranking_msg_command',
     'year':'send_ranking_ano_msg_command',
     "score": 'send_point_msg_command',
+    "yscore": 'send_year_point_msg_command',
     "stats": 'send_stats_command',
     "ystats": 'send_year_stats_command',
     "admin": 'admin_command',

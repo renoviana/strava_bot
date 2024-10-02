@@ -433,13 +433,13 @@ class StravaGroup:
         seconds = seconds % 60
         return f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
 
-    def get_point_str(self):
+    def get_point_str(self, first_day=None, last_day=None):
         """
         Retorna lista de pontos dos usuários
         """
         distance_list = []
         ignore_stats_ids = self.ignored_activities or []
-        user_data = self.get_all_user_data(ignore_stats_ids=ignore_stats_ids)
+        user_data = self.get_all_user_data(ignore_stats_ids=ignore_stats_ids, first_day=first_day, last_day=last_day)
         for user in self.membros.keys():
             distance = user_data.get(user)
             total_points = 0

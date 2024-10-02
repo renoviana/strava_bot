@@ -70,6 +70,35 @@ class StravaCommands:
         )
         return pontos_msg
 
+    def send_year_point_msg_command(self, _):
+        """
+        Send score ride rank
+        Args:
+            message (Message): telegram message
+        """
+        first_day = datetime.now().replace(
+            day=1,
+            hour=0,
+            minute=0,
+            second=0,
+            microsecond=0,
+            month=1,
+        )
+        last_day = datetime.now().replace(
+            day=1,
+            hour=0,
+            minute=0,
+            second=0,
+            microsecond=0,
+            month=1,
+            year=datetime.now().year + 1
+        )
+        pontos_msg = (
+            "\n".join(self.strava_group.get_point_str(first_day, last_day))
+            + "\n\nComo funciona: \n1 ponto - Ride/Run/Swim/Hike acima de 2km\n1 ponto - Pedal acima de 10km\n+1 ponto - Pedal acima de 350m de elevação\n+1 ponto - Pedal acima de 50km"
+        )
+        return pontos_msg
+
     def send_stats_command(self, _):
         """
         Send ride stats
