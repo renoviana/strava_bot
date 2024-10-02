@@ -94,7 +94,8 @@ class StravaCommands:
             year=datetime.now().year + 1
         )
         pontos_msg = (
-            "\n".join(self.strava_group.get_point_str(first_day, last_day))
+            "Stats do ano:\n"
+            + "\n".join(self.strava_group.get_point_str(first_day, last_day))
             + "\n\nComo funciona: \n1 ponto - Ride/Run/Swim/Hike acima de 2km\n1 ponto - Pedal acima de 10km\n+1 ponto - Pedal acima de 350m de elevação\n+1 ponto - Pedal acima de 50km"
         )
         return pontos_msg
