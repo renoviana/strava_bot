@@ -206,8 +206,6 @@ class StravaGroup:
                 return new_activity_list + list(new_data)
             else:
                 lista_geral += new_activity_list
-            
-            lista_geral += new_activity_list
         self.process_activities(lista_geral)
         return lista_geral
 
