@@ -65,7 +65,8 @@ class StravaCommands:
             message (Message): telegram message
         """
         pontos_msg = (
-            "\n".join(self.strava_group.get_point_str())
+            "Score Mensal:\n"
+            + "\n".join(self.strava_group.get_point_str())
             + "\n\nComo funciona: \n1 ponto - Ride/Run/Swim/Hike acima de 2km\n1 ponto - Pedal acima de 10km\n+1 ponto - Pedal acima de 350m de elevação\n+1 ponto - Pedal acima de 50km"
         )
         return pontos_msg
@@ -94,7 +95,7 @@ class StravaCommands:
             year=datetime.now().year + 1
         )
         pontos_msg = (
-            "Stats do ano:\n"
+            "Score Anual:\n"
             + "\n".join(self.strava_group.get_point_str(first_day, last_day))
             + "\n\nComo funciona: \n1 ponto - Ride/Run/Swim/Hike acima de 2km\n1 ponto - Pedal acima de 10km\n+1 ponto - Pedal acima de 350m de elevação\n+1 ponto - Pedal acima de 50km"
         )
