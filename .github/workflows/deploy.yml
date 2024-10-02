@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - main
-
+  workflow_dispatch:
 env:
   TARGET_DIR: /home/github/test
 
