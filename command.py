@@ -157,14 +157,11 @@ class StravaCommands:
         """
         Send goals menu
         """
+        dict_meta = self.strava_group.metas.keys()
         return {
             "texto": "Selecione o tipo de meta",
             "markup": get_markup(
-                [
-                    ("Bicicleta", "meta_ride"),
-                    ("Corrida/Caminhada", "meta_run"),
-                    ("WeightTraining", "meta_weighttraining"),
-                ],
+                list(map(lambda x: (x.title(), f"meta_{x}"), dict_meta)),
                 delete_option=True,
                 delete_data="meta",
             ),

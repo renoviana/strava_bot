@@ -563,12 +563,13 @@ class StravaGroup:
             rank_data = user.get(rank_params)
             emoji = ""
 
+            if strava_month_distance and rank_data >= strava_month_distance:
+                emoji = "✅"
+
             if rank_params == 'total_moving_time':
                 rank_data = self.format_seconds_to_mm_ss(rank_data)
                 rank_unit = ""
 
-            if strava_month_distance and rank_data >= strava_month_distance:
-                emoji = "✅"
             user_id = user.get("user_id")
             user_name = user.get('user').title()
 
@@ -651,10 +652,11 @@ class StravaGroup:
         sport_rank_by_time_list = ['workout', 'weighttraining']
         rank_params = 'total_distance'
         rank_unit="km"
-        
+        metas = self.metas.get(sport_type.lower())
         if sport_type.lower() in sport_rank_by_time_list:
             rank_params = 'total_moving_time'
             rank_unit = "min"
+            metas = self.metas.get(sport_type.lower()) / 60
 
         distance_list = self.get_sport_rank(sport_type, year_rank, first_day=None, last_day=None)
         sort_distance_list = sorted(
@@ -689,7 +691,7 @@ class StravaGroup:
         msg = msg_template + msg
 
         if not year_rank and self.metas.get(sport_type.lower()):
-            msg += f"\n\n⚠️ Meta individual do mês: {self.metas.get(sport_type.lower())}km"
+            msg += f"\n\n⚠️ Meta individual do mês: {metas}{rank_unit}"
 
         return msg
 
@@ -725,7 +727,9 @@ class StravaGroup:
         """
         if km:
             km = int(km)
-        self.metas[tipo_meta] = km
+            self.metas[tipo_meta] = km
+        else:
+            del self.metas[tipo_meta]
         self.update_entity()
 
     def calc_point_rank(self, total_user_points, total_elevation_gain_ride_m, distance_km, sport_type):
