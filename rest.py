@@ -641,7 +641,7 @@ class StravaGroup:
             "Swim": "🏊",
             "Hike": "🥾",
             "Walk": "🚶",
-            "Workout": "🏋️",
+            "Workout": "⚡︎",
         }
 
         emoji = emoji_dict.get(sport_type, sport_type)
