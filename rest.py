@@ -544,7 +544,6 @@ class StravaGroup:
             user_data = user_dict.get(user)
             all_types += list(user_data.keys())
         all_types = list(set(all_types))
-        all_types = list(filter(lambda x: x not in ['Workout'], all_types))
         return sorted(all_types)
 
     def rank_format(self,index_data, data, sport_type, rank_unit="km", rank_params='total_distance'):
