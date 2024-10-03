@@ -658,7 +658,8 @@ class StravaGroup:
         if sport_type.lower() in sport_rank_by_time_list:
             rank_params = 'total_moving_time'
             rank_unit = "min"
-            metas = self.metas.get(sport_type.lower()) / 60
+            if self.metas.get(sport_type.lower()):
+                metas = self.metas.get(sport_type.lower()) / 60
 
         distance_list = self.get_sport_rank(sport_type, year_rank, first_day=None, last_day=None)
         sort_distance_list = sorted(
