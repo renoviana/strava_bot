@@ -272,9 +272,6 @@ class StravaGroup:
 
             activity_type = activity["type"]
 
-            if activity_type == 'Workout':
-                activity_type = 'WeightTraining'
-
             if activity_type == 'WeightTraining' and activity["moving_time"] > 7200:
                 activity["moving_time"] = 7200
                 
@@ -285,8 +282,8 @@ class StravaGroup:
 
             activity_dict[activity_type].append(activity)
 
-        if  gym_dict:
-            activity_dict["WeightTraining"] = list(gym_dict.values())
+        # if  gym_dict:
+        #     activity_dict["WeightTraining"] = list(gym_dict.values())
         return activity_dict
 
     def update_gym_dict(self, gym_dict, activity):
