@@ -920,7 +920,6 @@ class StravaGroup:
             segments = sorted(segments, key=lambda x: x['moving_time'])
             athelete_list = []
             for segment in segments:
-                moving_time = segment['moving_time']
                 segment_athlete = segment['user']
                 start_date_local = segment['start_date_local']
                 segment['start_date_local'] = datetime.strptime(start_date_local, '%Y-%m-%dT%H:%M:%SZ')
@@ -929,10 +928,8 @@ class StravaGroup:
                     continue
 
                 athelete_list.append(segment_athlete)
-                segment_min = self.format_seconds_to_mm_ss(moving_time)
-                segment_athlete = f"<a href=\"https://www.strava.com/activities/{segment['activity']['id']}\">{segment_athlete} - {segment_min}</a>"
-
-                str_list.append('- '+segment_athlete)
+                msg_str = f"- <a href=\"https://www.strava.com/activities/{segment['activity']['id']}/segments/{segment['segment']['id']}\">{segment_athlete} - {segment_min}</a>"
+                str_list.append(msg_str)
             str_list.append("")
 
         return "\n".join(str_list)
