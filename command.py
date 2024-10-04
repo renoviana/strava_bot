@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from secure import STRAVA_CLIENT_ID, STRAVA_REDIRECT_URI
+from secure import STRAVA_CLIENT_ID, STRAVA_REDIRECT_URI, TICKET_MESSAGE
 from tools import get_markup
 from rest import StravaGroup
 class StravaCommands:
@@ -258,4 +258,4 @@ class StravaCommands:
         from_user= message.from_user
         first_name = from_user.first_name or from_user.username
         data_future = (datetime.now() + timedelta(hours=48)).strftime("%d/%m/%Y %H:%M")
-        return f"Oi {first_name}!\nParabéns, você foi sorteado para desenvolver o ticket  '{texto}'.\n\nVocê tem 48hrs a partir desse momento para desenvolver o ticket, caso não consiga basta fazer uma pequena colaboração de 5g do 🇨🇴.\nSeu tempo termina: {data_future}"
+        return f"Oi {first_name}!\nParabéns, você foi sorteado para desenvolver o ticket  '{texto}'.\n\n{TICKET_MESSAGE}\nSeu tempo termina: {data_future}"
