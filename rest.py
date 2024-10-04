@@ -929,7 +929,7 @@ class StravaGroup:
 
                 athelete_list.append(segment_athlete)
                 segment_min = self.format_seconds_to_mm_ss(segment['moving_time'])
-                msg_str = f"- <a href=\"https://www.strava.com/activities/{segment['activity']['id']}/segments/{segment['segment']['id']}\">{segment_athlete} - {segment_min}</a>"
+                msg_str = f"- <a href=\"https://www.strava.com/activities/{segment['activity']['id']}/segments/{segment['id']}\">{segment_athlete} - {segment_min}</a>"
                 str_list.append(msg_str)
             str_list.append("")
 
