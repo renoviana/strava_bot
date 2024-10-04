@@ -770,7 +770,7 @@ class StravaGroup:
         self.update_entity()
         return "Atividade ignorada com sucesso!"
 
-    def get_segments(self, min_distance=9000):
+    def get_segments(self, min_distance=7000):
         """
         Retrieves segments based on a minimum distance.
 
