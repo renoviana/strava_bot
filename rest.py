@@ -770,7 +770,7 @@ class StravaGroup:
         self.update_entity()
         return "Atividade ignorada com sucesso!"
 
-    def get_segments(self, min_distance=7000):
+    def get_segments(self, min_distance=None):
         """
         Retrieves segments based on a minimum distance.
 
@@ -780,6 +780,9 @@ class StravaGroup:
         Returns:
             dict: A dictionary containing segment data.
         """
+        if not min_distance:
+            min_distance = 6000
+
         ignore_stats_ids = self.ignored_activities
         group_members = list(self.membros.items())
         user_data = self.get_all_user_data(ignore_stats_ids=ignore_stats_ids)
@@ -815,7 +818,7 @@ class StravaGroup:
         filtered_activities = []
 
         for activity in activity_list:
-            if activity['distance'] < min_distance:
+            if activity['distance'] < int(min_distance):
                 continue
             activity_id = activity['id']
             if str(activity_id) in ignore_stats_ids:
@@ -843,7 +846,7 @@ class StravaGroup:
         segment_efforts = activity_data.get('segment_efforts', [])
 
         for segment_effort in segment_efforts:
-            if segment_effort['distance'] < min_distance:
+            if segment_effort['distance'] < int(min_distance):
                 continue
 
             if segment_effort['segment']['id'] in [18536734, 683759]:
@@ -894,7 +897,7 @@ class StravaGroup:
 
         return segment_dict
 
-    def get_segments_str(self, min_distance=7000):
+    def get_segments_str(self, min_distance):
         """
         Retorna segmentos em formato de string
         Args:

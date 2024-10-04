@@ -239,8 +239,11 @@ class StravaCommands:
         Args:
             message (Message): telegram message
         """
-        distance = message.text.replace("/segment ", "")
-        return self.strava_group.get_segments_str(distance)
+        max_distance = None
+        distance = message.text.split(" ")
+        if len(distance) > 1:
+            max_distance = distance[1]
+        return self.strava_group.get_segments_str(max_distance)
 
     def get_medalhas(self, _):
         """
