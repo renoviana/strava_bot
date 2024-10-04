@@ -233,13 +233,14 @@ class StravaCommands:
         sport_type = callback.data.replace("strava_", "")
         return self.strava_group.get_ranking_str(sport_type)
 
-    def get_segments(self, _):
+    def get_segments(self, message):
         """
         Send strava segments
         Args:
             message (Message): telegram message
         """
-        return self.strava_group.get_segments_str()
+        distance = message.text.replace("/segment ", "")
+        return self.strava_group.get_segments_str(distance)
 
     def get_medalhas(self, _):
         """
