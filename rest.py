@@ -846,6 +846,9 @@ class StravaGroup:
             if segment_effort['distance'] < min_distance:
                 continue
 
+            if segment_effort['segment']['id'] in [18536734, 683759]:
+                continue
+
             segment_effort.update({
                 'user': name,
                 'access_token': token['access_token'],
@@ -907,11 +910,10 @@ class StravaGroup:
                 segments[0]['name'],
                 " - ",
                 str(round(segments[0]['distance']/1000, 2)),
-                "km - ID: ",
-                f"{str(segments[0]['segment']['id'])}"
+                "km"
             ]
 
-            str_list.append(f"<a href=\"https://www.strava.com/segments/{str(segments[0]['segment']['id'])}\">{''.join(data)}</a>")
+            str_list.append(f"{''.join(data)}")
             segments = sorted(segments, key=lambda x: x['moving_time'])
             athelete_list = []
             for segment in segments:
@@ -925,10 +927,9 @@ class StravaGroup:
 
                 athelete_list.append(segment_athlete)
                 segment_min = self.format_seconds_to_mm_ss(moving_time)
-                segment_athlete = f"<a href=\"https://www.strava.com/activities/{segment['activity_id']}\">{segment_athlete} - {segment_min}</a>"
-                segment_date = segment['start_date_local'].strftime('%d/%m/%Y %H:%M:%S')
-                url = f"{segment_date}"
-                str_list.append('- '+segment_athlete+"\n"+url)
+                segment_athlete = f"<a href=\"https://www.strava.com/activities/{segment['activity']['id']}\">{segment_athlete} - {segment_min}</a>"
+
+                str_list.append('- '+segment_athlete)
             str_list.append("")
 
         return "\n".join(str_list)
