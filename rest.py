@@ -924,7 +924,7 @@ class StravaGroup:
                     continue
 
                 athelete_list.append(segment_athlete)
-                segment_min = str(round(moving_time/60, 2))
+                segment_min = self.format_seconds_to_mm_ss(moving_time)
                 segment_athlete = f"{segment_athlete} - {segment_min}min"
                 segment_date = segment['start_date_local'].strftime('%d/%m/%Y %H:%M:%S')
                 url = f"{segment_date}"
