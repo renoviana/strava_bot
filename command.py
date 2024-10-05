@@ -64,11 +64,7 @@ class StravaCommands:
             "+1 ponto - Pedal acima de 50km",
             "+1 ponto - Pedal acima de 100km",
         ]
-        pontos_msg = (
-            "Score Mensal:\n"
-            + "\n".join(self.strava_group.get_point_str())
-            + f"\n\n{'\n'.join(array_msg)}"
-        )
+        pontos_msg = f"Score Mensal:\n{'\n'.join(self.strava_group.get_point_str())}\n\n{'\n'.join(array_msg)}"
         return pontos_msg
 
     def send_year_point_msg_command(self, _):
