@@ -236,6 +236,8 @@ class StravaGroup:
             params["before"] = before_date.timestamp()
 
         response = self.get_strava_api(url, params, user)
+        if response.status_code > 500:
+            raise Exception("Erro ao acessar a API do Strava, tente novamente mais tarde")
         return response.json()
 
     def update_entity(self):

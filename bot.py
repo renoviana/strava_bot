@@ -100,7 +100,14 @@ def callback_query(call) -> None:
             bot.answer_callback_query(call.id)
         except Exception as exc:
             pass
+        
     except Exception as exc:
+        if exc.args:
+            send_reply_return(
+                exc.args[0], message, bot, disable_web_page_preview=True
+            )
+            return
+
         send_reply_return(
             "Erro ao executar o comando, tente novamente.", call.message, bot, disable_web_page_preview=True
         )
@@ -129,6 +136,12 @@ def handle_group_message(message) -> None:
         result = strava_command.__getattribute__(grupo_commands[command])(message)
         data = send_reply_return(result, message, bot, disable_web_page_preview=True)
     except Exception as exc:
+        if exc.args:
+            send_reply_return(
+                exc.args[0], message, bot, disable_web_page_preview=True
+            )
+            return
+
         send_reply_return(
             "Erro ao executar o comando, tente novamente.", message, bot, disable_web_page_preview=True
         )
