@@ -55,10 +55,19 @@ class StravaCommands:
         Args:
             message (Message): telegram message
         """
+
+        array_msg = [
+            "Como funciona: ",
+            "1 ponto - Run/Swim/Hike acima de 2km",
+            "1 ponto - Pedal acima de 10km",
+            "+1 ponto - Pedal acima de 350m de elevação",
+            "+1 ponto - Pedal acima de 50km",
+            "+1 ponto - Pedal acima de 100km",
+        ]
         pontos_msg = (
             "Score Mensal:\n"
             + "\n".join(self.strava_group.get_point_str())
-            + "\n\nComo funciona: \n1 ponto - Ride/Run/Swim/Hike acima de 2km\n1 ponto - Pedal acima de 10km\n+1 ponto - Pedal acima de 350m de elevação\n+1 ponto - Pedal acima de 50km"
+            + f"\n\n{'\n'.join(array_msg)}"
         )
         return pontos_msg
 

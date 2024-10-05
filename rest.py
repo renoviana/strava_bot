@@ -754,6 +754,9 @@ class StravaGroup:
         if distance_km > 50:
             total_user_points += 1
 
+        if distance_km > 100:
+            total_user_points += 1
+
         if total_elevation_gain_ride_m > 350:
             total_user_points += 1
         return total_user_points
