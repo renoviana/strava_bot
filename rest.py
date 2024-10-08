@@ -272,7 +272,7 @@ class StravaGroup:
             if isinstance(activity["start_date_local"], str):
                 activity["start_date_local"] = datetime.strptime(activity["start_date_local"], '%Y-%m-%dT%H:%M:%SZ')
 
-            activity_type = activity["type"]
+            activity_type = activity["sport_type"]
 
             # if activity_type == 'WeightTraining' and activity["moving_time"] > 7200:
             #     activity["moving_time"] = 7200
@@ -967,3 +967,89 @@ class StravaGroup:
             msg_list.append(f"{index+1}º - {name.title()} 🥇{medalhas['lider']} 🥈{medalhas['segundo']} 🥉{medalhas['terceiro']}")
         return "\n".join(msg_list)
     
+class StravaActivity:
+    last_run = None
+    cache_last_activity = None
+    cache_first_day = None
+    cache_last_day = None
+    membros = {}
+    metas = {}
+    ignored_activities = []
+
+
+
+    def load_activities(self):
+        for membro in self.membros:
+            self.list_activity(membro)
+
+
+
+    def list_activity(self, user, first_day=None, last_day=None):
+        """
+        Retorna lista de atividades do mês e filtra de acordo com o sport_list
+        Args:
+            user (str): usuario
+            sport_list (list): lista de esportes
+            first_day (datetime): data de inicio
+            last_day (datetime): data de fim
+        """
+
+        if not first_day:
+            first_day = datetime.now().replace(
+                day=1,
+                hour=0,
+                minute=0,
+                second=0,
+                microsecond=0,
+            )
+
+        if not last_day:
+            last_day = datetime.now() + timedelta(minutes=1)
+        
+        query = {
+            "athlete.id":  self.membros[user].get('athlete_id'),
+            "start_date_local": {
+                "$gte": first_day,
+                "$lt": last_day,
+            }
+        }
+
+        new_data = list_strava_activities(self.group_id, query)
+        activity_id = None
+        if new_data:
+            activity_id = new_data[0]['id']
+        lista_geral = []
+        new_activity_list = self.get_athlete_data(
+            user,
+            after_date=first_day,
+            before_date=last_day,
+        )
+        lista_geral += new_activity_list
+
+        if activity_id:
+            index_data = self.last_id_in_list(new_activity_list, activity_id)
+            if index_data is not None:
+                new_activity_list = new_activity_list[:index_data]
+                self.process_activities(new_activity_list)
+                return new_activity_list + list(new_data)
+
+        page = 1
+        while len(new_activity_list) % 100 == 0 and len(new_activity_list) != 0:
+            page += 1
+            new_activity_list = self.get_athlete_data(
+                user,
+                after_date=first_day,
+                before_date=last_day,
+                page=page,
+            )
+            
+            index_data = self.last_id_in_list(new_activity_list, activity_id)
+            if index_data is not None:
+                new_activity_list = new_activity_list[:index_data]
+                lista_geral += new_activity_list
+                self.process_activities(lista_geral)
+                return new_activity_list + list(new_data)
+            else:
+                lista_geral += new_activity_list
+        self.process_activities(lista_geral)
+        return lista_geral
