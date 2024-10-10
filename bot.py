@@ -1,3 +1,4 @@
+import queue
 import time
 import requests
 import telebot
@@ -12,7 +13,8 @@ connect(host=MONGO_URI)
 bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
 
 strava_dict = {}
-
+CALLBACK_QUEUE = queue.Queue()
+CURRENT_CALLBACK = None
 
 grupo_commands = {
     "rank": 'get_menu_sports_msg',
@@ -75,13 +77,7 @@ def new_chat_handler(message):
 
     bot.reply_to(message, f"Bem vindo ao grupo {new_user.get('first_name')}!\n\n Autorize seu strava nesse link para participar \n{link}")
 
-@bot.callback_query_handler(func=lambda call: True)
-def callback_query(call) -> None:
-    """
-    Handler para responder os callbacks:
-    Quando um usuário clica em algum botão no bot
-    """
-    
+def callback_process(call):
     try:
         if call.message.chat.id not in strava_dict:
             strava_dict[call.message.chat.id] = StravaCommands(call.message.chat.id)
@@ -100,17 +96,51 @@ def callback_query(call) -> None:
             bot.answer_callback_query(call.id)
         except Exception as exc:
             pass
-        
     except Exception as exc:
         if exc.args:
             send_reply_return(
-                exc.args[0], message, bot, disable_web_page_preview=True
+                exc.args[0], call.message, bot, disable_web_page_preview=True
             )
             return
 
         send_reply_return(
             "Erro ao executar o comando, tente novamente.", call.message, bot, disable_web_page_preview=True
         )
+
+
+
+def loop_callback():
+    global CALLBACK_QUEUE
+    while not CALLBACK_QUEUE.empty():
+        call = CALLBACK_QUEUE.get()
+        callback_process(call)
+        CALLBACK_QUEUE.task_done()
+
+@bot.callback_query_handler(func=lambda _: True)
+def callback_query(call) -> None:
+    """
+    Handler para responder os callbacks:
+    Quando um usuário clica em algum botão no bot
+    """
+    global CURRENT_CALLBACK, CALLBACK_QUEUE
+    print(call.data)
+    if CURRENT_CALLBACK:
+        return CALLBACK_QUEUE.put(call)
+    
+    CURRENT_CALLBACK = call
+    try:
+        callback_process(call)
+        loop_callback()
+    except:
+        pass
+    
+    CURRENT_CALLBACK = None
+    
+
+
+
+
+        
 
     
 
