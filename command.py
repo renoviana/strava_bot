@@ -267,7 +267,7 @@ class StravaCommands:
         data_future = (datetime.now() + timedelta(hours=48)).strftime("%d/%m/%Y %H:%M")
         return f"Oi {first_name}!\nParabéns, você foi sorteado para desenvolver o ticket  '{texto}'.\n\n{TICKET_MESSAGE}\nSeu tempo termina: {data_future}"
 
-    def get_month_msg(self, _):
+    def get_month_message(self, _):
         """
         Send month rank
         Args:
