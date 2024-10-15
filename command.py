@@ -275,7 +275,7 @@ class StravaCommands:
         """
         return self.strava_group.get_frequency()
     
-    def get_frequency_year_message(self, _):
+    def get_year_frequency_message(self, _):
         """
         Send year rank
         Args:
