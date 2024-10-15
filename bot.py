@@ -31,6 +31,7 @@ grupo_commands = {
     "segments": 'get_segments',
     "medalhas": 'get_medalhas',
     "ticket": 'get_ticket_message',
+    'activities': 'get_month_message'
 }
 
 query_commands = {
@@ -135,15 +136,6 @@ def callback_query(call) -> None:
         pass
     
     CURRENT_CALLBACK = None
-    
-
-
-
-
-        
-
-    
-
 
 @bot.message_handler(func=is_group_message)
 def handle_group_message(message) -> None:

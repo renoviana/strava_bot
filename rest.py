@@ -966,3 +966,31 @@ class StravaGroup:
             name, medalhas = i
             msg_list.append(f"{index+1}º - {name.title()} 🥇{medalhas['lider']} 🥈{medalhas['segundo']} 🥉{medalhas['terceiro']}")
         return "\n".join(msg_list)
+
+    def get_month_rank(self):
+        date_dict = {}
+        for membro in self.membros:
+            activity = self.list_activity(membro)
+            if membro not in date_dict:
+                date_dict[membro] = {}
+
+            for a in activity:
+                start_date_local = a['start_date_local']
+                if isinstance(start_date_local, str):
+                    start_date_local = datetime.strptime(start_date_local, '%Y-%m-%dT%H:%M:%SZ')
+                date = start_date_local.strftime('%Y-%m-%d')
+                date_dict[membro][date] = True
+                pass
+
+            if len(date_dict[membro]) == 0:
+                del date_dict[membro]
+                continue
+
+            date_dict[membro] = len(date_dict[membro])
+        # Order by value
+        date_dict = dict(sorted(date_dict.items(), key=lambda item: item[1], reverse=True))
+        month_days = datetime.now().day
+        msg_list = ["Quantidade de dias com atividades no mês:"]
+        for index, i in enumerate(date_dict):
+            msg_list.append(f"{index+1}º - {i.title()} - {date_dict[i]}/{month_days}")
+        return "\n".join(msg_list)
