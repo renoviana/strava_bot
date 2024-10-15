@@ -991,6 +991,11 @@ class StravaGroup:
         date_dict = dict(sorted(date_dict.items(), key=lambda item: item[1], reverse=True))
         month_days = datetime.now().day
         msg_list = ["Quantidade de dias com atividades no mês:"]
-        for index, i in enumerate(date_dict):
-            msg_list.append(f"{index+1}º - {i.title()} - {date_dict[i]}/{month_days}")
+        rank_position = 1
+        current_value = list(date_dict.values())[0]
+        for name, valor in date_dict.items():
+            if valor != current_value:
+                rank_position = rank_position + 1
+                current_value = valor
+            msg_list.append(f"{rank_position}º - {name.title()} - {valor}/{month_days}")
         return "\n".join(msg_list)
