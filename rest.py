@@ -967,7 +967,11 @@ class StravaGroup:
             msg_list.append(f"{index+1}º - {name.title()} 🥇{medalhas['lider']} 🥈{medalhas['segundo']} 🥉{medalhas['terceiro']}")
         return "\n".join(msg_list)
 
-    def get_frequency(self, first_day=None, last_day=None):
+    def get_frequency(self, first_day=None, last_day=None, month_days=None, title=""):
+        if not month_days:
+            title = "Quantidade de dias com atividades no mês:"
+            month_days = datetime.now().day
+
         date_dict = {}
         for membro in self.membros:
             activity = self.list_activity(membro, first_day=first_day, last_day=last_day)
@@ -989,8 +993,7 @@ class StravaGroup:
             date_dict[membro] = len(date_dict[membro])
         # Order by value
         date_dict = dict(sorted(date_dict.items(), key=lambda item: item[1], reverse=True))
-        month_days = datetime.now().day
-        msg_list = ["Quantidade de dias com atividades no mês:"]
+        msg_list = [title]
         rank_position = 1
         current_value = list(date_dict.values())[0]
         for name, valor in date_dict.items():

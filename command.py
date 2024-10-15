@@ -299,4 +299,5 @@ class StravaCommands:
             month=1,
             year=datetime.now().year + 1
         )
-        return self.strava_group.get_frequency(first_day, last_day)
+        data = datetime.now().timetuple().tm_yday
+        return self.strava_group.get_frequency(first_day, last_day, data, "Quantidade de dias com atividades no ano:")
