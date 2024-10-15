@@ -967,10 +967,10 @@ class StravaGroup:
             msg_list.append(f"{index+1}º - {name.title()} 🥇{medalhas['lider']} 🥈{medalhas['segundo']} 🥉{medalhas['terceiro']}")
         return "\n".join(msg_list)
 
-    def get_month_rank(self):
+    def get_frequency(self, first_day=None, last_day=None):
         date_dict = {}
         for membro in self.membros:
-            activity = self.list_activity(membro)
+            activity = self.list_activity(membro, first_day=first_day, last_day=last_day)
             if membro not in date_dict:
                 date_dict[membro] = {}
 
@@ -999,3 +999,5 @@ class StravaGroup:
                 current_value = valor
             msg_list.append(f"{rank_position}º - {name.title()} - {valor}/{month_days}")
         return "\n".join(msg_list)
+
+        

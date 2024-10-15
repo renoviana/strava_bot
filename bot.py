@@ -31,7 +31,8 @@ grupo_commands = {
     "segments": 'get_segments',
     "medalhas": 'get_medalhas',
     "ticket": 'get_ticket_message',
-    'frequency': 'get_month_message'
+    'frequency': 'get_frequency_message',
+    'yfrequency': 'get_year_frequency_message'
 }
 
 query_commands = {

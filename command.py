@@ -267,10 +267,36 @@ class StravaCommands:
         data_future = (datetime.now() + timedelta(hours=48)).strftime("%d/%m/%Y %H:%M")
         return f"Oi {first_name}!\nParabéns, você foi sorteado para desenvolver o ticket  '{texto}'.\n\n{TICKET_MESSAGE}\nSeu tempo termina: {data_future}"
 
-    def get_month_message(self, _):
+    def get_frequency_message(self, _):
         """
         Send month rank
         Args:
             message (Message): telegram message
         """
-        return self.strava_group.get_month_rank()
+        return self.strava_group.get_frequency()
+    
+    def get_frequency_year_message(self, _):
+        """
+        Send year rank
+        Args:
+            message (Message): telegram message
+        """
+        first_day = datetime.now().replace(
+            day=1,
+            hour=0,
+            minute=0,
+            second=0,
+            microsecond=0,
+            month=1,
+        )
+
+        last_day = datetime.now().replace(
+            day=1,
+            hour=0,
+            minute=0,
+            second=0,
+            microsecond=0,
+            month=1,
+            year=datetime.now().year + 1
+        )
+        return self.strava_group.get_frequency(first_day, last_day)
