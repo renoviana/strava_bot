@@ -1137,7 +1137,7 @@ class StravaGroup:
 
 
         # Iterar sobre os meses e esportes
-        for month, sports in data.items():
+        for month, sports in self.medalhas.items():
             for sport, rankings in sports.items():
                 for person, position in rankings.items():
                     if position == 1:
