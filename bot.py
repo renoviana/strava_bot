@@ -30,6 +30,7 @@ grupo_commands = {
     "sports": 'get_menu_sports_msg',
     "segments": 'get_segments',
     "medalhas": 'get_medalhas',
+    "medalhas_var": 'get_medalhas_var',
     "ticket": 'get_ticket_message',
     'frequency': 'get_frequency_message',
     'yfrequency': 'get_year_frequency_message'

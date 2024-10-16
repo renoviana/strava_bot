@@ -1124,3 +1124,43 @@ class StravaGroup:
         self.medalhas = medalhas
         # self.update_entity()
         return medalhas
+    
+
+    def get_medalhas_var(self):
+        from collections import defaultdict
+
+        # Dicionário para armazenar as contagens de medalhas e os detalhes dos meses
+        medals = defaultdict(lambda: {
+            "🥇": 0, "🥈": 0, "🥉": 0, "detalhes": defaultdict(lambda: {"🥇": [], "🥈": [], "🥉": []})
+        })
+
+
+
+        # Iterar sobre os meses e esportes
+        for month, sports in data.items():
+            for sport, rankings in sports.items():
+                for person, position in rankings.items():
+                    if position == 1:
+                        medals[person]["🥇"] += 1
+                        medals[person]["detalhes"][sport]["🥇"].append(month)
+                    elif position == 2:
+                        medals[person]["🥈"] += 1
+                        medals[person]["detalhes"][sport]["🥈"].append(month)
+                    elif position == 3:
+                        medals[person]["🥉"] += 1
+                        medals[person]["detalhes"][sport]["🥉"].append(month)
+
+        # Ordenar as pessoas pelo número de medalhas de ouro, depois prata, depois bronze
+        sorted_medals = sorted(medals.items(), key=lambda x: (-x[1]["🥇"], -x[1]["🥈"], -x[1]["🥉"]))
+        msg_list = []
+        # Exibir os resultados no formato desejado
+        for rank, (person, counts) in enumerate(sorted_medals, 1):
+            msg_list.append(f"{rank}º - {person} 🥇{counts['🥇']} 🥈{counts['🥈']} 🥉{counts['🥉']}")
+            for sport, detalhes in counts['detalhes'].items():
+                msg_list.append(f"{sport} -")
+                for medalha, meses in detalhes.items():
+                    if meses:
+                        msg_list.append(f"{medalha} - {', '.join(meses)}")
+            msg_list.append()  # Linha em branco entre pessoas
+
+        return "\n".join(msg_list)
