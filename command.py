@@ -135,8 +135,8 @@ class StravaCommands:
             "texto": "Usuários cadastradas:",
             "markup": get_markup(
                 lista_user,
-                delete_option=True,
-                delete_data="strava",
+                # delete_option=True,
+                # delete_data="strava",
             ),
         }
 
