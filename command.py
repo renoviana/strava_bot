@@ -263,6 +263,14 @@ class StravaCommands:
             message (Message): telegram message
         """
         return self.strava_group.get_medalhas_rank()
+    
+    def get_medalhas_var(self, _):
+        """
+        Send medal rank
+        Args:
+            message (Message): telegram message
+        """
+        return self.strava_group.get_medalhas_var()
 
     def get_ticket_message(self, message):
         texto = message.text.replace("/ticket ", "")
