@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import random
 import requests
 from model import StravaActivity, add_strava_group, get_strava_group, list_strava_activities
 from secure import (
@@ -944,27 +945,26 @@ class StravaGroup:
         """
         Retorna o ranking geral de medalhas
         """
-        medalhas = self.medalhas
-        user_dict = {}
-        for sport in medalhas:
-            for user in medalhas[sport]:
-                if user not in user_dict:
-                    user_dict[user] = {
-                        'lider': 0,
-                        'segundo': 0,
-                        'terceiro': 0,
-                        'pontos_total': 0,
-                    }
-                user_dict[user]['lider'] += medalhas[sport][user]['lider']
-                user_dict[user]['segundo'] += medalhas[sport][user]['segundo']
-                user_dict[user]['terceiro'] += medalhas[sport][user]['terceiro']
-                user_dict[user]['pontos_total'] += medalhas[sport][user]['lider'] * 3 + medalhas[sport][user]['segundo'] * 2 + medalhas[sport][user]['terceiro']
+        from collections import defaultdict
 
-        rank = sorted(user_dict.items(), key=lambda x: x[1]['pontos_total'], reverse=True)
+        # Dicionário para armazenar as contagens de medalhas
+        medals = defaultdict(lambda: {"🥇": 0, "🥈": 0, "🥉": 0})
+        for month, sports in self.medalhas.items():
+            for sport, rankings in sports.items():
+                for person, position in rankings.items():
+                    if position == 1:
+                        medals[person]["🥇"] += 1
+                    elif position == 2:
+                        medals[person]["🥈"] += 1
+                    elif position == 3:
+                        medals[person]["🥉"] += 1
         msg_list = []
-        for index, i in enumerate(rank):
-            name, medalhas = i
-            msg_list.append(f"{index+1}º - {name.title()} 🥇{medalhas['lider']} 🥈{medalhas['segundo']} 🥉{medalhas['terceiro']}")
+        # Ordenar as pessoas pelo número de medalhas de ouro, depois prata, depois bronze
+        sorted_medals = sorted(medals.items(), key=lambda x: (-x[1]["🥇"], -x[1]["🥈"], -x[1]["🥉"]))
+
+        # Exibir os resultados no formato desejado
+        for rank, (person, counts) in enumerate(sorted_medals, 1):
+            msg_list.append(f"{rank}º - {person} 🥇{counts['🥇']} 🥈{counts['🥈']} 🥉{counts['🥉']}")
         return "\n".join(msg_list)
 
     def get_frequency(self, first_day=None, last_day=None, month_days=None, title=""):
@@ -1004,3 +1004,123 @@ class StravaGroup:
         return "\n".join(msg_list)
 
         
+    def update_medalhas(self, first_day, last_day):
+        """
+        Atualiza medalhas
+        """
+        medalhas = self.medalhas
+        novas_medalhas_str = "Vencedores do mês:\n"
+        index_dict = {
+            0: {
+                'emoji': '🥇',
+                'key': 'lider'
+            },
+            1: {
+                'emoji': '🥈',
+                'key': 'segundo'
+            },
+            2: {
+                'emoji': '🥉',
+                'key': 'terceiro'
+            }
+        }
+        rank_dict = {}
+        medalhas_dict = {}
+        for membro, data  in self.membros.items():
+            created_at = data.get('created_at')
+            if created_at > last_day:
+                continue
+            activity = self.get_activity_list_by_type(membro, first_day=first_day, last_day=last_day)
+            sport_dict = {}
+            for sport_type in activity:
+                if sport_type not in rank_dict:
+                    rank_dict[sport_type] = []
+
+                lista = activity[sport_type]
+                rank_parms = 'distance'
+                if sport_type in ['WeightTraining', 'Workout']:
+                    rank_parms = 'moving_time'
+                soma = sum([i[rank_parms] for i in lista])
+
+                if sport_type == 'Walk' and soma < 45000:
+                    continue
+                sport_dict[sport_type] = soma
+                rank_dict[sport_type].append({
+                    'total': soma,
+                    'user': membro
+                })
+        
+        for sport in rank_dict:
+            user_lista = rank_dict[sport]
+            user_lista = sorted(user_lista, key=lambda x: x['total'], reverse=True)
+
+            if len(user_lista) == 1:
+                continue
+            
+            if  len(user_lista) > 1 and len(user_lista) < 3:
+                user_lista = user_lista[:1]
+
+            if len(user_lista) > 3:
+                user_lista = user_lista[:3]
+
+            medalhas_dict[sport] = {}
+
+            for index, user_data in enumerate(user_lista):
+                user = user_data.get('user')
+                total = user_data.get('total')
+                if user not in medalhas_dict[sport]:
+                    medalhas_dict[sport][user] = []
+                medalhas_dict[sport][user] = index+1
+        return medalhas_dict
+        # for sport in self.list_type_activities(first_day=first_day, last_day=last_day).items():
+        #     sport_name, users = sport
+        #     rank =  self.get_rank(sport_name, use_cache=True, user_list=users)
+        #     sport_name = sport_name.lower()
+        #     sport_rank_by_time_list = ['workout', 'weighttraining']
+        #     rank_params = 'km'
+        #     if sport_name in sport_rank_by_time_list:
+        #         rank_params = 'min'
+
+        #     if len(rank) == 1:
+        #         continue
+
+        #     medalhas_dict = {}
+        #     for user_data in rank:
+        #         total = user_data.get('total_distance')
+        #         if not total:
+        #             total = user_data.get('total_moving_time')
+
+        #         if sport_name == 'walk' and total < 50:
+        #             continue
+
+        #         user_name = user_data.get('user').lower()
+                
+        #         if total not in medalhas_dict:
+        #             medalhas_dict[total] = []
+        #         medalhas_dict[total].append(user_name)
+
+        #     if not medalhas_dict:
+        #         continue
+
+        #     novas_medalhas_str += f"\n{sport_name.capitalize()}:\n"
+        #     medalhas_dict = sorted(medalhas_dict.items(), key=lambda x: x[0], reverse=True)
+        #     for index, medal in enumerate(medalhas_dict):
+        #         total, users = medal
+        #         user = random.choice(users)
+        #         only_gold_medal = int(index) > 0 and len(medalhas_dict) < 4
+
+        #         if index > 2 or only_gold_medal:
+        #             break
+
+        #         if user not in medalhas[sport_name]:
+        #             medalhas[sport_name][user] = {
+        #                 'lider': 0,
+        #                 'segundo': 0,
+        #                 'terceiro': 0
+        #             }
+        #         medalhas[sport_name][user][index_dict[index]['key']] += 1
+        #         novas_medalhas_str += f"{index_dict[index]['emoji']} {user.title()} - {total}{rank_params}\n"
+
+        self.medalhas = medalhas
+        # self.update_entity()
+        return medalhas
