@@ -1161,6 +1161,5 @@ class StravaGroup:
                 for medalha, meses in detalhes.items():
                     if meses:
                         msg_list.append(f"{medalha} - {', '.join(meses)}")
-            msg_list.append()  # Linha em branco entre pessoas
 
         return "\n".join(msg_list)
