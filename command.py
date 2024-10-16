@@ -122,7 +122,11 @@ class StravaCommands:
             message (Message): telegram message
         """
         dict_user = self.strava_group.membros
-        lista_user = list(dict_user.keys())
+        lista_user = []
+        for membro, data in dict_user.items():
+            data = data.get('created_at')
+            data_str = data.strftime("%d/%m/%Y %H:%M")
+            lista_user.append(f"{membro} - {data_str}")
 
         if len(lista_user) == 0:
             return "Nenhum usuário cadastrado"
