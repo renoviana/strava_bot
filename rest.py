@@ -37,11 +37,19 @@ class StravaGroup:
             sport_type (str): tipo de esporte
             user_name (str): nome do usuário
         """
-        victory_dict = self.medalhas.get(sport_type, {}).get(user_name.lower(), {})
-        lider = victory_dict.get("lider")
-        segundo = victory_dict.get("segundo")
-        terceiro = victory_dict.get("terceiro")
-
+        medalhas = {
+            1:0,
+            2:0,
+            3:0,
+        }
+        for data in self.medalhas.values():
+            sport_medalhas = data.get(sport_type.title())
+            if not sport_medalhas:
+                continue
+            victory_dict = sport_medalhas.get(user_name, None)
+            if victory_dict:
+                medalhas[victory_dict] += 1
+        lider, segundo, terceiro = list(medalhas.values())
         msg = ""
 
         if lider:
@@ -577,11 +585,12 @@ class StravaGroup:
 
             user_id = user.get("user_id")
             user_name = user.get('user').title()
+            user_link = user_name
 
             if user_id:
-                user_name = f"<a href=\"https://www.strava.com/athletes/{user_id}\">{user_name}{self.get_victory_str(sport_type, user_name)}</a>"
+                user_link = f"<a href=\"https://www.strava.com/athletes/{user_id}\">{user_name}</a>"
 
-            rank_list.append(f"{index_data+1}º - {user_name}{self.get_victory_str(sport_type ,user_name)} - {rank_data}{rank_unit} {emoji}")
+            rank_list.append(f"{index_data+1}º - {user_link}{self.get_victory_str(sport_type ,user_name)} - {rank_data}{rank_unit} {emoji}")
         return "\n".join(rank_list)
 
     def get_sport_rank(self, sport_type, year_rank=False, first_day=None, last_day=None):
