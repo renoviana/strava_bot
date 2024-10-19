@@ -958,22 +958,29 @@ class StravaGroup:
 
         # Dicionário para armazenar as contagens de medalhas
         medals = defaultdict(lambda: {"🥇": 0, "🥈": 0, "🥉": 0})
+        pontos = 0
         for month, sports in self.medalhas.items():
             for sport, rankings in sports.items():
                 for person, position in rankings.items():
                     if position == 1:
+                        pontos += 3
                         medals[person]["🥇"] += 1
                     elif position == 2:
+                        pontos += 2
                         medals[person]["🥈"] += 1
                     elif position == 3:
+                        pontos += 1
                         medals[person]["🥉"] += 1
+                    
+        medals[person]["pontos"] = pontos
+        # Ordenar por pontos
+        sorted_medals = sorted(medals.items(), key=lambda x: -x[1]["pontos"])
         msg_list = []
         # Ordenar as pessoas pelo número de medalhas de ouro, depois prata, depois bronze
-        sorted_medals = sorted(medals.items(), key=lambda x: (-x[1]["🥇"], -x[1]["🥈"], -x[1]["🥉"]))
 
         # Exibir os resultados no formato desejado
         for rank, (person, counts) in enumerate(sorted_medals, 1):
-            msg_list.append(f"{rank}º - {person} 🥇{counts['🥇']} 🥈{counts['🥈']} 🥉{counts['🥉']}")
+            msg_list.append(f"{rank}º - {person} 🥇{counts['🥇']} 🥈{counts['🥈']} 🥉{counts['🥉']} | {pontos} Pontos")
         return "\n".join(msg_list)
 
     def get_frequency(self, first_day=None, last_day=None, month_days=None, title=""):
