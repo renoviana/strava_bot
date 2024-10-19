@@ -31,7 +31,7 @@ def send_reply_return(message_return, message, telegram_bot, save_log=True, disa
         if isinstance(message_return, str):
             if len(message_return) > 4000:
                 return list(map(lambda i: send_reply_return(message_return[i : i + 4000], message, telegram_bot, save_log, disable_web_page_preview, reply_markup), range(0, len(message_return), 4000)))
-            return telegram_bot.reply_to(message, message_return, reply_markup=reply_markup, parse_mode = "HTML", disable_web_page_preview=disable_web_page_preview)
+            return telegram_bot.send_message(message.chat.id, message_return, reply_markup=reply_markup, parse_mode = "HTML", disable_web_page_preview=disable_web_page_preview)
 
         if isinstance(message_return, dict):
             texto_result = message_return.get("texto", "")
