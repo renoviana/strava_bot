@@ -43,9 +43,10 @@ class StravaGroup:
             3:0,
         }
         for data in self.medalhas.values():
-            sport_medalhas = data.get(sport_type.title())
+            sport_medalhas = list(filter(lambda x:x.lower() == sport_type.lower(), data))
             if not sport_medalhas:
                 continue
+            sport_medalhas = data.get(sport_medalhas[0])
             victory_dict = sport_medalhas.get(user_name, None)
             if victory_dict:
                 medalhas[victory_dict] += 1
