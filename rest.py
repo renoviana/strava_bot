@@ -415,7 +415,7 @@ class StravaGroup:
                     result_dict[activity_type]["max_distance"]['value'] = round(distance_km, 2)
                     result_dict[activity_type]["max_distance"]['activity_id'] = activity.get('id')
 
-                if max_speed_ride_km > result_dict[activity_type]["max_velocity"]['value'] and not ignore_stats and max_speed_ride_km < 80:
+                if max_speed_ride_km > result_dict[activity_type]["max_velocity"]['value'] and not ignore_stats and max_speed_ride_km < 90:
                     result_dict[activity_type]["max_velocity"]['value'] = round(max_speed_ride_km, 2)
                     result_dict[activity_type]["max_velocity"]['activity_id'] = activity.get('id')
 
