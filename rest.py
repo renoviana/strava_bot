@@ -1174,7 +1174,7 @@ class StravaGroup:
         msg_list = []
         # Exibir os resultados no formato desejado
         for rank, (person, counts) in enumerate(sorted_medals, 1):
-            msg_list.append(f"{rank}º - {person} 🥇{counts['🥇']} 🥈{counts['🥈']} 🥉{counts['🥉']}")
+            msg_list.append(f"\n{rank}º - {person} 🥇{counts['🥇']} 🥈{counts['🥈']} 🥉{counts['🥉']}")
             for sport, detalhes in counts['detalhes'].items():
                 msg_list.append(f"{sport} -")
                 for medalha, meses in detalhes.items():
