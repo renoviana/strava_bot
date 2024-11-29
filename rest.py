@@ -1202,8 +1202,10 @@ class StravaGroup:
         lista_membros = []
         for membro_name in self.membros:
             segment_data = self.get_segment_data(membro_name, segment_id)
+
             if "errors" in segment_data:
                 raise Exception(f"Erro ao buscar segmento: {segment_data['message']}")
+
             athlete_has_segment = segment_data.get("athlete_segment_stats")
             if not athlete_has_segment['pr_elapsed_time']:
                 continue
@@ -1222,5 +1224,5 @@ class StravaGroup:
         if not lista_membros:
             return "Nenhum membro tem o segmento"
         
-        msg = [f"Ranking do segmento: <a href='https://www.strava.com/segments/{segment_id}'>{segment_data['name']} - {round(segment_data['distance'] / 1000, 2)}km</a>"]
+        msg = [f"<a href='https://www.strava.com/segments/{segment_id}'>{segment_data['name']} - {round(segment_data['distance'] / 1000, 2)}km</a>"]
         return "\n".join(msg + [f"{membro[0]} - {membro[1]['str']}" for membro in enumerate(lista_membros, 1)])
