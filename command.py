@@ -3,7 +3,7 @@ from secure import STRAVA_CLIENT_ID, STRAVA_REDIRECT_URI, TICKET_MESSAGE
 from tools import get_markup
 from rest import StravaGroup
 class StravaCommands:
-    strava_group = None
+    strava_group: StravaGroup = None
 
     def __init__(self, group_id):
         self.strava_group = StravaGroup(str(group_id))
@@ -313,3 +313,12 @@ class StravaCommands:
         )
         data = datetime.now().timetuple().tm_yday
         return self.strava_group.get_frequency(first_day, last_day, data, "Quantidade de dias com atividades no ano:")
+    
+    def get_segment_rank_command(self, message):
+        """
+        Send segment rank
+        Args:
+            message (Message): telegram message
+        """
+        segment_id = message.text.replace("/segment ", "")
+        return self.strava_group.get_segments_rank(segment_id)

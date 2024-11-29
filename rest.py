@@ -67,8 +67,8 @@ class StravaGroup:
     def get_strava_api(
         self,
         url,
-        params,
-        user):
+        user,
+        params=None):
         """
         Retorna dados de atividades em formato json
         Args:
@@ -76,6 +76,10 @@ class StravaGroup:
             'params' (dict): parametros
             'user' (str): usuario
         """
+
+        if not params:
+            params = {}
+
         access_token, refresh_token = self.get_user_access_and_refresh_token(user)
         params["access_token"] = access_token
         response = requests.get(url, params=params, timeout=40)
@@ -87,8 +91,8 @@ class StravaGroup:
             access_token, refresh_token = self.update_user_token(user, refresh_token)
             return self.get_strava_api(
                 url,
-                params,
                 user,
+                params=params,
             )
 
         return response
@@ -245,7 +249,7 @@ class StravaGroup:
         if before_date:
             params["before"] = before_date.timestamp()
 
-        response = self.get_strava_api(url, params, user)
+        response = self.get_strava_api(url, user, params=params)
         if response.status_code > 500:
             raise Exception("Erro ao acessar a API do Strava, tente novamente mais tarde")
         return response.json()
@@ -857,7 +861,7 @@ class StravaGroup:
         """
         activity_id = activity['id']
         activity_data = self.get_strava_api(
-            f"https://www.strava.com/api/v3/activities/{activity_id}", {}, name
+            f"https://www.strava.com/api/v3/activities/{activity_id}", name
         ).json()
         segment_efforts = activity_data.get('segment_efforts', [])
 
@@ -898,7 +902,6 @@ class StravaGroup:
             for segment in segment_list:
                 segment_data = self.get_strava_api(
                     f"https://www.strava.com/api/v3/segment_efforts/{segment['id']}",
-                    {},
                     segment['user']
                 ).json()
 
@@ -1182,3 +1185,35 @@ class StravaGroup:
                         msg_list.append(f"{medalha} - {', '.join(meses)}")
 
         return "\n".join(msg_list)
+
+    def get_segment_data(self, user_name, segment_id):
+        response = self.get_strava_api(f"https://www.strava.com/api/v3/segments/{segment_id}", user_name)
+        data = response.json()
+        athlete_has_segment = data.get("athlete_segment_stats")
+        if not athlete_has_segment:
+            return
+        return athlete_has_segment
+    
+    def convert_seconds_to_minutes(self, seconds):
+        minutes = seconds // 60  # Calcula os minutos inteiros
+        remaining_seconds = seconds % 60  # Calcula os segundos restantes
+        return f"{minutes}:{remaining_seconds}"
+
+    def get_segments_rank(self, segment_id):
+        lista_membros = []
+        for membro_name in self.membros:
+            pass
+            data = self.get_segment_data(membro_name, segment_id)
+            if not data['pr_elapsed_time']:
+                continue
+            pr_elapsed_time = data['pr_elapsed_time']
+            pr_elapsed_time = self.convert_seconds_to_minutes(pr_elapsed_time)
+            pr_date = datetime.strptime(data['pr_date'], "%Y-%m-%d").strftime("%d/%m/%Y")
+            lista_membros.append({
+                "membro_name": membro_name,
+                "pr_elapsed_time": pr_elapsed_time,
+                "pr_date": pr_date,
+                "str": f"<a href='https://www.strava.com/activities/{data['pr_activity_id']}'>{membro_name} - {pr_elapsed_time} {pr_date}</a>"
+            })
+        lista_membros = sorted(lista_membros, key=lambda x: x['pr_elapsed_time'])
+        return lista_membros

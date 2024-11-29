@@ -29,6 +29,7 @@ grupo_commands = {
     "ignore": 'ignore_ativities_status_callback',
     "sports": 'get_menu_sports_msg',
     "segments": 'get_segments',
+    "segment": 'get_segment_rank_command',
     "medalhas": 'get_medalhas',
     "medalhasvar": 'get_medalhas_var',
     "ticket": 'get_ticket_message',
