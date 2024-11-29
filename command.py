@@ -321,4 +321,4 @@ class StravaCommands:
             message (Message): telegram message
         """
         segment_id = message.text.replace("/segment ", "")
-        return self.strava_group.get_segments_rank(segment_id)
+        return self.strava_group.get_segments_rank(int(segment_id))

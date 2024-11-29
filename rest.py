@@ -932,7 +932,10 @@ class StravaGroup:
                 segments[0]['name'],
                 " - ",
                 str(round(segments[0]['distance']/1000, 2)),
-                "km"
+                "km",
+                " - ",
+                segments[0]['segment']['id'],
+
             ]
 
             str_list.append(f"{''.join(data)}")
@@ -1188,32 +1191,34 @@ class StravaGroup:
 
     def get_segment_data(self, user_name, segment_id):
         response = self.get_strava_api(f"https://www.strava.com/api/v3/segments/{segment_id}", user_name)
-        data = response.json()
-        athlete_has_segment = data.get("athlete_segment_stats")
-        if not athlete_has_segment:
-            return
-        return athlete_has_segment
+        return response.json()
     
     def convert_seconds_to_minutes(self, seconds):
         minutes = seconds // 60  # Calcula os minutos inteiros
         remaining_seconds = seconds % 60  # Calcula os segundos restantes
-        return f"{minutes}:{remaining_seconds}"
+        return f"{minutes}:{remaining_seconds:02}"
 
     def get_segments_rank(self, segment_id):
         lista_membros = []
         for membro_name in self.membros:
-            pass
-            data = self.get_segment_data(membro_name, segment_id)
-            if not data['pr_elapsed_time']:
+            segment_data = self.get_segment_data(membro_name, segment_id)
+            athlete_has_segment = segment_data.get("athlete_segment_stats")
+            if not athlete_has_segment['pr_elapsed_time']:
                 continue
-            pr_elapsed_time = data['pr_elapsed_time']
+
+            pr_elapsed_time = athlete_has_segment['pr_elapsed_time']
             pr_elapsed_time = self.convert_seconds_to_minutes(pr_elapsed_time)
-            pr_date = datetime.strptime(data['pr_date'], "%Y-%m-%d").strftime("%d/%m/%Y")
+            pr_date = datetime.strptime(athlete_has_segment['pr_date'], "%Y-%m-%d").strftime("%d/%m/%Y")
             lista_membros.append({
                 "membro_name": membro_name,
                 "pr_elapsed_time": pr_elapsed_time,
                 "pr_date": pr_date,
-                "str": f"<a href='https://www.strava.com/activities/{data['pr_activity_id']}'>{membro_name} - {pr_elapsed_time} {pr_date}</a>"
+                "str": f"<a href='https://www.strava.com/activities/{athlete_has_segment['pr_activity_id']}'>{membro_name} - {pr_elapsed_time} {pr_date}</a>"
             })
         lista_membros = sorted(lista_membros, key=lambda x: x['pr_elapsed_time'])
-        return lista_membros
+        
+        if not lista_membros:
+            return "Nenhum membro tem o segmento"
+        
+        msg = [f"Ranking do segmento: <a href='https://www.strava.com/segments/{segment_id}'>{segment_data['name']} - {round(segment_data['distance'] / 1000, 2)}km</a>"]
+        return "\n".join(msg + [f"{membro[0]} - {membro[1]['str']}" for membro in enumerate(lista_membros, 1)])
