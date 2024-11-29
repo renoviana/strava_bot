@@ -934,7 +934,7 @@ class StravaGroup:
                 str(round(segments[0]['distance']/1000, 2)),
                 "km",
                 " - ",
-                segments[0]['segment']['id'],
+                str(segments[0]['segment']['id']),
 
             ]
 
