@@ -964,8 +964,8 @@ class StravaGroup:
         from collections import defaultdict
         medals = defaultdict(lambda: {"🥇": 0, "🥈": 0, "🥉": 0, "pontos": 0})
 
-        for month, sports in self.medalhas.items():
-            for sport, rankings in sports.items():
+        for _, sports in self.medalhas.items():
+            for _, rankings in sports.items():
                 for person, position in rankings.items():
                     if position == 1:
                         medals[person]["🥇"] += 1
