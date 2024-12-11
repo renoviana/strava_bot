@@ -668,7 +668,7 @@ class StravaGroup:
             today_str = datetime.now().year
 
         msg_template = f"Ranking {today_str} {emoji}:\n"
-        sport_rank_by_time_list = ['workout', 'weighttraining']
+        sport_rank_by_time_list = ['workout', 'weighttraining', 'velomobile', 'standuppaddling', 'yoga']
         rank_params = 'total_distance'
         rank_unit="km"
         metas = self.metas.get(sport_type.lower())
