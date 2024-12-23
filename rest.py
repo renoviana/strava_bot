@@ -47,7 +47,8 @@ class StravaGroup:
             if not sport_medalhas:
                 continue
             sport_medalhas = data.get(sport_medalhas[0])
-            victory_dict = sport_medalhas.get(user_name, None)
+            sport_medalhas = {k.lower(): v for k, v in sport_medalhas.items()}
+            victory_dict = sport_medalhas.get(user_name.lower(), None)
             if victory_dict:
                 medalhas[victory_dict] += 1
         lider, segundo, terceiro = list(medalhas.values())
