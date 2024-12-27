@@ -4,31 +4,36 @@ from secure import STRAVA_CLIENT_ID, STRAVA_REDIRECT_URI, TICKET_MESSAGE
 from tools import get_markup
 from rest import StravaGroup
 
-command_dict = {}
-callback_dict = {}
 
-def TelegramCommand(command: str):
+
+
+
+class StravaCommands:
+    command_dict = {}
+    callback_dict = {}
+    strava_group: StravaGroup = None
+    def __init__(self, strava_group: StravaGroup):
+        self.strava_group = strava_group
+
+    @staticmethod
+    def TelegramCommand(command: str):
         def decorator(func):
-            command_dict[command] = func.__name__
+            StravaCommands.command_dict[command] = func.__name__
             @functools.wraps(func)
             def wrapper(*args, **kwargs):
                 return func(*args, **kwargs)
             return wrapper
         return decorator
 
-def TelegramCallback(command: str):
-    def decorator(func):
-        callback_dict[command] = func.__name__
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            return func(*args, **kwargs)
-        return wrapper
-    return decorator
-
-class StravaCommands:
-    strava_group: StravaGroup = None
-    def __init__(self, strava_group: StravaGroup):
-        self.strava_group = strava_group
+    @staticmethod
+    def TelegramCallback(command: str):
+        def decorator(func):
+            StravaCommands.callback_dict[command] = func.__name__
+            @functools.wraps(func)
+            def wrapper(*args, **kwargs):
+                return func(*args, **kwargs)
+            return wrapper
+        return decorator
 
     @TelegramCommand("year")
     def send_ranking_ano_msg_command(self, _):
