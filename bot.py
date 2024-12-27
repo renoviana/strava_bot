@@ -17,9 +17,7 @@ strava_dict = {}
 CALLBACK_QUEUE = queue.Queue()
 CURRENT_CALLBACK = None
 
-@bot.message_handler(content_types=[
-    "new_chat_members"
-])
+@bot.message_handler(content_types=["new_chat_members"])
 def new_chat_handler(message):
     """
     Handler para novos usuários e também a entrada do bot no grupo
@@ -49,11 +47,14 @@ def new_chat_handler(message):
 
     bot.reply_to(message, f"Bem vindo ao grupo {new_user.get('first_name')}!\n\n Autorize seu strava nesse link para participar \n{link}")
 
+def get_strava_command_group(group_id):
+    if group_id not in strava_dict:
+            strava_dict[group_id] = StravaCommands(StravaDataEngine(group_id, StravaService, DbManager))
+    return strava_dict[group_id]
+
 def callback_process(call):
     try:
-        if call.message.chat.id not in strava_dict:
-            strava_dict[call.message.chat.id] = StravaCommands(StravaDataEngine(call.message.chat.id, StravaService, DbManager))
-        strava_command = strava_dict[call.message.chat.id]
+        strava_command_group = get_strava_command_group(call.message.chat.id)
         command_list = list(
             filter(lambda command: command[0] in call.data, callback_dict.items())
         )
@@ -62,7 +63,7 @@ def callback_process(call):
             return
 
         _, command_function_name = command_list[0]
-        resultado = strava_command.__getattribute__(command_function_name)(call)
+        resultado = strava_command_group.__getattribute__(command_function_name)(call)
         send_reply_return(resultado, call.message, bot, disable_web_page_preview=True)
         try:
             bot.answer_callback_query(call.id)
@@ -79,13 +80,6 @@ def callback_process(call):
             "Erro ao executar o comando, tente novamente.", call.message, bot, disable_web_page_preview=True
         )
 
-def loop_callback():
-    global CALLBACK_QUEUE
-    while not CALLBACK_QUEUE.empty():
-        call = CALLBACK_QUEUE.get()
-        callback_process(call)
-        CALLBACK_QUEUE.task_done()
-
 @bot.callback_query_handler(func=lambda _: True)
 def callback_query(call) -> None:
     """
@@ -99,7 +93,10 @@ def callback_query(call) -> None:
     CURRENT_CALLBACK = call
     try:
         callback_process(call)
-        loop_callback()
+        while not CALLBACK_QUEUE.empty():
+            call = CALLBACK_QUEUE.get()
+            callback_process(call)
+            CALLBACK_QUEUE.task_done()
     except:
         pass
     
@@ -111,19 +108,14 @@ def handle_group_message(message) -> None:
     Handler para escutar comandos de grupo
     """
     try:
-        if message.chat.id not in strava_dict:
-            strava_dict[message.chat.id] = StravaCommands(StravaDataEngine(message.chat.id, StravaService, DbManager))
-
-        strava_command = strava_dict[message.chat.id]
-        command = message.text[1:].split(" ")[0]
+        strava_command_group = get_strava_command_group(message.chat.id)
+        command = message.text[1:].split(" ")[0].replace("@bsbpedalbot", "")
         bot_member = bot.get_chat_member(message.chat.id, bot.get_me().id)
         is_bot_admin = bot_member.status in ["administrator", "creator"]
 
-        command = command.replace("@bsbpedalbot", "")
-
         if command not in command_dict:
             return
-        result = strava_command.__getattribute__(command_dict[command])(message)
+        result = strava_command_group.__getattribute__(command_dict[command])(message)
         data = send_reply_return(result, message, bot, disable_web_page_preview=True)
     except Exception as exc:
         if exc.args:
