@@ -108,9 +108,9 @@ class StravaDataEngine:
 
         activity_list += api_activity_list
 
-        page = 1
+        page = 2
+
         while len(api_activity_list) % 100 == 0:
-            page += 1
             api_activity_list = self.provider.list_activity(user_name, after=first_day.timestamp(), before=last_day.timestamp(), page=page)
 
             index_data = self.last_id_in_list(api_activity_list, last_db_activity_id)
@@ -119,6 +119,8 @@ class StravaDataEngine:
                 break
 
             activity_list += api_activity_list
+            page += 1
+
         self.db_manager.process_activities(activity_list)
         return activity_list + list(db_activity_list) 
 
