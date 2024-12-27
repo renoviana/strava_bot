@@ -115,8 +115,7 @@ class StravaDataEngine:
 
             index_data = self.last_id_in_list(api_activity_list, last_db_activity_id)
             if index_data is not None:
-                api_activity_list = api_activity_list[:index_data]
-                activity_list += api_activity_list
+                activity_list += api_activity_list[:index_data]
                 break
 
             activity_list += api_activity_list
