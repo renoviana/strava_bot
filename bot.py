@@ -17,17 +17,19 @@ strava_dict = {}
 CALLBACK_QUEUE = queue.Queue()
 CURRENT_CALLBACK = None
 
+def get_strava_command_group(group_id) -> StravaCommands:
+    if group_id not in strava_dict:
+            strava_dict[group_id] = StravaCommands(StravaDataEngine(group_id, StravaService, DbManager))
+    return strava_dict[group_id]
+
 @bot.message_handler(content_types=["new_chat_members"])
 def new_chat_handler(message):
     """
     Handler para novos usuários e também a entrada do bot no grupo
     """
-    if message.chat.id not in strava_dict:
-        strava_dict[message.chat.id] = StravaCommands(StravaDataEngine(str(message.chat.id), StravaService, DbManager))
-
-    strava_command = strava_dict[message.chat.id]
+    strava_command_group = get_strava_command_group(message.chat.id)
     new_user = message.json.get("new_chat_member")
-    link = strava_command.get_link_command(message)
+    link = strava_command_group.get_link_command(message)
 
     if new_user.get('id') == TELEGRAM_BOT_ID:
         bot.reply_to(
@@ -46,11 +48,6 @@ def new_chat_handler(message):
         return
 
     bot.reply_to(message, f"Bem vindo ao grupo {new_user.get('first_name')}!\n\n Autorize seu strava nesse link para participar \n{link}")
-
-def get_strava_command_group(group_id):
-    if group_id not in strava_dict:
-            strava_dict[group_id] = StravaCommands(StravaDataEngine(group_id, StravaService, DbManager))
-    return strava_dict[group_id]
 
 def callback_process(call):
     try:
