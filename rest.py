@@ -4,13 +4,9 @@ from dateutil.relativedelta import relativedelta
 from model import DbManager
 from service import StravaService
 
-class StravaGroup:
+class StravaDataEngine:
     provider :StravaService
     db_manager: DbManager
-    last_run = None
-    cache_last_activity = None
-    cache_first_day = None
-    cache_last_day = None
     membros = {}
     metas = {}
     ignored_activities = []
@@ -70,13 +66,13 @@ class StravaGroup:
 
     def list_activity(
         self,
-        user,
+        user_name,
         first_day=None,
         last_day=None,):
         """
         Retorna lista de atividades do mês e filtra de acordo com o sport_list
         Args:
-            user (str): usuario
+            user_name (str): usuario
             sport_list (list): lista de esportes
             first_day (datetime): data de inicio
             last_day (datetime): data de fim
@@ -94,20 +90,13 @@ class StravaGroup:
         if not last_day:
             last_day = datetime.now() + timedelta(minutes=1)
         
-        query = {
-            "athlete.id":  self.membros[user].get('athlete_id'),
-            "start_date_local": {
-                "$gte": first_day,
-                "$lt": last_day,
-            }
-        }
-
-        new_data = self.db_manager.list_strava_activities(query)
+        user_id = self.membros.get(user_name, {}).get('athlete_id')
+        new_data = self.db_manager.list_strava_activities(user_id, first_day, last_day)
         activity_id = None
         if new_data:
             activity_id = new_data[0]['id']
         lista_geral = []
-        new_activity_list = self.provider.list_activity(user, after=first_day.timestamp(), before=last_day.timestamp())
+        new_activity_list = self.provider.list_activity(user_name, after=first_day.timestamp(), before=last_day.timestamp())
         lista_geral += new_activity_list
 
         if activity_id:
@@ -120,7 +109,7 @@ class StravaGroup:
         page = 1
         while len(new_activity_list) % 100 == 0 and len(new_activity_list) != 0:
             page += 1
-            new_activity_list = self.provider.list_activity(user, after=first_day.timestamp(), before=last_day.timestamp(), page=page)
+            new_activity_list = self.provider.list_activity(user_name, after=first_day.timestamp(), before=last_day.timestamp(), page=page)
             index_data = self.last_id_in_list(new_activity_list, activity_id)
             if index_data is not None:
                 new_activity_list = new_activity_list[:index_data]
@@ -166,8 +155,7 @@ class StravaGroup:
 
             activity_dict[activity_type].append(activity)
 
-        # if  gym_dict:
-        #     activity_dict["WeightTraining"] = list(gym_dict.values())
+
         return activity_dict
 
     def update_gym_dict(self, gym_dict, activity):
@@ -193,6 +181,11 @@ class StravaGroup:
         return gym_dict
 
     def get_all_user_data(self, ignore_stats_ids=None, first_day=None, last_day=None):
+        self.last_run = self.last_run or None
+        self.cache_last_activity = self.cache_last_activity or None
+        self.cache_first_day = self.cache_first_day or None
+        self.cache_last_day = self.cache_last_day or None
+
         if not first_day:
             first_day = datetime.now().replace(
                 day=1,

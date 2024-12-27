@@ -80,28 +80,33 @@ class DbManager:
         strava_group = Strava_group.objects(telegram_group_id=self.group_id).first()
 
         if not strava_group:
-            self.add_strava_group(self.group_id)
+            self.add_strava_group()
             strava_group = Strava_group.objects(telegram_group_id=self.group_id).first()
 
         return strava_group
 
-    def add_strava_group(self, membros={}, metas={}, ignored_activities=[], segments_ids=[], medalhas={'ride':{}}, cache_data=[]):
+    def add_strava_group(self):
         return Strava_group(
             telegram_group_id=self.group_id,
-            membros=membros,
-            metas=metas,
-            ignored_activities=ignored_activities,
-            segments_ids=segments_ids,
-            medalhas=medalhas,
-            cache_data=cache_data
+            membros={},
+            metas={},
+            ignored_activities=[],
+            segments_ids=[],
+            medalhas={'ride':{}},
+            cache_data=[]
         ).save()
 
-    def list_strava_activities(self, query=None, order_by='-start_date_local'):
-        if not query:
-            data = StravaActivity.objects(group_id=self.group_id).order_by(order_by).all()
-        else:
-            query['group_id'] = self.group_id
-            data = StravaActivity.objects(__raw__=query).order_by(order_by).all()
+    def list_strava_activities(self, user_id, first_day, last_day):
+        query = {
+            'group_id': self.group_id,
+            'athlete.id': user_id,
+            'start_date_local': {
+                "$gte": first_day,
+                "$lt": last_day,
+            }
+        }
+
+        data = StravaActivity.objects(__raw__=query).order_by('-start_date_local').all()
 
         new_data = []
         for i in data:
@@ -116,11 +121,7 @@ class DbManager:
         return new_data
 
     def update_membro(self, user, data):
-        group = Strava_group.objects(telegram_group_id=self.group_id).first()
-
-        if not group:
-            raise Exception("Grupo não encontrado")
-
+        group = self.get_strava_group()
         group.membros[user] = data
         group.save()
 
@@ -135,8 +136,6 @@ class DbManager:
         removed_user_id = strava_group.membros[user_name].get('athlete_id')
         strava_group.membros = {key: value for key, value in strava_group.membros.items() if key != user_name}
 
-        
-        
         query = {
             "athlete.id":  removed_user_id,
             "group_id": self.group_id,

@@ -1,12 +1,12 @@
 import datetime
 import logging
 from mongoengine import connect
-from rest import StravaGroup
+from rest import StravaDataEngine
 from secure import MONGO_URI, TELEGRAM_GROUP_ID
 logger = logging.getLogger(__name__)
 
 connect(host=MONGO_URI)
-strava_group = StravaGroup(TELEGRAM_GROUP_ID)
+strava_group = StravaDataEngine(TELEGRAM_GROUP_ID)
 
 def test_strava_commands():
     assert strava_group.strava_entity

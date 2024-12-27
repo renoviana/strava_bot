@@ -6,7 +6,7 @@ import threading
 from mongoengine import connect
 from model import DbManager
 from command import StravaCommands, command_dict, callback_dict
-from rest import StravaGroup
+from rest import StravaDataEngine
 from service import StravaService
 from tools import is_group_message, send_reply_return
 from secure import HEALTH_CHECK_URL, TELEGRAM_BOT_TOKEN, MONGO_URI, TELEGRAM_BOT_ID
@@ -25,7 +25,7 @@ def new_chat_handler(message):
     Handler para novos usuários e também a entrada do bot no grupo
     """
     if message.chat.id not in strava_dict:
-        strava_dict[message.chat.id] = StravaCommands(StravaGroup(str(message.chat.id), StravaService, DbManager))
+        strava_dict[message.chat.id] = StravaCommands(StravaDataEngine(str(message.chat.id), StravaService, DbManager))
 
     strava_command = strava_dict[message.chat.id]
     new_user = message.json.get("new_chat_member")
@@ -52,7 +52,7 @@ def new_chat_handler(message):
 def callback_process(call):
     try:
         if call.message.chat.id not in strava_dict:
-            strava_dict[call.message.chat.id] = StravaCommands(StravaGroup(call.message.chat.id, StravaService, DbManager))
+            strava_dict[call.message.chat.id] = StravaCommands(StravaDataEngine(call.message.chat.id, StravaService, DbManager))
         strava_command = strava_dict[call.message.chat.id]
         command_list = list(
             filter(lambda command: command[0] in call.data, callback_dict.items())
@@ -112,7 +112,7 @@ def handle_group_message(message) -> None:
     """
     try:
         if message.chat.id not in strava_dict:
-            strava_dict[message.chat.id] = StravaCommands(StravaGroup(message.chat.id, StravaService, DbManager))
+            strava_dict[message.chat.id] = StravaCommands(StravaDataEngine(message.chat.id, StravaService, DbManager))
 
         strava_command = strava_dict[message.chat.id]
         command = message.text[1:].split(" ")[0]
