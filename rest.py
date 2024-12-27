@@ -99,14 +99,14 @@ class StravaDataEngine:
         db_activity_list, last_db_activity_id = self.get_db_activity(first_day, last_day, user_id)        
         api_activity_list = self.provider.list_activity(user_name, after=first_day.timestamp(), before=last_day.timestamp())
 
-        if not api_activity_list:
-            return db_activity_list
-        
-        activity_list += api_activity_list
-
         index_data = self.last_id_in_list(api_activity_list, last_db_activity_id)
         if index_data is not None:
             api_activity_list = api_activity_list[:index_data]
+
+        if not api_activity_list:
+            return db_activity_list
+
+        activity_list += api_activity_list
 
         page = 1
         while len(api_activity_list) % 100 == 0:
