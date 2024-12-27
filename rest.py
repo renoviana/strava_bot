@@ -100,7 +100,7 @@ class StravaDataEngine:
         api_activity_list = self.provider.list_activity(user_name, after=first_day.timestamp(), before=last_day.timestamp())
 
         last_index_db = self.last_id_in_list(api_activity_list, last_db_activity_id)
-        if last_index_db:
+        if last_index_db is not None:
             api_activity_list = api_activity_list[:last_index_db]
 
         activity_list += api_activity_list
@@ -109,7 +109,7 @@ class StravaDataEngine:
             api_activity_list = self.provider.list_activity(user_name, after=first_day.timestamp(), before=last_day.timestamp(), page=page)
 
             last_index_db = self.last_id_in_list(api_activity_list, last_db_activity_id)
-            if last_index_db:
+            if last_index_db is not None:
                 activity_list += api_activity_list[:last_index_db]
                 break
 
