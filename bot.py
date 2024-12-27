@@ -1,12 +1,11 @@
 import queue
 import time
-from typing import Dict
 import requests
 import telebot
 import threading
 from mongoengine import connect
 from model import DbManager
-from command import StravaCommands
+from command import StravaCommands, command_dict, callback_dict
 from rest import StravaGroup
 from service import StravaService
 from tools import is_group_message, send_reply_return
@@ -14,7 +13,7 @@ from secure import HEALTH_CHECK_URL, TELEGRAM_BOT_TOKEN, MONGO_URI, TELEGRAM_BOT
 
 connect(host=MONGO_URI)
 bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
-strava_dict: Dict[int, StravaCommands] = {}
+strava_dict = {}
 CALLBACK_QUEUE = queue.Queue()
 CURRENT_CALLBACK = None
 
@@ -56,10 +55,10 @@ def callback_process(call):
             strava_dict[call.message.chat.id] = StravaCommands(StravaGroup(call.message.chat.id, StravaService, DbManager))
         strava_command = strava_dict[call.message.chat.id]
         command_list = list(
-            filter(lambda command: command[0] in call.data, strava_command.callback_dict.items())
+            filter(lambda command: command[0] in call.data, callback_dict.items())
         )
 
-        if not command_list:
+        if not callback_dict:
             return
 
         _, command_function_name = command_list[0]
@@ -122,9 +121,9 @@ def handle_group_message(message) -> None:
 
         command = command.replace("@bsbpedalbot", "")
 
-        if command not in strava_command.command_dict:
+        if command not in command_dict:
             return
-        result = strava_command.__getattribute__(strava_command.command_dict[command])(message)
+        result = strava_command.__getattribute__(command_dict[command])(message)
         data = send_reply_return(result, message, bot, disable_web_page_preview=True)
     except Exception as exc:
         if exc.args:
