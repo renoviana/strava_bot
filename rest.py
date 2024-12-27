@@ -583,7 +583,7 @@ class StravaGroup:
 
         return msg
 
-    def remove_strava_user(self, user_name, user_name_admin):
+    def remove_strava_user(self, user_name):
         """
         Remove usuário do strava
         Args:
@@ -593,7 +593,6 @@ class StravaGroup:
         user_name = user_name.split(" - ")[0]
         membros = self.db_manager.remove_strava_user(user_name)
         self.membros = membros
-        return f"Usuário {user_name} removido com sucesso pelo {user_name_admin}!"
 
     def save_group_meta(self, tipo_meta, km):
         """
@@ -638,7 +637,6 @@ class StravaGroup:
             activity_id (str): id da atividade
         """
         self.ignored_activities = self.db_manager.add_ignore_activity(activity_id)
-        return "Atividade ignorada com sucesso!"
 
     def get_segments(self, min_distance=None):
         """

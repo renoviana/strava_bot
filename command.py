@@ -299,7 +299,8 @@ class StravaCommands:
         message_text = message.text
         atividade_link = message_text.replace("/ignore ", "")
         atividade_id = atividade_link.split("/")[-1]
-        return self.strava_group.add_ignore_activity(atividade_id)
+        self.strava_group.add_ignore_activity(atividade_id)
+        return "Atividade ignorada com sucesso!"
     
     @TelegramCallback("syear_")
     def get_ranking_year_callback(self, callback):
@@ -320,7 +321,8 @@ class StravaCommands:
         """
         user_name = callback.data.replace("del_strava_", "")
         user_name_admin = callback.from_user.first_name or callback.from_user.username
-        return self.strava_group.remove_strava_user(user_name, user_name_admin)
+        self.strava_group.remove_strava_user(user_name, user_name_admin)
+        return f"Usuário {user_name} removido com sucesso pelo {user_name_admin}!"
 
     @TelegramCallback("meta_")
     def custom_meta_callback(self, callback):
