@@ -99,47 +99,37 @@ class StravaDataEngine:
         )
 
         all_activities = []
-        try:
-            provider_activities = self.provider.list_activity(
-                user_name, after=first_day.timestamp(), before=last_day.timestamp()
+        provider_activities = self.provider.list_activity(
+            user_name, after=first_day.timestamp(), before=last_day.timestamp()
+        )
+        all_activities.extend(provider_activities)
+
+        if activities_from_db:
+            # Deduplication logic (consider alternative strategies)
+            index = self.last_id_in_list(provider_activities, activities_from_db[0]['id'])
+            if index is not None:
+                provider_activities = provider_activities[:index]
+
+        # Fetch remaining pages if necessary (optimize if possible)
+        page = 2
+        while len(provider_activities) % 100 == 0 and provider_activities:
+            new_page_activities = self.provider.list_activity(
+                user_name, 
+                after=first_day.timestamp(), 
+                before=last_day.timestamp(), 
+                page=page
             )
-            all_activities.extend(provider_activities)
+            all_activities.extend(new_page_activities)
 
             if activities_from_db:
-                # Deduplication logic (consider alternative strategies)
-                index = self.last_id_in_list(provider_activities, activities_from_db[0]['id'])
+                index = self.last_id_in_list(new_page_activities, activities_from_db[0]['id'])
                 if index is not None:
-                    provider_activities = provider_activities[:index]
+                    all_activities = all_activities[:index]
+                    break  # Stop fetching further pages
 
-            # Fetch remaining pages if necessary (optimize if possible)
-            page = 2
-            while len(provider_activities) % 100 == 0 and provider_activities:
-                new_page_activities = self.provider.list_activity(
-                    user_name, 
-                    after=first_day.timestamp(), 
-                    before=last_day.timestamp(), 
-                    page=page
-                )
-                all_activities.extend(new_page_activities)
+            page += 1
 
-                if activities_from_db:
-                    index = self.last_id_in_list(new_page_activities, activities_from_db[0]['id'])
-                    if index is not None:
-                        all_activities = all_activities[:index]
-                        break  # Stop fetching further pages
-
-                page += 1
-
-        except Exception as e:
-            # Log the error and potentially return an empty list or raise an exception
-            print(f"Error fetching activities from provider: {e}")
-
-        try:
-            self.db_manager.process_activities(all_activities)
-        except Exception as e:
-            # Log the error and potentially return an empty list or raise an exception
-            print(f"Error processing activities: {e}")
-
+        self.db_manager.process_activities(all_activities)
         return all_activities + activities_from_db
 
     def get_activity_list_by_type(
