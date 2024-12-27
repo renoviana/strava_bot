@@ -59,12 +59,12 @@ class StravaDataEngine:
 
         return msg
 
-    def last_id_in_list(self, lista, last_id):
-        if not last_id:
+    def last_id_in_list(self, activity_list, last_db_id):
+        if not last_db_id:
             return None
 
-        for index, data in enumerate(lista):
-            if last_id == data['id']:
+        for index, data in enumerate(activity_list):
+            if last_db_id == data['id']:
                 return index
         
         return None
@@ -83,7 +83,7 @@ class StravaDataEngine:
             last_day (datetime): data de fim
         """
         activity_list = []
-        user_id = self.membros.get(user_name, {}).get('athlete_id')
+
         if not first_day:
             first_day = datetime.now().replace(
                 day=1,
@@ -96,26 +96,21 @@ class StravaDataEngine:
         if not last_day:
             last_day = datetime.now() + timedelta(minutes=1)
 
-        db_activity_list, last_db_activity_id = self.get_db_activity(first_day, last_day, user_id)        
+        db_activity_list, last_db_activity_id = self.get_db_activity(first_day, last_day, self.membros.get(user_name, {}).get('athlete_id'))        
         api_activity_list = self.provider.list_activity(user_name, after=first_day.timestamp(), before=last_day.timestamp())
 
-        index_data = self.last_id_in_list(api_activity_list, last_db_activity_id)
-        if index_data is not None:
-            api_activity_list = api_activity_list[:index_data]
-
-        if not api_activity_list:
-            return db_activity_list
+        last_index_db = self.last_id_in_list(api_activity_list, last_db_activity_id)
+        if last_index_db:
+            api_activity_list = api_activity_list[:last_index_db]
 
         activity_list += api_activity_list
-
         page = 2
-
-        while len(api_activity_list) % 100 == 0:
+        while api_activity_list and len(api_activity_list) % 100 == 0:
             api_activity_list = self.provider.list_activity(user_name, after=first_day.timestamp(), before=last_day.timestamp(), page=page)
 
-            index_data = self.last_id_in_list(api_activity_list, last_db_activity_id)
-            if index_data is not None:
-                activity_list += api_activity_list[:index_data]
+            last_index_db = self.last_id_in_list(api_activity_list, last_db_activity_id)
+            if last_index_db:
+                activity_list += api_activity_list[:last_index_db]
                 break
 
             activity_list += api_activity_list
