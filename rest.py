@@ -60,6 +60,9 @@ class StravaDataEngine:
         return msg
 
     def last_id_in_list(self, lista, last_id):
+        if not last_id:
+            return None
+
         for index, data in enumerate(lista):
             if last_id == data['id']:
                 return index
@@ -101,25 +104,21 @@ class StravaDataEngine:
         
         activity_list += api_activity_list
 
-        if last_db_activity_id:
-            index_data = self.last_id_in_list(api_activity_list, last_db_activity_id)
-            if index_data is not None:
-                api_activity_list = api_activity_list[:index_data]
-                self.db_manager.process_activities(api_activity_list)
-                return api_activity_list + list(db_activity_list)
+        if index_data := self.last_id_in_list(api_activity_list, last_db_activity_id) and last_db_activity_id:
+            api_activity_list = api_activity_list[:index_data]
+            self.db_manager.process_activities(api_activity_list)
+            return api_activity_list + list(db_activity_list)
 
         page = 1
         while len(api_activity_list) % 100 == 0:
             page += 1
             api_activity_list = self.provider.list_activity(user_name, after=first_day.timestamp(), before=last_day.timestamp(), page=page)
 
-            if last_db_activity_id:
-                index_data = self.last_id_in_list(api_activity_list, last_db_activity_id)
-                if index_data is not None:
-                    api_activity_list = api_activity_list[:index_data]
-                    activity_list += api_activity_list
-                    self.db_manager.process_activities(activity_list)
-                    return activity_list + list(db_activity_list)
+            if index_data := self.last_id_in_list(api_activity_list, last_db_activity_id) and last_db_activity_id:
+                api_activity_list = api_activity_list[:index_data]
+                activity_list += api_activity_list
+                self.db_manager.process_activities(activity_list)
+                return activity_list + list(db_activity_list)
 
             activity_list += api_activity_list
         self.db_manager.process_activities(activity_list)
