@@ -10,6 +10,7 @@ class StravaDataEngine:
     membros = {}
     metas = {}
     ignored_activities = []
+    
 
     def __init__(self, group_id, provider: StravaService, db_manager:DbManager) -> None:
         self.db_manager = db_manager(group_id)
@@ -21,6 +22,10 @@ class StravaDataEngine:
         self.ignored_activities = self.strava_entity.ignored_activities
         self.medalhas = self.strava_entity.medalhas or {}
         self.list_activities = []
+        self.last_run = None
+        self.cache_last_activity = None
+        self.cache_first_day = None
+        self.cache_last_day = None
 
     def get_victory_str(self, sport_type,  user_name):
         """
@@ -181,11 +186,6 @@ class StravaDataEngine:
         return gym_dict
 
     def get_all_user_data(self, ignore_stats_ids=None, first_day=None, last_day=None):
-        self.last_run = self.last_run or None
-        self.cache_last_activity = self.cache_last_activity or None
-        self.cache_first_day = self.cache_first_day or None
-        self.cache_last_day = self.cache_last_day or None
-
         if not first_day:
             first_day = datetime.now().replace(
                 day=1,
