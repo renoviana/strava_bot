@@ -1,12 +1,11 @@
 import requests
 
 from secure import STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET
-from model import DbManager
 
 class StravaService:
     url = 'https://www.strava.com/api/v3'
 
-    def __init__(self, membros, db_manager: DbManager):
+    def __init__(self, membros, db_manager):
         self.membros = membros
         self.db_manager = db_manager
 

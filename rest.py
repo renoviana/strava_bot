@@ -1,18 +1,15 @@
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
-
-from model import DbManager
 from service import StravaService
 
 class StravaDataEngine:
     provider :StravaService
-    db_manager: DbManager
     membros = {}
     metas = {}
     ignored_activities = []
     
 
-    def __init__(self, group_id, provider: StravaService, db_manager:DbManager) -> None:
+    def __init__(self, group_id, provider: StravaService, db_manager) -> None:
         self.db_manager = db_manager(group_id)
         self.group_id = group_id
         self.strava_entity = self.db_manager.get_strava_group()
@@ -96,33 +93,36 @@ class StravaDataEngine:
             last_day = datetime.now() + timedelta(minutes=1)
         
         user_id = self.membros.get(user_name, {}).get('athlete_id')
-        new_data = self.db_manager.list_strava_activities(user_id, first_day, last_day)
+        db_activity_list = self.db_manager.list_strava_activities(user_id, first_day, last_day)
         activity_id = None
-        if new_data:
-            activity_id = new_data[0]['id']
+        if db_activity_list:
+            activity_id = db_activity_list[0]['id']
         lista_geral = []
-        new_activity_list = self.provider.list_activity(user_name, after=first_day.timestamp(), before=last_day.timestamp())
-        lista_geral += new_activity_list
+        api_activity_list = self.provider.list_activity(user_name, after=first_day.timestamp(), before=last_day.timestamp())
+        
+        lista_geral += api_activity_list
 
         if activity_id:
-            index_data = self.last_id_in_list(new_activity_list, activity_id)
+            index_data = self.last_id_in_list(api_activity_list, activity_id)
             if index_data is not None:
-                new_activity_list = new_activity_list[:index_data]
-                self.db_manager.process_activities(new_activity_list)
-                return new_activity_list + list(new_data)
+                api_activity_list = api_activity_list[:index_data]
+                self.db_manager.process_activities(api_activity_list)
+                return api_activity_list + list(db_activity_list)
 
         page = 1
-        while len(new_activity_list) % 100 == 0 and len(new_activity_list) != 0:
+        while len(api_activity_list) % 100 == 0 and len(api_activity_list) != 0:
             page += 1
-            new_activity_list = self.provider.list_activity(user_name, after=first_day.timestamp(), before=last_day.timestamp(), page=page)
-            index_data = self.last_id_in_list(new_activity_list, activity_id)
-            if index_data is not None:
-                new_activity_list = new_activity_list[:index_data]
-                lista_geral += new_activity_list
-                self.db_manager.process_activities(lista_geral)
-                return new_activity_list + list(new_data)
-            else:
-                lista_geral += new_activity_list
+            api_activity_list = self.provider.list_activity(user_name, after=first_day.timestamp(), before=last_day.timestamp(), page=page)
+
+            if activity_id:
+                index_data = self.last_id_in_list(api_activity_list, activity_id)
+                if index_data is not None:
+                    api_activity_list = api_activity_list[:index_data]
+                    lista_geral += api_activity_list
+                    self.db_manager.process_activities(lista_geral)
+                    return api_activity_list + list(db_activity_list)
+
+            lista_geral += api_activity_list
         self.db_manager.process_activities(lista_geral)
         return lista_geral
 
