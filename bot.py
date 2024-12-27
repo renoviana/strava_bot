@@ -60,7 +60,7 @@ def callback_process(call):
 
         if not callback_dict:
             return
-        print(command_dict)
+
         _, command_function_name = command_list[0]
         resultado = strava_command.__getattribute__(command_function_name)(call)
         send_reply_return(resultado, call.message, bot, disable_web_page_preview=True)
@@ -93,7 +93,6 @@ def callback_query(call) -> None:
     Quando um usuário clica em algum botão no bot
     """
     global CURRENT_CALLBACK, CALLBACK_QUEUE
-    print(call.data)
     if CURRENT_CALLBACK:
         return CALLBACK_QUEUE.put(call)
     
