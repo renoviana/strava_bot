@@ -79,7 +79,8 @@ class StravaDataEngine:
             first_day (datetime): data de inicio
             last_day (datetime): data de fim
         """
-
+        activity_list = []
+        user_id = self.membros.get(user_name, {}).get('athlete_id')
         if not first_day:
             first_day = datetime.now().replace(
                 day=1,
@@ -91,40 +92,45 @@ class StravaDataEngine:
 
         if not last_day:
             last_day = datetime.now() + timedelta(minutes=1)
-        
-        user_id = self.membros.get(user_name, {}).get('athlete_id')
-        db_activity_list = self.db_manager.list_strava_activities(user_id, first_day, last_day)
-        activity_id = None
-        if db_activity_list:
-            activity_id = db_activity_list[0]['id']
-        lista_geral = []
-        api_activity_list = self.provider.list_activity(user_name, after=first_day.timestamp(), before=last_day.timestamp())
-        
-        lista_geral += api_activity_list
 
-        if activity_id:
-            index_data = self.last_id_in_list(api_activity_list, activity_id)
+        db_activity_list, last_db_activity_id = self.get_db_activity(first_day, last_day, user_id)        
+        api_activity_list = self.provider.list_activity(user_name, after=first_day.timestamp(), before=last_day.timestamp())
+
+        if not api_activity_list:
+            return db_activity_list
+        
+        activity_list += api_activity_list
+
+        if last_db_activity_id:
+            index_data = self.last_id_in_list(api_activity_list, last_db_activity_id)
             if index_data is not None:
                 api_activity_list = api_activity_list[:index_data]
                 self.db_manager.process_activities(api_activity_list)
                 return api_activity_list + list(db_activity_list)
 
         page = 1
-        while len(api_activity_list) % 100 == 0 and len(api_activity_list) != 0:
+        while len(api_activity_list) % 100 == 0:
             page += 1
             api_activity_list = self.provider.list_activity(user_name, after=first_day.timestamp(), before=last_day.timestamp(), page=page)
 
-            if activity_id:
-                index_data = self.last_id_in_list(api_activity_list, activity_id)
+            if last_db_activity_id:
+                index_data = self.last_id_in_list(api_activity_list, last_db_activity_id)
                 if index_data is not None:
                     api_activity_list = api_activity_list[:index_data]
-                    lista_geral += api_activity_list
-                    self.db_manager.process_activities(lista_geral)
-                    return api_activity_list + list(db_activity_list)
+                    activity_list += api_activity_list
+                    self.db_manager.process_activities(activity_list)
+                    return activity_list + list(db_activity_list)
 
-            lista_geral += api_activity_list
-        self.db_manager.process_activities(lista_geral)
-        return lista_geral
+            activity_list += api_activity_list
+        self.db_manager.process_activities(activity_list)
+        return activity_list
+
+    def get_db_activity(self, first_day, last_day, user_id):
+        db_activity_list = self.db_manager.list_strava_activities(user_id, first_day, last_day)
+        activity_id = None
+        if db_activity_list:
+            activity_id = db_activity_list[0]['id']
+        return db_activity_list, activity_id
 
     def get_activity_list_by_type(
         self, user, first_day=None, last_day=None):
