@@ -98,9 +98,6 @@ class StravaDataEngine:
             user_id, first_day, last_day
         )
 
-        last_activity_id = None
-
-
         all_activities = []
         try:
             provider_activities = self.provider.list_activity(
