@@ -107,8 +107,6 @@ class StravaDataEngine:
         index_data = self.last_id_in_list(api_activity_list, last_db_activity_id)
         if index_data is not None:
             api_activity_list = api_activity_list[:index_data]
-            self.db_manager.process_activities(api_activity_list)
-            return api_activity_list + list(db_activity_list)
 
         page = 1
         while len(api_activity_list) % 100 == 0:
@@ -119,12 +117,11 @@ class StravaDataEngine:
             if index_data is not None:
                 api_activity_list = api_activity_list[:index_data]
                 activity_list += api_activity_list
-                self.db_manager.process_activities(activity_list)
-                return activity_list + list(db_activity_list)
+                break
 
             activity_list += api_activity_list
         self.db_manager.process_activities(activity_list)
-        return activity_list
+        return activity_list + list(db_activity_list) 
 
     def get_db_activity(self, first_day, last_day, user_id):
         db_activity_list = self.db_manager.list_strava_activities(user_id, first_day, last_day)
