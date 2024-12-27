@@ -1,13 +1,36 @@
 from datetime import datetime, timedelta
+import functools
 from secure import STRAVA_CLIENT_ID, STRAVA_REDIRECT_URI, TICKET_MESSAGE
 from tools import get_markup
 from rest import StravaGroup
+
+command_dict = {}
+callback_dict = {}
+
+def TelegramCommand(command: str):
+        def decorator(func):
+            command_dict[command] = func.__name__
+            @functools.wraps(func)
+            def wrapper(*args, **kwargs):
+                return func(*args, **kwargs)
+            return wrapper
+        return decorator
+
+def TelegramCallback(command: str):
+    def decorator(func):
+        callback_dict[command] = func.__name__
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
+
 class StravaCommands:
     strava_group: StravaGroup = None
+    def __init__(self, strava_group: StravaGroup):
+        self.strava_group = strava_group
 
-    def __init__(self, group_id):
-        self.strava_group = StravaGroup(str(group_id))
-
+    @TelegramCommand("year")
     def send_ranking_ano_msg_command(self, _):
         """
         Send ride year rank
@@ -42,13 +65,7 @@ class StravaCommands:
             "markup": get_markup(all_type, "syear_"),
         }
 
-    def get_ranking_year_msg(self, callback):
-        """
-        Send year sport rank
-        """
-        sport = callback.data.replace("syear_", "")
-        return self.strava_group.get_ranking_str(sport,year_rank=True)
-
+    @TelegramCommand("score")
     def send_point_msg_command(self, _):
         """
         Send score ride rank
@@ -69,6 +86,7 @@ class StravaCommands:
         pontos_msg = f"Score Mensal:\n{points_str}\n\n{array_msg}"
         return pontos_msg
 
+    @TelegramCommand("yscore")
     def send_year_point_msg_command(self, _):
         """
         Send score ride rank
@@ -99,6 +117,7 @@ class StravaCommands:
         )
         return pontos_msg
 
+    @TelegramCommand("stats")
     def send_stats_command(self, _):
         """
         Send ride stats
@@ -107,6 +126,7 @@ class StravaCommands:
         """
         return self.strava_group.get_stats_str()
     
+    @TelegramCommand("ystats")
     def send_year_stats_command(self, _):
         """
         Send ride stats
@@ -115,6 +135,7 @@ class StravaCommands:
         """
         return self.strava_group.get_stats_str(year_stats=True)
 
+    @TelegramCommand("admin")
     def admin_command(self, _):
         """
         Send admin menu
@@ -135,19 +156,12 @@ class StravaCommands:
             "texto": "Usuários cadastradas:",
             "markup": get_markup(
                 lista_user,
-                # delete_option=True,
-                # delete_data="strava",
+                delete_option=True,
+                delete_data="strava",
             ),
         }
 
-    def del_strava_user_callback(self, call):
-        """
-        Remove strava user
-        """
-        user_name = call.data.replace("del_strava_", "")
-        user_name_admin = call.from_user.first_name or call.from_user.username
-        return self.strava_group.remove_strava_user(user_name, user_name_admin)
-
+    @TelegramCommand("link")
     def get_link_command(self, message):
         """
         Send strava link
@@ -155,6 +169,7 @@ class StravaCommands:
         group_id = str(message.chat.id)
         return f"https://www.strava.com/oauth/authorize?client_id={STRAVA_CLIENT_ID}&redirect_uri={STRAVA_REDIRECT_URI.format(group_id)}"
 
+    @TelegramCommand("metas")
     def metas_command(self, _):
         """
         Send goals menu
@@ -169,58 +184,9 @@ class StravaCommands:
             ),
         }
 
-    def custom_meta_command(self, message):
-        """
-        Send goal question
-        """
-        tipo_meta = message.data.replace("meta_", "")
-        return {
-            "function": self.add_meta_callback,
-            "texto": "Digite o valor da meta em km",
-            "function_data": {
-                "tipo_meta": tipo_meta,
-            },
-        }
-
-    def add_meta_callback(self, message, data):
-        """
-        Add sport goal
-        Args:
-            message (Message): telegram message
-            data (dict): dados da função
-        """
-        meta_km = message.text
-        tipo_meta = data.get("tipo_meta")
-
-        if not meta_km.isnumeric():
-            return "Valor invalido, informe apenas numeros"
-
-        self.strava_group.save_group_meta(tipo_meta, int(meta_km))
-
-        return "Meta adicionada com sucesso"
-
-    def del_meta_command(self, message):
-        """
-        Remove goal
-        Args:
-            message (Message): telegram message
-        """
-        tipo_meta = message.data.replace("del_meta_meta_", "")
-        self.strava_group.save_group_meta(tipo_meta, None)
-        return f"Meta {tipo_meta.title()} removida com sucesso"
-
-    def ignore_ativities_status_callback(self, message):
-        """
-        Send ignored activitys
-        Args:
-            message (Message): telegram message
-        """
-        message_text = message.text
-        atividade_link = message_text.replace("/ignore ", "")
-        atividade_id = atividade_link.split("/")[-1]
-        return self.strava_group.add_ignore_activity(atividade_id)
-
-    def get_menu_sports_msg(self, _):
+    @TelegramCommand("rank")
+    @TelegramCommand("sport")
+    def get_menu_sports_command(self, _):
         """
         Send sport menu
         Args:
@@ -237,14 +203,8 @@ class StravaCommands:
             "markup": get_markup(all_type, "strava_"),
         }
 
-    def get_sports_msg(self, callback):
-        """
-        Retorna ranking do esporte
-        """
-        sport_type = callback.data.replace("strava_", "")
-        return self.strava_group.get_ranking_str(sport_type)
-
-    def get_segments(self, message):
+    @TelegramCommand("segments")
+    def get_segments_command(self, message):
         """
         Send strava segments
         Args:
@@ -256,7 +216,8 @@ class StravaCommands:
             max_distance = distance[1]
         return self.strava_group.get_segments_str(max_distance)
 
-    def get_medalhas(self, _):
+    @TelegramCommand("medalhas")
+    def get_medalhas_command(self, _):
         """
         Send medal rank
         Args:
@@ -264,7 +225,8 @@ class StravaCommands:
         """
         return self.strava_group.get_medalhas_rank()
     
-    def get_medalhas_var(self, _):
+    @TelegramCommand("medalhasvar")
+    def get_medalhas_var_command(self, _):
         """
         Send medal rank
         Args:
@@ -272,14 +234,16 @@ class StravaCommands:
         """
         return self.strava_group.get_medalhas_var()
 
-    def get_ticket_message(self, message):
+    @TelegramCommand("ticket")
+    def get_ticket_command(self, message):
         texto = message.text.replace("/ticket ", "")
         from_user= message.from_user
         first_name = from_user.first_name or from_user.username
         data_future = (datetime.now() + timedelta(hours=48)).strftime("%d/%m/%Y %H:%M")
         return f"Oi {first_name}!\nParabéns, você foi sorteado para desenvolver o ticket  '{texto}'.\n\n{TICKET_MESSAGE}\nSeu tempo termina: {data_future}"
 
-    def get_frequency_message(self, _):
+    @TelegramCommand("frequency")
+    def get_frequency_command(self, _):
         """
         Send month rank
         Args:
@@ -287,7 +251,8 @@ class StravaCommands:
         """
         return self.strava_group.get_frequency()
     
-    def get_year_frequency_message(self, _):
+    @TelegramCommand("yfrequency")
+    def get_year_frequency_command(self, _):
         """
         Send year rank
         Args:
@@ -314,6 +279,7 @@ class StravaCommands:
         data = datetime.now().timetuple().tm_yday
         return self.strava_group.get_frequency(first_day, last_day, data, "Quantidade de dias com atividades no ano:")
     
+    @TelegramCommand("segment")
     def get_segment_rank_command(self, message):
         """
         Send segment rank
@@ -322,3 +288,90 @@ class StravaCommands:
         """
         segment_id = message.text.replace("/segment ", "")
         return self.strava_group.get_segments_rank(int(segment_id))
+    
+    @TelegramCommand("ignore")
+    def ignore_ativities_status_command(self, message):
+        """
+        Send ignored activitys
+        Args:
+            message (Message): telegram message
+        """
+        message_text = message.text
+        atividade_link = message_text.replace("/ignore ", "")
+        atividade_id = atividade_link.split("/")[-1]
+        return self.strava_group.add_ignore_activity(atividade_id)
+    
+    @TelegramCallback("syear_")
+    def get_ranking_year_callback(self, callback):
+        """
+        Send year sport rank
+        Args:
+            callback (Callback): telegram callback
+        """
+        sport = callback.data.replace("syear_", "")
+        return self.strava_group.get_ranking_str(sport,year_rank=True)
+
+    @TelegramCallback("del_strava")
+    def del_strava_user_callback(self, callback):
+        """
+        Remove strava user
+        Args:
+            callback (Callback): telegram callback
+        """
+        user_name = callback.data.replace("del_strava_", "")
+        user_name_admin = callback.from_user.first_name or callback.from_user.username
+        return self.strava_group.remove_strava_user(user_name, user_name_admin)
+
+    @TelegramCallback("meta_")
+    def custom_meta_callback(self, callback):
+        """
+        Send goal question
+        Args:
+            callback (Callback): telegram callback
+        """
+        def add_meta_callback(message, data):
+            """
+            Add sport goal
+            Args:
+                message (Message): telegram message
+                data (dict): dados da função
+            """
+            meta_km = message.text
+            tipo_meta = data.get("tipo_meta")
+
+            if not meta_km.isnumeric():
+                return "Valor invalido, informe apenas numeros"
+
+            self.strava_group.save_group_meta(tipo_meta, int(meta_km))
+
+            return "Meta adicionada com sucesso"
+
+        tipo_meta = callback.data.replace("meta_", "")
+        return {
+            "function": add_meta_callback,
+            "texto": "Digite o valor da meta em km",
+            "function_data": {
+                "tipo_meta": tipo_meta,
+            },
+        }
+    
+    @TelegramCallback("del_meta")
+    def del_meta_callback(self, callback):
+        """
+        Remove goal
+        Args:
+            callback (Callback): telegram callback
+        """
+        tipo_meta = callback.data.replace("del_meta_meta_", "")
+        self.strava_group.save_group_meta(tipo_meta, None)
+        return f"Meta {tipo_meta.title()} removida com sucesso"
+
+    @TelegramCallback("strava_")
+    def get_sports_msg_callback(self, callback):
+        """
+        Retorna ranking do esporte
+        Args:
+            callback (Callback): telegram callback
+        """
+        sport_type = callback.data.replace("strava_", "")
+        return self.strava_group.get_ranking_str(sport_type)

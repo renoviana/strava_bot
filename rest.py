@@ -1,14 +1,12 @@
 from datetime import datetime, timedelta
-import random
-import requests
-from model import StravaActivity, add_strava_group, get_strava_group, list_strava_activities
-from secure import (
-    STRAVA_CLIENT_ID,
-    STRAVA_CLIENT_SECRET,
-)
 from dateutil.relativedelta import relativedelta
 
+from model import DbManager
+from service import StravaService
+
 class StravaGroup:
+    provider :StravaService
+    db_manager: DbManager
     last_run = None
     cache_last_activity = None
     cache_first_day = None
@@ -17,15 +15,13 @@ class StravaGroup:
     metas = {}
     ignored_activities = []
 
-    def __init__(self, group_id=None) -> None:
-        self.strava_entity = get_strava_group(group_id)
-        self.group_id = self.strava_entity.telegram_group_id
-        if not self.strava_entity:
-            add_strava_group(self.group_id)
-            self.strava_entity = get_strava_group(self.group_id)
-
-        self.metas = self.strava_entity.metas
+    def __init__(self, group_id, provider: StravaService, db_manager:DbManager) -> None:
+        self.db_manager = db_manager(group_id)
+        self.group_id = group_id
+        self.strava_entity = self.db_manager.get_strava_group()
+        self.provider = provider(self.strava_entity.membros, self.db_manager)
         self.membros = self.strava_entity.membros
+        self.metas = self.strava_entity.metas
         self.ignored_activities = self.strava_entity.ignored_activities
         self.medalhas = self.strava_entity.medalhas or {}
         self.list_activities = []
@@ -65,75 +61,12 @@ class StravaGroup:
 
         return msg
 
-    def get_strava_api(
-        self,
-        url,
-        user,
-        params=None):
-        """
-        Retorna dados de atividades em formato json
-        Args:
-            'url' (str): url da api
-            'params' (dict): parametros
-            'user' (str): usuario
-        """
-
-        if not params:
-            params = {}
-
-        access_token, refresh_token = self.get_user_access_and_refresh_token(user)
-        params["access_token"] = access_token
-        response = requests.get(url, params=params, timeout=40)
-
-        if response.status_code == 429:
-            raise Exception("Erro ao acessar o strava muitas requisições, tente novamente mais tarde")
-
-        if response.status_code == 401:
-            access_token, refresh_token = self.update_user_token(user, refresh_token)
-            return self.get_strava_api(
-                url,
-                user,
-                params=params,
-            )
-
-        return response
-
-    def update_user_token(self, user, refresh_token):
-        """
-        Atualiza token do usuário
-        Args:
-            user (str): usuario
-            refresh_token (str): refresh token
-        """
-        url = "https://www.strava.com/oauth/token"
-        params = {
-            "client_id": STRAVA_CLIENT_ID,
-            "client_secret": STRAVA_CLIENT_SECRET,
-            "refresh_token": refresh_token,
-            "grant_type": "refresh_token",
-        }
-        new_token = requests.post(url, params=params, timeout=40).json()
-        self.membros[user]["access_token"] = new_token["access_token"]
-        self.membros[user]["refresh_token"] = new_token["refresh_token"]
-        self.update_entity()
-        return new_token["access_token"], new_token["refresh_token"]
-
     def last_id_in_list(self, lista, last_id):
         for index, data in enumerate(lista):
             if last_id == data['id']:
                 return index
         
         return None
-
-    def get_user_access_and_refresh_token(self, user):
-        """
-        Retorna access token e refresh token do usuário
-        Args:
-            user (str): usuario
-        """
-        user_at = self.membros[user].get("access_token")
-        user_rt = self.membros[user].get("refresh_token")
-        return user_at, user_rt
 
     def list_activity(
         self,
@@ -169,102 +102,36 @@ class StravaGroup:
             }
         }
 
-        new_data = list_strava_activities(self.group_id, query)
+        new_data = self.db_manager.list_strava_activities(query)
         activity_id = None
         if new_data:
             activity_id = new_data[0]['id']
         lista_geral = []
-        new_activity_list = self.get_athlete_data(
-            user,
-            after_date=first_day,
-            before_date=last_day,
-        )
+        new_activity_list = self.provider.list_activity(user, after=first_day.timestamp(), before=last_day.timestamp())
         lista_geral += new_activity_list
 
         if activity_id:
             index_data = self.last_id_in_list(new_activity_list, activity_id)
             if index_data is not None:
                 new_activity_list = new_activity_list[:index_data]
-                self.process_activities(new_activity_list)
+                self.db_manager.process_activities(new_activity_list)
                 return new_activity_list + list(new_data)
 
         page = 1
         while len(new_activity_list) % 100 == 0 and len(new_activity_list) != 0:
             page += 1
-            new_activity_list = self.get_athlete_data(
-                user,
-                after_date=first_day,
-                before_date=last_day,
-                page=page,
-            )
-            
+            new_activity_list = self.provider.list_activity(user, after=first_day.timestamp(), before=last_day.timestamp(), page=page)
             index_data = self.last_id_in_list(new_activity_list, activity_id)
             if index_data is not None:
                 new_activity_list = new_activity_list[:index_data]
                 lista_geral += new_activity_list
-                self.process_activities(lista_geral)
+                self.db_manager.process_activities(lista_geral)
                 return new_activity_list + list(new_data)
             else:
                 lista_geral += new_activity_list
-        self.process_activities(lista_geral)
+        self.db_manager.process_activities(lista_geral)
         return lista_geral
 
-    def process_activities(self, new_activity_list):
-        mongo_lista = []
-        for activity in new_activity_list:
-            activity_dict = activity.copy()
-            activity_dict['group_id'] = self.group_id
-            activity_dict['activity_type'] = activity_dict['type']
-            activity_dict['activity_id'] = activity_dict['id']
-            activity_dict['activity_map'] = activity_dict['map']
-            del activity_dict['type']
-            del activity_dict['id']
-            del activity_dict['map']
-            mongo_lista.append(StravaActivity(**activity_dict))
-        if mongo_lista:
-            StravaActivity.objects.insert(mongo_lista)
-
-    def get_athlete_data(
-        self,
-        user,
-        after_date=None,
-        before_date=None,
-        page=1,
-        per_page=100):
-        """
-        Retorna dados ded atividades em formato json
-        Args:
-            after_date (datetime): data de inicio
-            before_date (datetime): data de fim
-            user (str): usuario
-            page (int): pagina
-            per_page (int): itens por pagina
-        """
-        url = "https://www.strava.com/api/v3/athlete/activities"
-        access_token, _ = self.get_user_access_and_refresh_token(user)
-        params = {"access_token": access_token, "page": page, "per_page": per_page}
-
-        if after_date:
-            params["after"] = after_date.timestamp()
-
-        if before_date:
-            params["before"] = before_date.timestamp()
-
-        response = self.get_strava_api(url, user, params=params)
-        if response.status_code > 500:
-            raise Exception("Erro ao acessar a API do Strava, tente novamente mais tarde")
-        return response.json()
-
-    def update_entity(self):
-        """
-        Atualiza entidade do strava
-        """
-        self.strava_entity.metas = self.metas
-        self.strava_entity.membros = self.membros
-        self.strava_entity.ignored_activities = self.ignored_activities
-        self.strava_entity.medalhas = self.medalhas
-        self.strava_entity.save()
-    
     def get_activity_list_by_type(
         self, user, first_day=None, last_day=None):
         """
@@ -723,20 +590,9 @@ class StravaGroup:
             user_name (str): nome do usuário
             user_name_admin (str): nome do admin
         """
-        new_grupo_dict = {}
-        for user_name_db, strava_data in self.membros.items():
-            if user_name_db == user_name:
-                continue
-            new_grupo_dict[user_name_db] = strava_data
-        
-        athlete_id = self.membros[user_name].get('athlete_id')
-        query = {
-            "athlete.id":  athlete_id,
-            "group_id": self.group_id,
-        }
-        StravaActivity.objects(__raw__=query).delete()
-        self.membros = new_grupo_dict
-        self.update_entity()
+        user_name = user_name.split(" - ")[0]
+        membros = self.db_manager.remove_strava_user(user_name)
+        self.membros = membros
         return f"Usuário {user_name} removido com sucesso pelo {user_name_admin}!"
 
     def save_group_meta(self, tipo_meta, km):
@@ -746,12 +602,8 @@ class StravaGroup:
             tipo_meta (str): tipo de meta
             km (int): km
         """
-        if km:
-            km = int(km)
-            self.metas[tipo_meta] = km
-        else:
-            del self.metas[tipo_meta]
-        self.update_entity()
+        metas = self.db_manager.update_meta(tipo_meta, km)
+        self.metas = metas
 
     def calc_point_rank(self, total_user_points, total_elevation_gain_ride_m, distance_km, sport_type):
         """
@@ -785,10 +637,7 @@ class StravaGroup:
         Args:
             activity_id (str): id da atividade
         """
-        ignore_stats_ids = self.ignored_activities or []
-        ignore_stats_ids.append(str(activity_id))
-        self.ignored_activities = ignore_stats_ids
-        self.update_entity()
+        self.ignored_activities = self.db_manager.add_ignore_activity(activity_id)
         return "Atividade ignorada com sucesso!"
 
     def get_segments(self, min_distance=None):
@@ -860,10 +709,7 @@ class StravaGroup:
             min_distance (int): The minimum distance.
             all_segments (dict): Dictionary to collect all segment efforts.
         """
-        activity_id = activity['id']
-        activity_data = self.get_strava_api(
-            f"https://www.strava.com/api/v3/activities/{activity_id}", name
-        ).json()
+        activity_data = self.provider.get_activity(activity['id'])
         segment_efforts = activity_data.get('segment_efforts', [])
 
         for segment_effort in segment_efforts:
@@ -877,7 +723,7 @@ class StravaGroup:
                 'user': name,
                 'access_token': token['access_token'],
                 'refresh_token': token['refresh_token'],
-                'atividade_id': activity_id
+                'atividade_id': activity['id']
             })
             segment_id = segment_effort['segment']['id']
 
@@ -901,10 +747,7 @@ class StravaGroup:
 
         for segment_list in filtered_segments.values():
             for segment in segment_list:
-                segment_data = self.get_strava_api(
-                    f"https://www.strava.com/api/v3/segment_efforts/{segment['id']}",
-                    segment['user']
-                ).json()
+                segment_data = self.provider.get_segment_effort(segment['user'], segment['id'])
 
                 activity_id = segment_data['segment']['id']
                 segment_data.update({
@@ -993,7 +836,6 @@ class StravaGroup:
 
         return "\n".join(msg_list)
 
-
     def get_frequency(self, first_day=None, last_day=None, month_days=None, title=""):
         if not month_days:
             title = "Quantidade de dias com atividades no mês:"
@@ -1030,7 +872,6 @@ class StravaGroup:
             msg_list.append(f"{rank_position}º - {name.title()} - {valor}/{month_days}")
         return "\n".join(msg_list)
     
-
     def get_medalhas_var(self):
         from collections import defaultdict
 
@@ -1067,10 +908,6 @@ class StravaGroup:
                         msg_list.append(f"{medalha} - {', '.join(meses)}")
 
         return "\n".join(msg_list)
-
-    def get_segment_data(self, user_name, segment_id):
-        response = self.get_strava_api(f"https://www.strava.com/api/v3/segments/{segment_id}", user_name)
-        return response.json()
     
     def convert_seconds_to_minutes(self, seconds):
         minutes = seconds // 60  # Calcula os minutos inteiros
@@ -1080,7 +917,7 @@ class StravaGroup:
     def get_segments_rank(self, segment_id):
         lista_membros = []
         for membro_name in self.membros:
-            segment_data = self.get_segment_data(membro_name, segment_id)
+            segment_data = self.provider.get_segment(membro_name, segment_id)
 
             if "errors" in segment_data:
                 raise Exception(f"Erro ao buscar segmento: {segment_data['message']}")

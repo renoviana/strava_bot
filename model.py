@@ -70,64 +70,122 @@ class StravaActivity(Document):
     average_cadence = FloatField()
     suffer_score = IntField()
     group_id = IntField()
+
+class DbManager:
+
+    def __init__(self, group_id):
+        self.group_id = int(group_id)
+        
+    def get_strava_group(self) -> Strava_group:
+        strava_group = Strava_group.objects(telegram_group_id=self.group_id).first()
+
+        if not strava_group:
+            self.add_strava_group(self.group_id)
+            strava_group = Strava_group.objects(telegram_group_id=self.group_id).first()
+
+        return strava_group
+
+    def add_strava_group(self, membros={}, metas={}, ignored_activities=[], segments_ids=[], medalhas={'ride':{}}, cache_data=[]):
+        return Strava_group(
+            telegram_group_id=self.group_id,
+            membros=membros,
+            metas=metas,
+            ignored_activities=ignored_activities,
+            segments_ids=segments_ids,
+            medalhas=medalhas,
+            cache_data=cache_data
+        ).save()
+
+    def list_strava_activities(self, query=None, order_by='-start_date_local'):
+        if not query:
+            data = StravaActivity.objects(group_id=self.group_id).order_by(order_by).all()
+        else:
+            query['group_id'] = self.group_id
+            data = StravaActivity.objects(__raw__=query).order_by(order_by).all()
+
+        new_data = []
+        for i in data:
+            data_dict = i.to_mongo().to_dict()
+            data_dict['type'] = data_dict['activity_type']
+            data_dict['id'] = data_dict['activity_id']
+            data_dict['map'] = data_dict['activity_map']
+            del data_dict['activity_type']
+            del data_dict['activity_id']
+            del data_dict['activity_map']
+            new_data.append(data_dict)
+        return new_data
+
+    def update_membro(self, user, data):
+        group = Strava_group.objects(telegram_group_id=self.group_id).first()
+
+        if not group:
+            raise Exception("Grupo não encontrado")
+
+        group.membros[user] = data
+        group.save()
+
+    def remove_strava_user(self, user_name):
+        """
+        Remove usuário do strava
+        Args:
+            user_name (str): nome do usuário
+            user_name_admin (str): nome do admin
+        """
+        strava_group = self.get_strava_group()
+        removed_user_id = strava_group.membros[user_name].get('athlete_id')
+        strava_group.membros = {key: value for key, value in strava_group.membros.items() if key != user_name}
+
+        
+        
+        query = {
+            "athlete.id":  removed_user_id,
+            "group_id": self.group_id,
+        }
+        StravaActivity.objects(__raw__=query).delete()
+        strava_group.save()
+        return strava_group.membros
     
+    def update_meta(self, tipo_meta, km):
+        strava_group = self.get_strava_group()
+        metas = strava_group.metas
 
+        if km:
+            km = int(km)
+            metas[tipo_meta] = km
+        else:
+            del metas[tipo_meta]
+        
+        strava_group.metas = metas
+        strava_group.save()
+        return strava_group.metas
 
+    def add_ignore_activity(self, activity_id):
+        """
+        Ignora atividade
+        Args:
+            activity_id (str): id da atividade
+        """
+        strava_group = self.get_strava_group()
+        ignored_activities = strava_group.ignored_activities or []
+        ignored_activities.append(str(activity_id))
+        strava_group.ignored_activities = ignored_activities
+        strava_group.save()
+        return strava_group.ignored_activities
+    
+    def process_activities(self, new_activity_list):
+        if not new_activity_list:
+            return
 
-
-def get_strava_group(telegram_group_id):
-    return Strava_group.objects(telegram_group_id=telegram_group_id).first()
-
-def add_strava_group(telegram_group_id, membros={}, metas={}, ignored_activities=[], segments_ids=[], medalhas={'ride':{}}, cache_data=[]):
-    return Strava_group(
-        telegram_group_id=telegram_group_id,
-        membros=membros,
-        metas=metas,
-        ignored_activities=ignored_activities,
-        segments_ids=segments_ids,
-        medalhas=medalhas,
-        cache_data=cache_data
-    ).save()
-
-def add_strava_activity(data):
-    if StravaActivity.objects(activity_id=data['id'], group_id=data['group_id']).first():
-        return
-
-    data_copy = data.copy()
-    data_copy['activity_type'] = data_copy['type']
-    data_copy['activity_id'] = data_copy['id']
-    data_copy['activity_map'] = data_copy['map']
-    del data_copy['type']
-    del data_copy['id']
-    del data_copy['map']
-    return StravaActivity(**data_copy).save()
-
-def get_strava_activity(activity_id):
-    return StravaActivity.objects(activity_id=activity_id).first()
-
-def list_strava_activities(group_id, query=None, order_by='-start_date_local'):
-    if not query:
-        data = StravaActivity.objects(group_id=group_id).order_by(order_by).all()
-    else:
-        query['group_id'] = group_id
-        data = StravaActivity.objects(__raw__=query).order_by(order_by).all()
-
-    new_data = []
-    for i in data:
-        data_dict = i.to_mongo().to_dict()
-        data_dict['type'] = data_dict['activity_type']
-        data_dict['id'] = data_dict['activity_id']
-        data_dict['map'] = data_dict['activity_map']
-        del data_dict['activity_type']
-        del data_dict['activity_id']
-        del data_dict['activity_map']
-        new_data.append(data_dict)
-    return new_data
-
-
-def get_last_strava_activity(group_id, athlete_id):
-    query = {
-        'group_id': group_id,
-        "athlete.id": athlete_id
-    }
-    return StravaActivity.objects(group_id=group_id, **{"athlete__id": athlete_id}).order_by('-start_date_local').first()
+        mongo_lista = []
+        for activity in new_activity_list:
+            activity_dict = activity.copy()
+            activity_dict['group_id'] = self.group_id
+            activity_dict['activity_type'] = activity_dict['type']
+            activity_dict['activity_id'] = activity_dict['id']
+            activity_dict['activity_map'] = activity_dict['map']
+            del activity_dict['type']
+            del activity_dict['id']
+            del activity_dict['map']
+            mongo_lista.append(StravaActivity(**activity_dict))
+        
+        StravaActivity.objects.insert(mongo_lista)
