@@ -1,15 +1,15 @@
-import queue
 import time
+import queue
+import threading
 import requests
 import telebot
-import threading
 from mongoengine import connect
 from model import DbManager
 from command import StravaCommands, command_dict, callback_dict
 from rest import StravaDataEngine
 from service import StravaService
 from tools import is_group_message, send_reply_return
-from secure import HEALTH_CHECK_URL, TELEGRAM_BOT_TOKEN, MONGO_URI, TELEGRAM_BOT_ID
+from secure import TELEGRAM_BOT_TOKEN, MONGO_URI, TELEGRAM_BOT_ID, HEALTH_CHECK_URL
 
 connect(host=MONGO_URI)
 bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
@@ -18,6 +18,11 @@ CALLBACK_QUEUE = queue.Queue()
 CURRENT_CALLBACK = None
 
 def get_strava_command_group(group_id) -> StravaCommands:
+    """
+    Função para retornar a instância de StravaCommands
+    Args:
+        group_id (int): Id do grupo
+    """
     if group_id not in strava_dict:
             strava_dict[group_id] = StravaCommands(StravaDataEngine(group_id, StravaService, DbManager))
     return strava_dict[group_id]
@@ -112,7 +117,8 @@ def handle_group_message(message) -> None:
 
         if command not in command_dict:
             return
-        result = strava_command_group.__getattribute__(command_dict[command])(message)
+
+        result = getattr(strava_command_group, command_dict[command])(message)
         data = send_reply_return(result, message, bot, disable_web_page_preview=True)
     except Exception as exc:
         if exc.args:

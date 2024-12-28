@@ -31,11 +31,11 @@ class StravaCommands:
         self.strava_engine = strava_engine
 
     @TelegramCommand("year")
-    def send_ranking_ano_msg_command(self, _):
+    def year_rank_command(self, _):
         """
-        Send ride year rank
+        Send menu year rank
         Args:
-            message (Message): telegram message
+            _ (Message): telegram message
         """
         first_day = datetime.now().replace(
             day=1,
@@ -54,26 +54,25 @@ class StravaCommands:
             month=1,
             year=datetime.now().year + 1
         )
-        all_type = self.strava_engine.list_type_activities(first_day=first_day, last_day=last_day)
-        all_type = list(filter(lambda x: x != "activity_dict", all_type))
+        year_activities_list = self.strava_engine.list_type_activities(first_day=first_day, last_day=last_day)
 
-        if not all_type:
-            return "Nenhum atividade encontrada nesse mês"
+        if not year_activities_list:
+            return "Nenhuma atividade encontrada"
 
         return {
-            "texto": "Selecione o tipo de esporte",
-            "markup": get_markup(all_type, "syear_"),
+            "texto": "Selecione o esporte",
+            "markup": get_markup(year_activities_list, "syear_"),
         }
 
     @TelegramCommand("score")
-    def send_point_msg_command(self, _):
+    def score_command(self, _):
         """
         Send score ride rank
         Args:
             message (Message): telegram message
         """
 
-        array_msg = [
+        rules_list = [
             "Como funciona: ",
             "1 ponto - Run/Swim/Hike acima de 2km",
             "1 ponto - Pedal acima de 10km",
@@ -81,13 +80,13 @@ class StravaCommands:
             "+1 ponto - Pedal acima de 50km",
             "+1 ponto - Pedal acima de 100km",
         ]
-        array_msg = '\n'.join(array_msg)
+        rules_str = '\n'.join(rules_list)
         points_str = '\n'.join(self.strava_engine.get_point_str())
-        pontos_msg = f"Score Mensal:\n{points_str}\n\n{array_msg}"
+        pontos_msg = f"Score Mensal:\n{points_str}\n\n{rules_str}"
         return pontos_msg
 
     @TelegramCommand("yscore")
-    def send_year_point_msg_command(self, _):
+    def year_score_command(self, _):
         """
         Send score ride rank
         Args:
@@ -110,30 +109,28 @@ class StravaCommands:
             month=1,
             year=datetime.now().year + 1
         )
-        pontos_msg = (
-            "Score Anual:\n"
-            + "\n".join(self.strava_engine.get_point_str(first_day, last_day))
-            + "\n\nComo funciona: \n1 ponto - Ride/Run/Swim/Hike acima de 2km\n1 ponto - Pedal acima de 10km\n+1 ponto - Pedal acima de 350m de elevação\n+1 ponto - Pedal acima de 50km"
-        )
+        rules_list = [
+            "Como funciona: ",
+            "1 ponto - Run/Swim/Hike acima de 2km",
+            "1 ponto - Pedal acima de 10km",
+            "+1 ponto - Pedal acima de 350m de elevação",
+            "+1 ponto - Pedal acima de 50km",
+            "+1 ponto - Pedal acima de 100km",
+        ]
+        rules_str = '\n'.join(rules_list)
+        points_str = '\n'.join(self.strava_engine.get_point_str(first_day, last_day))
+        pontos_msg = f"Score Anual:\n{points_str}\n\n{rules_str}"
         return pontos_msg
 
     @TelegramCommand("stats")
-    def send_stats_command(self, _):
-        """
-        Send ride stats
-        Args:
-            message (Message): telegram message
-        """
-        return self.strava_engine.get_stats_str()
-    
     @TelegramCommand("ystats")
-    def send_year_stats_command(self, _):
+    def stats_command(self, message):
         """
         Send ride stats
         Args:
             message (Message): telegram message
         """
-        return self.strava_engine.get_stats_str(year_stats=True)
+        return self.strava_engine.get_stats_str(year_stats=message.text == "/ystats@bsbpedalbot")
 
     @TelegramCommand("admin")
     def admin_command(self, _):
@@ -162,7 +159,7 @@ class StravaCommands:
         }
 
     @TelegramCommand("link")
-    def get_link_command(self, message):
+    def link_command(self, message):
         """
         Send strava link
         """
@@ -170,15 +167,15 @@ class StravaCommands:
         return f"https://www.strava.com/oauth/authorize?client_id={STRAVA_CLIENT_ID}&redirect_uri={STRAVA_REDIRECT_URI.format(group_id)}"
 
     @TelegramCommand("metas")
-    def metas_command(self, _):
+    def group_goals_command(self, _):
         """
         Send goals menu
         """
-        dict_meta = self.strava_engine.metas.keys()
+        goals_dict = self.strava_engine.metas.keys()
         return {
-            "texto": "Selecione o tipo de meta",
+            "texto": "Selecione a meta",
             "markup": get_markup(
-                list(map(lambda x: (x.title(), f"meta_{x}"), dict_meta)),
+                list(map(lambda x: (x.title(), f"meta_{x}"), goals_dict)),
                 delete_option=True,
                 delete_data="meta",
             ),
@@ -186,14 +183,13 @@ class StravaCommands:
 
     @TelegramCommand("rank")
     @TelegramCommand("sport")
-    def get_menu_sports_command(self, _):
+    def list_sport_command(self, _):
         """
         Send sport menu
         Args:
             message (Message): telegram message
         """
         all_type = self.strava_engine.list_type_activities()
-        all_type = list(filter(lambda x: x != "activity_dict", all_type))
 
         if not all_type:
             return "Nenhum atividade encontrada nesse mês"
@@ -203,21 +199,21 @@ class StravaCommands:
             "markup": get_markup(all_type, "strava_"),
         }
 
-    @TelegramCommand("segments")
-    def get_segments_command(self, message):
-        """
-        Send strava segments
-        Args:
-            message (Message): telegram message
-        """
-        max_distance = None
-        distance = message.text.split(" ")
-        if len(distance) > 1:
-            max_distance = distance[1]
-        return self.strava_engine.get_segments_str(max_distance)
+    # @TelegramCommand("segments")
+    # def segments_command(self, message):
+    #     """
+    #     Send strava segments
+    #     Args:
+    #         message (Message): telegram message
+    #     """
+    #     max_distance = None
+    #     distance = message.text.split(" ")
+    #     if len(distance) > 1:
+    #         max_distance = distance[1]
+    #     return self.strava_engine.get_segments_str(max_distance)
 
     @TelegramCommand("medalhas")
-    def get_medalhas_command(self, _):
+    def group_medals_command(self, _):
         """
         Send medal rank
         Args:
@@ -226,7 +222,7 @@ class StravaCommands:
         return self.strava_engine.get_medalhas_rank()
     
     @TelegramCommand("medalhasvar")
-    def get_medalhas_var_command(self, _):
+    def group_medals_var_command(self, _):
         """
         Send medal rank
         Args:
@@ -235,7 +231,12 @@ class StravaCommands:
         return self.strava_engine.get_medalhas_var()
 
     @TelegramCommand("ticket")
-    def get_ticket_command(self, message):
+    def ticket_command(self, message):
+        """
+        Send ticket message
+        Args:
+            message (Message): telegram message
+        """
         texto = message.text.replace("/ticket ", "")
         from_user= message.from_user
         first_name = from_user.first_name or from_user.username
@@ -243,7 +244,7 @@ class StravaCommands:
         return f"Oi {first_name}!\nParabéns, você foi sorteado para desenvolver o ticket  '{texto}'.\n\n{TICKET_MESSAGE}\nSeu tempo termina: {data_future}"
 
     @TelegramCommand("frequency")
-    def get_frequency_command(self, _):
+    def frequency_command(self, _):
         """
         Send month rank
         Args:
@@ -252,7 +253,7 @@ class StravaCommands:
         return self.strava_engine.get_frequency()
     
     @TelegramCommand("yfrequency")
-    def get_year_frequency_command(self, _):
+    def year_frequency_command(self, _):
         """
         Send year rank
         Args:
@@ -280,7 +281,7 @@ class StravaCommands:
         return self.strava_engine.get_frequency(first_day, last_day, data, "Quantidade de dias com atividades no ano:")
     
     @TelegramCommand("segment")
-    def get_segment_rank_command(self, message):
+    def segment_command(self, message):
         """
         Send segment rank
         Args:
@@ -290,7 +291,7 @@ class StravaCommands:
         return self.strava_engine.get_segments_rank(int(segment_id))
     
     @TelegramCommand("ignore")
-    def ignore_ativities_status_command(self, message):
+    def ignore_ativities_command(self, message):
         """
         Send ignored activitys
         Args:
@@ -303,7 +304,7 @@ class StravaCommands:
         return "Atividade ignorada com sucesso!"
     
     @TelegramCallback("syear_")
-    def get_ranking_year_callback(self, callback):
+    def year_rank_callback(self, callback):
         """
         Send year sport rank
         Args:
@@ -313,7 +314,7 @@ class StravaCommands:
         return self.strava_engine.get_ranking_str(sport,year_rank=True)
 
     @TelegramCallback("del_strava")
-    def del_strava_user_callback(self, callback):
+    def delete_user_callback(self, callback):
         """
         Remove strava user
         Args:
@@ -325,7 +326,7 @@ class StravaCommands:
         return f"Usuário {user_name} removido com sucesso pelo {user_name_admin}!"
 
     @TelegramCallback("meta_")
-    def custom_meta_callback(self, callback):
+    def update_meta_callback(self, callback):
         """
         Send goal question
         Args:
@@ -358,7 +359,7 @@ class StravaCommands:
         }
     
     @TelegramCallback("del_meta")
-    def del_meta_callback(self, callback):
+    def delete_meta_callback(self, callback):
         """
         Remove goal
         Args:
@@ -369,7 +370,7 @@ class StravaCommands:
         return f"Meta {tipo_meta.title()} removida com sucesso"
 
     @TelegramCallback("strava_")
-    def get_sports_msg_callback(self, callback):
+    def rank_callback(self, callback):
         """
         Retorna ranking do esporte
         Args:
