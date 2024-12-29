@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 import functools
 from secure import STRAVA_CLIENT_ID, STRAVA_REDIRECT_URI, TICKET_MESSAGE
 from tools import get_markup
-from rest import StravaDataEngine
+from engine import StravaDataEngine
 
 command_dict = {}
 callback_dict = {}

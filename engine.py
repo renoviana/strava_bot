@@ -632,6 +632,157 @@ class StravaDataEngine:
         """
         self.ignored_activities = self.db_manager.add_ignore_activity(activity_id)
 
+    def get_medalhas_rank(self):
+        """
+        Retorna o ranking geral de medalhas
+        """
+        from collections import defaultdict
+        medals = defaultdict(lambda: {"🥇": 0, "🥈": 0, "🥉": 0, "pontos": 0})
+
+        for _, sports in self.medalhas.items():
+            for _, rankings in sports.items():
+                for person, position in rankings.items():
+                    if position == 1:
+                        medals[person]["🥇"] += 1
+                        medals[person]["pontos"] += 3
+                    elif position == 2:
+                        medals[person]["🥈"] += 1
+                        medals[person]["pontos"] += 2
+                    elif position == 3:
+                        medals[person]["🥉"] += 1
+                        medals[person]["pontos"] += 1
+
+        # Ordenar por pontos, e em caso de empate, ordenar por medalhas de ouro, prata, e bronze
+        sorted_medals = sorted(medals.items(), key=lambda x: (-x[1]["pontos"], -x[1]["🥇"], -x[1]["🥈"], -x[1]["🥉"]))
+
+        # Exibir os resultados no formato desejado
+        msg_list = []
+        rank = 1
+        pontos = sorted_medals[0][1]['pontos']
+        for rank, (person, counts) in enumerate(sorted_medals, 1):
+            if counts['pontos'] < pontos:
+                rank = rank + 1
+                pontos = counts['pontos']
+            msg_list.append(f"{rank}º - {person} 🥇{counts['🥇']} 🥈{counts['🥈']} 🥉{counts['🥉']} | {counts['pontos']} pts")
+
+        return "\n".join(msg_list)
+
+    def get_frequency(self, first_day=None, last_day=None, month_days=None, title=""):
+        """
+        Retorna a frequência de atividades dos usuários
+        Args:
+            first_day (datetime): data de inicio
+            last_day (datetime): data de fim
+            month_days (int): quantidade de dias no mês
+            title (str): titulo
+        """
+        if not month_days:
+            title = "Quantidade de dias com atividades no mês:"
+            month_days = datetime.now().day
+
+        date_dict = {}
+        for membro in self.membros:
+            activity = self.list_activity(membro, first_day=first_day, last_day=last_day)
+            if membro not in date_dict:
+                date_dict[membro] = {}
+
+            for a in activity:
+                start_date_local = a['start_date_local']
+                if isinstance(start_date_local, str):
+                    start_date_local = datetime.strptime(start_date_local, '%Y-%m-%dT%H:%M:%SZ')
+                date = start_date_local.strftime('%Y-%m-%d')
+                date_dict[membro][date] = True
+                pass
+
+            if len(date_dict[membro]) == 0:
+                del date_dict[membro]
+                continue
+
+            date_dict[membro] = len(date_dict[membro])
+        # Order by value
+        date_dict = dict(sorted(date_dict.items(), key=lambda item: item[1], reverse=True))
+        msg_list = [title]
+        rank_position = 1
+        current_value = list(date_dict.values())[0]
+        for name, valor in date_dict.items():
+            if valor != current_value:
+                rank_position = rank_position + 1
+                current_value = valor
+            msg_list.append(f"{rank_position}º - {name.title()} - {valor}/{month_days}")
+        return "\n".join(msg_list)
+    
+    def get_medalhas_var(self):
+        """
+        Retorna o ranking de medalhas por esporte e mês
+        """
+        from collections import defaultdict
+        medals = defaultdict(lambda: {
+            "🥇": 0, "🥈": 0, "🥉": 0, "detalhes": defaultdict(lambda: {"🥇": [], "🥈": [], "🥉": []})
+        })
+
+        # Iterar sobre os meses e esportes
+        for month, sports in self.medalhas.items():
+            month = month.replace("_", "/")
+            for sport, rankings in sports.items():
+                for person, position in rankings.items():
+                    if position == 1:
+                        medals[person]["🥇"] += 1
+                        medals[person]["detalhes"][sport]["🥇"].append(month)
+                    elif position == 2:
+                        medals[person]["🥈"] += 1
+                        medals[person]["detalhes"][sport]["🥈"].append(month)
+                    elif position == 3:
+                        medals[person]["🥉"] += 1
+                        medals[person]["detalhes"][sport]["🥉"].append(month)
+
+        sorted_medals = sorted(medals.items(), key=lambda x: (-x[1]["🥇"], -x[1]["🥈"], -x[1]["🥉"]))
+        msg_list = []
+
+        for rank, (person, counts) in enumerate(sorted_medals, 1):
+            msg_list.append(f"\n{rank}º - {person} 🥇{counts['🥇']} 🥈{counts['🥈']} 🥉{counts['🥉']}")
+            for sport, detalhes in counts['detalhes'].items():
+                msg_list.append(f"{sport} -")
+                for medalha, meses in detalhes.items():
+                    if meses:
+                        msg_list.append(f"{medalha} - {', '.join(meses)}")
+
+        return "\n".join(msg_list)
+    
+    def get_segments_rank(self, segment_id):
+        """
+        Retorna o ranking de um segmento
+        Args:
+            segment_id (int): id do segmento
+        """
+        lista_membros = []
+        for membro_name in self.membros:
+            segment_data = self.provider.get_segment(membro_name, segment_id)
+
+            if "errors" in segment_data:
+                raise Exception(f"Erro ao buscar segmento: {segment_data['message']}")
+
+            athlete_has_segment = segment_data.get("athlete_segment_stats")
+            if not athlete_has_segment['pr_elapsed_time']:
+                continue
+
+            pr_elapsed_time = athlete_has_segment['pr_elapsed_time']
+            pr_elapsed_time =  f"{pr_elapsed_time // 60}:{pr_elapsed_time % 60:02}"
+            pr_date = datetime.strptime(athlete_has_segment['pr_date'], "%Y-%m-%d").strftime("%d/%m/%Y")
+            lista_membros.append({
+                "membro_name": membro_name,
+                "pr_elapsed_time": pr_elapsed_time,
+                "pr_date": pr_date,
+                "str": f"<a href='https://www.strava.com/activities/{athlete_has_segment['pr_activity_id']}'>{membro_name} - {pr_elapsed_time} {pr_date}</a>"
+            })
+        lista_membros = sorted(lista_membros, key=lambda x: x['pr_elapsed_time'])
+        
+        if not lista_membros:
+            return "Nenhum membro tem o segmento"
+        
+        msg = [f"<a href='https://www.strava.com/segments/{segment_id}'>{segment_data['name']} - {round(segment_data['distance'] / 1000, 2)}km</a>"]
+        return "\n".join(msg + [f"{membro[0]} - {membro[1]['str']}" for membro in enumerate(lista_membros, 1)])
+    
+
     # def get_segments(self, min_distance=None):
     #     """
     #     Retrieves segments based on a minimum distance.
@@ -793,144 +944,3 @@ class StravaDataEngine:
 
     #     return "\n".join(str_list)
     
-    def get_medalhas_rank(self):
-        """
-        Retorna o ranking geral de medalhas
-        """
-        from collections import defaultdict
-        medals = defaultdict(lambda: {"🥇": 0, "🥈": 0, "🥉": 0, "pontos": 0})
-
-        for _, sports in self.medalhas.items():
-            for _, rankings in sports.items():
-                for person, position in rankings.items():
-                    if position == 1:
-                        medals[person]["🥇"] += 1
-                        medals[person]["pontos"] += 3
-                    elif position == 2:
-                        medals[person]["🥈"] += 1
-                        medals[person]["pontos"] += 2
-                    elif position == 3:
-                        medals[person]["🥉"] += 1
-                        medals[person]["pontos"] += 1
-
-        # Ordenar por pontos, e em caso de empate, ordenar por medalhas de ouro, prata, e bronze
-        sorted_medals = sorted(medals.items(), key=lambda x: (-x[1]["pontos"], -x[1]["🥇"], -x[1]["🥈"], -x[1]["🥉"]))
-
-        # Exibir os resultados no formato desejado
-        msg_list = []
-        rank = 1
-        pontos = sorted_medals[0][1]['pontos']
-        for rank, (person, counts) in enumerate(sorted_medals, 1):
-            if counts['pontos'] < pontos:
-                rank = rank + 1
-                pontos = counts['pontos']
-            msg_list.append(f"{rank}º - {person} 🥇{counts['🥇']} 🥈{counts['🥈']} 🥉{counts['🥉']} | {counts['pontos']} pts")
-
-        return "\n".join(msg_list)
-
-    def get_frequency(self, first_day=None, last_day=None, month_days=None, title=""):
-        if not month_days:
-            title = "Quantidade de dias com atividades no mês:"
-            month_days = datetime.now().day
-
-        date_dict = {}
-        for membro in self.membros:
-            activity = self.list_activity(membro, first_day=first_day, last_day=last_day)
-            if membro not in date_dict:
-                date_dict[membro] = {}
-
-            for a in activity:
-                start_date_local = a['start_date_local']
-                if isinstance(start_date_local, str):
-                    start_date_local = datetime.strptime(start_date_local, '%Y-%m-%dT%H:%M:%SZ')
-                date = start_date_local.strftime('%Y-%m-%d')
-                date_dict[membro][date] = True
-                pass
-
-            if len(date_dict[membro]) == 0:
-                del date_dict[membro]
-                continue
-
-            date_dict[membro] = len(date_dict[membro])
-        # Order by value
-        date_dict = dict(sorted(date_dict.items(), key=lambda item: item[1], reverse=True))
-        msg_list = [title]
-        rank_position = 1
-        current_value = list(date_dict.values())[0]
-        for name, valor in date_dict.items():
-            if valor != current_value:
-                rank_position = rank_position + 1
-                current_value = valor
-            msg_list.append(f"{rank_position}º - {name.title()} - {valor}/{month_days}")
-        return "\n".join(msg_list)
-    
-    def get_medalhas_var(self):
-        from collections import defaultdict
-
-        # Dicionário para armazenar as contagens de medalhas e os detalhes dos meses
-        medals = defaultdict(lambda: {
-            "🥇": 0, "🥈": 0, "🥉": 0, "detalhes": defaultdict(lambda: {"🥇": [], "🥈": [], "🥉": []})
-        })
-
-        # Iterar sobre os meses e esportes
-        for month, sports in self.medalhas.items():
-            month = month.replace("_", "/")
-            for sport, rankings in sports.items():
-                for person, position in rankings.items():
-                    if position == 1:
-                        medals[person]["🥇"] += 1
-                        medals[person]["detalhes"][sport]["🥇"].append(month)
-                    elif position == 2:
-                        medals[person]["🥈"] += 1
-                        medals[person]["detalhes"][sport]["🥈"].append(month)
-                    elif position == 3:
-                        medals[person]["🥉"] += 1
-                        medals[person]["detalhes"][sport]["🥉"].append(month)
-
-        # Ordenar as pessoas pelo número de medalhas de ouro, depois prata, depois bronze
-        sorted_medals = sorted(medals.items(), key=lambda x: (-x[1]["🥇"], -x[1]["🥈"], -x[1]["🥉"]))
-        msg_list = []
-        # Exibir os resultados no formato desejado
-        for rank, (person, counts) in enumerate(sorted_medals, 1):
-            msg_list.append(f"\n{rank}º - {person} 🥇{counts['🥇']} 🥈{counts['🥈']} 🥉{counts['🥉']}")
-            for sport, detalhes in counts['detalhes'].items():
-                msg_list.append(f"{sport} -")
-                for medalha, meses in detalhes.items():
-                    if meses:
-                        msg_list.append(f"{medalha} - {', '.join(meses)}")
-
-        return "\n".join(msg_list)
-    
-    def convert_seconds_to_minutes(self, seconds):
-        minutes = seconds // 60  # Calcula os minutos inteiros
-        remaining_seconds = seconds % 60  # Calcula os segundos restantes
-        return f"{minutes}:{remaining_seconds:02}"
-
-    def get_segments_rank(self, segment_id):
-        lista_membros = []
-        for membro_name in self.membros:
-            segment_data = self.provider.get_segment(membro_name, segment_id)
-
-            if "errors" in segment_data:
-                raise Exception(f"Erro ao buscar segmento: {segment_data['message']}")
-
-            athlete_has_segment = segment_data.get("athlete_segment_stats")
-            if not athlete_has_segment['pr_elapsed_time']:
-                continue
-
-            pr_elapsed_time = athlete_has_segment['pr_elapsed_time']
-            pr_elapsed_time = self.convert_seconds_to_minutes(pr_elapsed_time)
-            pr_date = datetime.strptime(athlete_has_segment['pr_date'], "%Y-%m-%d").strftime("%d/%m/%Y")
-            lista_membros.append({
-                "membro_name": membro_name,
-                "pr_elapsed_time": pr_elapsed_time,
-                "pr_date": pr_date,
-                "str": f"<a href='https://www.strava.com/activities/{athlete_has_segment['pr_activity_id']}'>{membro_name} - {pr_elapsed_time} {pr_date}</a>"
-            })
-        lista_membros = sorted(lista_membros, key=lambda x: x['pr_elapsed_time'])
-        
-        if not lista_membros:
-            return "Nenhum membro tem o segmento"
-        
-        msg = [f"<a href='https://www.strava.com/segments/{segment_id}'>{segment_data['name']} - {round(segment_data['distance'] / 1000, 2)}km</a>"]
-        return "\n".join(msg + [f"{membro[0]} - {membro[1]['str']}" for membro in enumerate(lista_membros, 1)])

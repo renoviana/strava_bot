@@ -6,7 +6,7 @@ import telebot
 from mongoengine import connect
 from model import DbManager
 from command import StravaCommands, command_dict, callback_dict
-from rest import StravaDataEngine
+from engine import StravaDataEngine
 from service import StravaService
 from tools import is_group_message, send_reply_return
 from secure import TELEGRAM_BOT_TOKEN, MONGO_URI, TELEGRAM_BOT_ID, HEALTH_CHECK_URL
