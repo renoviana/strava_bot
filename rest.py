@@ -96,7 +96,7 @@ class StravaDataEngine:
         if not last_day:
             last_day = datetime.now() + timedelta(minutes=1)
 
-        db_activity_list, last_db_activity_id = self.get_db_activity(first_day, last_day, self.membros.get(user_name, {}).get('athlete_id'))        
+        db_activity_list, last_db_activity_id = self.list_db_activity(first_day, last_day, self.membros.get(user_name, {}).get('athlete_id'))        
         api_activity_list = self.provider.list_activity(user_name, after=first_day.timestamp(), before=last_day.timestamp())
 
         last_index_db = self.last_id_in_list(api_activity_list, last_db_activity_id)
@@ -117,19 +117,26 @@ class StravaDataEngine:
             page += 1
 
         self.db_manager.process_activities(activity_list)
-        return activity_list + list(db_activity_list) 
+        return activity_list + list(db_activity_list)
 
-    def get_db_activity(self, first_day, last_day, user_id):
+    def list_db_activity(self, first_day, last_day, user_id):
+        """
+        Lista atividades do banco de dados de acordo com o usuário
+        Args:
+            first_day (datetime): data de inicio
+            last_day (datetime): data de fim
+            user_id (int): id do usuário
+        """
         db_activity_list = self.db_manager.list_strava_activities(user_id, first_day, last_day)
         activity_id = None
         if db_activity_list:
             activity_id = db_activity_list[0]['id']
         return db_activity_list, activity_id
 
-    def get_activity_list_by_type(
+    def list_activity_by_sport_type(
         self, user, first_day=None, last_day=None):
         """
-        Calcula a distancia total e os pontos do usuário
+        Lista atividades por tipo de esporte
         Args:
             user (str): usuario
             first_day (datetime): data de inicio
@@ -148,24 +155,24 @@ class StravaDataEngine:
             if isinstance(activity["start_date_local"], str):
                 activity["start_date_local"] = datetime.strptime(activity["start_date_local"], '%Y-%m-%dT%H:%M:%SZ')
 
-            activity_type = activity["sport_type"]
+            activity_sport_type = activity["sport_type"]
 
-            if activity_type == 'WeightTraining' and activity["moving_time"] > 7200:
+            if activity_sport_type == 'WeightTraining' and activity["moving_time"] > 7200:
                 activity["moving_time"] = 7200
                 
-            gym_dict = self.update_gym_dict(gym_dict, activity)
+            gym_dict = self.apply_gym_rules(gym_dict, activity)
 
-            if activity_type not in activity_dict:
-                activity_dict[activity_type] = []
+            if activity_sport_type not in activity_dict:
+                activity_dict[activity_sport_type] = []
 
-            activity_dict[activity_type].append(activity)
+            activity_dict[activity_sport_type].append(activity)
 
 
         return activity_dict
 
-    def update_gym_dict(self, gym_dict, activity):
+    def apply_gym_rules(self, gym_dict, activity):
         """
-        Atualiza dicionario de atividades
+        Aplica regras para atividades de musculação
         Args:
             gym_dict (dict): dicionario de atividades
             activity (dict): atividade
@@ -185,7 +192,7 @@ class StravaDataEngine:
             gym_dict[date_activity] = activity
         return gym_dict
 
-    def calculate_user_stats(self, ignore_stats_ids=None, first_day=None, last_day=None, include_activity_dict=False, min_distance=None):
+    def calculate_group_stats(self, ignore_stats_ids=None, first_day=None, last_day=None, include_activity_dict=False):
         """
         Calcula estatísticas de atividades para cada usuário do grupo.
         Esta função gera um resumo 
@@ -220,9 +227,10 @@ class StravaDataEngine:
             return self.cache_last_activity
 
         group_members_dict = {}
+        
 
         for user in self.membros:
-            activity_dict = self.get_activity_list_by_type(user, first_day=first_day, last_day=last_day)
+            activity_dict = self.list_activity_by_sport_type(user, first_day=first_day, last_day=last_day)
 
             if not activity_dict:
                 continue
@@ -252,11 +260,12 @@ class StravaDataEngine:
                         continue
 
                     ignore_stats = str(activity.get('id', activity.get('activity_id'))) in ignore_stats_ids
+                    
                     if distance_km > user_dict[sport_name]["max_distance"]['value'] and not ignore_stats:
                         user_dict[sport_name]["max_distance"]['value'] = round(distance_km, 2)
                         user_dict[sport_name]["max_distance"]['activity_id'] = activity.get('id')
 
-                    if max_speed_ride_km > user_dict[sport_name]["max_velocity"]['value'] and not ignore_stats and max_speed_ride_km < 90:
+                    if max_speed_ride_km > user_dict[sport_name]["max_velocity"]['value'] and not ignore_stats:
                         user_dict[sport_name]["max_velocity"]['value'] = round(max_speed_ride_km, 2)
                         user_dict[sport_name]["max_velocity"]['activity_id'] = activity.get('id')
 
@@ -299,7 +308,7 @@ class StravaDataEngine:
             first_day (datetime): data de inicio
             last_day (datetime): data de fim
         """
-        return self.last_run and datetime.now() - timedelta(minutes=1) < self.last_run and self.cache_last_day == last_day and self.cache_first_day == first_day
+        return self.last_run and datetime.now() - timedelta(minutes=2) < self.last_run and self.cache_last_day == last_day and self.cache_first_day == first_day
 
     def ignore_activity_rules(self, activity, min_distance=None):
         """
@@ -314,8 +323,6 @@ class StravaDataEngine:
         total_moving_time_less_than_5 = activity.get("moving_time") < 300
         distance_greater_than_400 = round(activity.get("distance") / 1000, 2) > 400
         return total_distance_and_moving_time_zero or total_moving_time_less_than_5 or distance_greater_than_400 or ignore_min_distance
-
-
 
     def format_seconds_to_mm_ss(self, seconds):
         """
@@ -334,7 +341,7 @@ class StravaDataEngine:
         """
         distance_list = []
         ignore_stats_ids = self.ignored_activities or []
-        group_members_dict = self.calculate_user_stats(ignore_stats_ids=ignore_stats_ids, first_day=first_day, last_day=last_day)
+        group_members_dict = self.calculate_group_stats(ignore_stats_ids=ignore_stats_ids, first_day=first_day, last_day=last_day)
         for user, activity_dict in group_members_dict.items():
             total_points = 0
             for sport_dict in activity_dict.values():
@@ -349,20 +356,6 @@ class StravaDataEngine:
                 enumerate(sort_distance_list),
             )
         )
-
-    def update_max_metrics(self, metric, user, distance, max_metrics):
-        """
-        Atualiza metricas4
-        Args:
-            metric (str): metrica
-            user (str): usuario
-            distance (dict): distancia
-            max_metrics (dict): metricas
-        """
-        if distance[metric]["value"] > max_metrics[metric]["value"]:
-            max_metrics[metric]["user"] = user
-            max_metrics[metric]["value"] = distance[metric]["value"]
-            max_metrics[metric]["activity_id"] = distance[metric]["activity_id"]
 
     def get_stats_str(self, year_stats=False):
         """
@@ -389,34 +382,38 @@ class StravaDataEngine:
                 year=datetime.now().year + 1
             )
             date_str = "ano"
-        ignore_stats_ids = self.ignored_activities
-        max_distance_geral = {"user": '', "value": 0, "activity_id": None}
-        max_velocity_geral = {"user": '', "value": 0, "activity_id": None}
-        max_average_speed_geral = {"user": '', "value": 0, "activity_id": None}
-        max_elevation_gain_geral = {"user": '', "value": 0, "activity_id": None}
-        max_moving_time_geral = {"user": '', "value": 0, "activity_id": None}
+
         max_metrics = {
-            "max_distance": max_distance_geral,
-            "max_velocity": max_velocity_geral,
-            "max_average_speed": max_average_speed_geral,
-            "max_elevation_gain": max_elevation_gain_geral,
-            "max_moving_time": max_moving_time_geral
+            "max_distance": {},
+            "max_velocity": {},
+            "max_average_speed": {},
+            "max_elevation_gain": {},
+            "max_moving_time": {}
         }
-        group_members_dict = self.calculate_user_stats(ignore_stats_ids=ignore_stats_ids, first_day=first_day, last_day=last_day)
+        group_members_dict = self.calculate_group_stats(ignore_stats_ids=self.ignored_activities, first_day=first_day, last_day=last_day)
         for user_name, activity_dict in group_members_dict.items():
-            distance = activity_dict.get("Ride")
-            if not distance:
+            ride_dict = activity_dict.get("Ride")
+            if not ride_dict:
                 continue
 
-            for metric in max_metrics:
-                self.update_max_metrics(metric, user_name, distance, max_metrics)
+            for metric, _ in max_metrics.items():
+                current_value = ride_dict[metric]["value"]
+                if not max_metrics[metric] or current_value > max_metrics[metric]["value"]:
+                    max_metrics[metric] = {
+                        "user": user_name,
+                        "value": current_value,
+                        "activity_id": ride_dict[metric]["activity_id"]
+                    }
+
+        if not max_metrics["max_distance"]:
+            return "Não há atividades de bicicleta para gerar estatísticas"
 
         msg_texto = f"🚲💨  Estatísticas do {date_str} 🚲💨\n"
-        msg_texto += f"Maior distância: <a href=\"https://www.strava.com/activities/{max_distance_geral['activity_id']}\">{round(max_distance_geral['value'],2)}km - {max_distance_geral['user'].title()}</a>\n"
-        msg_texto += f"Maior velocidade: <a href=\"https://www.strava.com/activities/{max_velocity_geral['activity_id']}\">{round(max_velocity_geral['value'],2)}km/h - {max_velocity_geral['user'].title()}</a>\n"
-        msg_texto += f"Maior velocidade média: <a href=\"https://www.strava.com/activities/{max_average_speed_geral['activity_id']}\">{round(max_average_speed_geral['value'],2)}km/h - {max_average_speed_geral['user'].title()}</a>\n"
-        msg_texto += f"Maior ganho de elevação: <a href=\"https://www.strava.com/activities/{max_elevation_gain_geral['activity_id']}\">{round(max_elevation_gain_geral['value'],2)}m - {max_elevation_gain_geral['user'].title()}</a>\n"
-        msg_texto += f"Maior tempo de movimento: <a href=\"https://www.strava.com/activities/{max_moving_time_geral['activity_id']}\">{self.format_seconds_to_mm_ss(max_moving_time_geral['value'])} - {max_moving_time_geral['user'].title()}</a>\n"
+        msg_texto += f"Maior distância: <a href=\"https://www.strava.com/activities/{max_metrics['max_distance']['activity_id']}\">{round(max_metrics['max_distance']['value'],2)}km - {max_metrics['max_distance']['user'].title()}</a>\n"
+        msg_texto += f"Maior velocidade: <a href=\"https://www.strava.com/activities/{max_metrics['max_velocity']['activity_id']}\">{round(max_metrics['max_velocity']['value'],2)}km/h - {max_metrics['max_velocity']['user'].title()}</a>\n"
+        msg_texto += f"Maior velocidade média: <a href=\"https://www.strava.com/activities/{max_metrics['max_average_speed']['activity_id']}\">{round(max_metrics['max_average_speed']['value'],2)}km/h - {max_metrics['max_average_speed']['user'].title()}</a>\n"
+        msg_texto += f"Maior ganho de elevação: <a href=\"https://www.strava.com/activities/{max_metrics['max_elevation_gain']['activity_id']}\">{round(max_metrics['max_elevation_gain']['value'],2)}m - {max_metrics['max_elevation_gain']['user'].title()}</a>\n"
+        msg_texto += f"Maior tempo de movimento: <a href=\"https://www.strava.com/activities/{max_metrics['max_moving_time']['activity_id']}\">{self.format_seconds_to_mm_ss(max_metrics['max_moving_time']['value'])} - {max_metrics['max_moving_time']['user'].title()}</a>\n"
         return msg_texto
 
     def list_type_activities(self, first_day=None, last_day=None):
@@ -424,7 +421,7 @@ class StravaDataEngine:
         Retorna lista de distancias dos usuários
         """
         all_types = []
-        group_members_dict = self.calculate_user_stats(first_day=first_day, last_day=last_day)
+        group_members_dict = self.calculate_group_stats(first_day=first_day, last_day=last_day)
         for activity_list in group_members_dict.values():
             all_types += list(activity_list.keys())
 
@@ -496,7 +493,7 @@ class StravaDataEngine:
             )
         ignore_stats_ids = self.ignored_activities
         distance_list = []
-        group_members_dict = self.calculate_user_stats(ignore_stats_ids=ignore_stats_ids, first_day=first_day, last_day=last_day)
+        group_members_dict = self.calculate_group_stats(ignore_stats_ids=ignore_stats_ids, first_day=first_day, last_day=last_day)
         for user_name, activity_dict in group_members_dict.items():
             json_data = activity_dict.get(sport_type)
 
@@ -511,12 +508,10 @@ class StravaDataEngine:
 
     def get_ranking_str(self, sport_type , year_rank=False):
         """
-        Envia mensagem com o ranking
+        Calcula o rank dos usuários
         Args:
             sport_type (str): tipo de esporte
             year_rank (bool): ranking do ano
-            first_day (datetime): data de inicio
-            last_day (datetime): data de fim
         """
         emoji_dict = {
             "Ride": "🚲",
@@ -637,166 +632,166 @@ class StravaDataEngine:
         """
         self.ignored_activities = self.db_manager.add_ignore_activity(activity_id)
 
-    def get_segments(self, min_distance=None):
-        """
-        Retrieves segments based on a minimum distance.
+    # def get_segments(self, min_distance=None):
+    #     """
+    #     Retrieves segments based on a minimum distance.
 
-        Args:
-            min_distance (int): The minimum distance for segments.
+    #     Args:
+    #         min_distance (int): The minimum distance for segments.
 
-        Returns:
-            dict: A dictionary containing segment data.
-        """
-        if not min_distance:
-            min_distance = 6000
+    #     Returns:
+    #         dict: A dictionary containing segment data.
+    #     """
+    #     if not min_distance:
+    #         min_distance = 6000
 
-        ignore_stats_ids = self.ignored_activities
-        group_members = list(self.membros.items())
-        group_members_dict = self.calculate_user_stats(ignore_stats_ids=ignore_stats_ids, include_activity_dict=True)
-        all_segments = {}
+    #     ignore_stats_ids = self.ignored_activities
+    #     group_members = list(self.membros.items())
+    #     group_members_dict = self.calculate_group_stats(ignore_stats_ids=ignore_stats_ids, include_activity_dict=True)
+    #     all_segments = {}
 
-        for name, token in group_members:
-            activities = self._get_user_activities(
-                name, group_members_dict, min_distance, ignore_stats_ids
-            )
+    #     for name, token in group_members:
+    #         activities = self._get_user_activities(
+    #             name, group_members_dict, min_distance, ignore_stats_ids
+    #         )
 
-            for activity in activities:
-                self._process_activity_segments(
-                    activity, name, token, min_distance, all_segments
-                )
+    #         for activity in activities:
+    #             self._process_activity_segments(
+    #                 activity, name, token, min_distance, all_segments
+    #             )
 
-        segment_dict = self._collect_segment_data(all_segments)
-        return segment_dict
+    #     segment_dict = self._collect_segment_data(all_segments)
+    #     return segment_dict
 
-    def _get_user_activities(self, name, user_data, min_distance, ignore_stats_ids):
-        """
-        Retrieves activities for a user that meet the minimum distance criteria.
+    # def _get_user_activities(self, name, user_data, min_distance, ignore_stats_ids):
+    #     """
+    #     Retrieves activities for a user that meet the minimum distance criteria.
 
-        Args:
-            name (str): The user's name.
-            user_data (dict): The user data.
-            min_distance (int): The minimum distance.
-            ignore_stats_ids (set): Set of activity IDs to ignore.
+    #     Args:
+    #         name (str): The user's name.
+    #         user_data (dict): The user data.
+    #         min_distance (int): The minimum distance.
+    #         ignore_stats_ids (set): Set of activity IDs to ignore.
 
-        Returns:
-            list: A list of filtered activities.
-        """
-        activity_list = user_data.get(name, {}).get('activity_dict', {}).get('Ride', [])
-        filtered_activities = []
+    #     Returns:
+    #         list: A list of filtered activities.
+    #     """
+    #     activity_list = user_data.get(name, {}).get('activity_dict', {}).get('Ride', [])
+    #     filtered_activities = []
 
-        for activity in activity_list:
-            if activity['distance'] < int(min_distance):
-                continue
-            activity_id = activity['id']
-            if str(activity_id) in ignore_stats_ids:
-                continue
-            activity['id'] = activity_id
-            filtered_activities.append(activity)
+    #     for activity in activity_list:
+    #         if activity['distance'] < int(min_distance):
+    #             continue
+    #         activity_id = activity['id']
+    #         if str(activity_id) in ignore_stats_ids:
+    #             continue
+    #         activity['id'] = activity_id
+    #         filtered_activities.append(activity)
 
-        return filtered_activities
+    #     return filtered_activities
 
-    def _process_activity_segments(self, activity, user_name, token, min_distance, all_segments):
-        """
-        Processes an activity to collect segment efforts.
+    # def _process_activity_segments(self, activity, user_name, token, min_distance, all_segments):
+    #     """
+    #     Processes an activity to collect segment efforts.
 
-        Args:
-            activity (dict): The activity data.
-            user_name (str): The user's name.
-            token (dict): The user's token.
-            min_distance (int): The minimum distance.
-            all_segments (dict): Dictionary to collect all segment efforts.
-        """
-        activity_data = self.provider.get_activity(user_name, activity['id'])
-        segment_efforts = activity_data.get('segment_efforts', [])
+    #     Args:
+    #         activity (dict): The activity data.
+    #         user_name (str): The user's name.
+    #         token (dict): The user's token.
+    #         min_distance (int): The minimum distance.
+    #         all_segments (dict): Dictionary to collect all segment efforts.
+    #     """
+    #     activity_data = self.provider.get_activity(user_name, activity['id'])
+    #     segment_efforts = activity_data.get('segment_efforts', [])
 
-        for segment_effort in segment_efforts:
-            if segment_effort['distance'] < int(min_distance):
-                continue
+    #     for segment_effort in segment_efforts:
+    #         if segment_effort['distance'] < int(min_distance):
+    #             continue
 
-            if segment_effort['segment']['id'] in [18536734, 683759]:
-                continue
+    #         if segment_effort['segment']['id'] in [18536734, 683759]:
+    #             continue
 
-            segment_effort.update({
-                'user': user_name,
-                'access_token': token['access_token'],
-                'refresh_token': token['refresh_token'],
-                'atividade_id': activity['id']
-            })
-            segment_id = segment_effort['segment']['id']
+    #         segment_effort.update({
+    #             'user': user_name,
+    #             'access_token': token['access_token'],
+    #             'refresh_token': token['refresh_token'],
+    #             'atividade_id': activity['id']
+    #         })
+    #         segment_id = segment_effort['segment']['id']
 
-            all_segments.setdefault(segment_id, []).append(segment_effort)
+    #         all_segments.setdefault(segment_id, []).append(segment_effort)
 
-    def _collect_segment_data(self, all_segments):
-        """
-        Collects segment data from segment efforts.
+    # def _collect_segment_data(self, all_segments):
+    #     """
+    #     Collects segment data from segment efforts.
 
-        Args:
-            all_segments (dict): Dictionary containing all segment efforts.
+    #     Args:
+    #         all_segments (dict): Dictionary containing all segment efforts.
 
-        Returns:
-            dict: A dictionary containing segment data.
-        """
-        segment_dict = {}
-        athlete_ids = {}
-        filtered_segments = {
-            k: v for k, v in all_segments.items() if len(v) > 2
-        }
+    #     Returns:
+    #         dict: A dictionary containing segment data.
+    #     """
+    #     segment_dict = {}
+    #     athlete_ids = {}
+    #     filtered_segments = {
+    #         k: v for k, v in all_segments.items() if len(v) > 2
+    #     }
 
-        for segment_list in filtered_segments.values():
-            for segment in segment_list:
-                segment_data = self.provider.get_segment_effort(segment['user'], segment['id'])
+    #     for segment_list in filtered_segments.values():
+    #         for segment in segment_list:
+    #             segment_data = self.provider.get_segment_effort(segment['user'], segment['id'])
 
-                activity_id = segment_data['segment']['id']
-                segment_data.update({
-                    'user': segment['user'],
-                    'atividade_id': segment['atividade_id']
-                })
-                athlete_ids[segment['athlete']['id']] = True
+    #             activity_id = segment_data['segment']['id']
+    #             segment_data.update({
+    #                 'user': segment['user'],
+    #                 'atividade_id': segment['atividade_id']
+    #             })
+    #             athlete_ids[segment['athlete']['id']] = True
 
-                segment_dict.setdefault(activity_id, []).append(segment_data)
+    #             segment_dict.setdefault(activity_id, []).append(segment_data)
 
-        return segment_dict
+    #     return segment_dict
 
-    def get_segments_str(self, min_distance):
-        """
-        Retorna segmentos em formato de string
-        Args:
-            min_distance (int): distancia minima
-        """
-        str_list = ["Segmentos do mês:"]
-        segment_dict = self.get_segments(min_distance)
-        for segments in segment_dict.values():
-            if len(segments) < 2:
-                continue
+    # def get_segments_str(self, min_distance):
+    #     """
+    #     Retorna segmentos em formato de string
+    #     Args:
+    #         min_distance (int): distancia minima
+    #     """
+    #     str_list = ["Segmentos do mês:"]
+    #     segment_dict = self.get_segments(min_distance)
+    #     for segments in segment_dict.values():
+    #         if len(segments) < 2:
+    #             continue
 
-            data = [
-                segments[0]['name'],
-                " - ",
-                str(round(segments[0]['distance']/1000, 2)),
-                "km",
-                " - ",
-                str(segments[0]['segment']['id']),
+    #         data = [
+    #             segments[0]['name'],
+    #             " - ",
+    #             str(round(segments[0]['distance']/1000, 2)),
+    #             "km",
+    #             " - ",
+    #             str(segments[0]['segment']['id']),
 
-            ]
+    #         ]
 
-            str_list.append(f"{''.join(data)}")
-            segments = sorted(segments, key=lambda x: x['moving_time'])
-            athelete_list = []
-            for segment in segments:
-                segment_athlete = segment['user']
-                start_date_local = segment['start_date_local']
-                segment['start_date_local'] = datetime.strptime(start_date_local, '%Y-%m-%dT%H:%M:%SZ')
+    #         str_list.append(f"{''.join(data)}")
+    #         segments = sorted(segments, key=lambda x: x['moving_time'])
+    #         athelete_list = []
+    #         for segment in segments:
+    #             segment_athlete = segment['user']
+    #             start_date_local = segment['start_date_local']
+    #             segment['start_date_local'] = datetime.strptime(start_date_local, '%Y-%m-%dT%H:%M:%SZ')
 
-                if segment_athlete in athelete_list:
-                    continue
+    #             if segment_athlete in athelete_list:
+    #                 continue
 
-                athelete_list.append(segment_athlete)
-                segment_min = self.format_seconds_to_mm_ss(segment['moving_time'])
-                msg_str = f"- <a href=\"https://www.strava.com/activities/{segment['activity']['id']}/segments/{segment['id']}\">{segment_athlete} - {segment_min}</a>"
-                str_list.append(msg_str)
-            str_list.append("")
+    #             athelete_list.append(segment_athlete)
+    #             segment_min = self.format_seconds_to_mm_ss(segment['moving_time'])
+    #             msg_str = f"- <a href=\"https://www.strava.com/activities/{segment['activity']['id']}/segments/{segment['id']}\">{segment_athlete} - {segment_min}</a>"
+    #             str_list.append(msg_str)
+    #         str_list.append("")
 
-        return "\n".join(str_list)
+    #     return "\n".join(str_list)
     
     def get_medalhas_rank(self):
         """

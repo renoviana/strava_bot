@@ -303,15 +303,17 @@ class StravaCommands:
         self.strava_engine.add_ignore_activity(atividade_id)
         return "Atividade ignorada com sucesso!"
     
+    @TelegramCallback("strava_")
     @TelegramCallback("syear_")
-    def year_rank_callback(self, callback):
+    def rank_callback(self, callback):
         """
-        Send year sport rank
+        Send rank
         Args:
             callback (Callback): telegram callback
         """
-        sport = callback.data.replace("syear_", "")
-        return self.strava_engine.get_ranking_str(sport,year_rank=True)
+        year_rank = "syear" in callback.data
+        sport_name = callback.data.replace("syear_", "").replace("strava_", "")
+        return self.strava_engine.get_ranking_str(sport_name,year_rank=year_rank)
 
     @TelegramCallback("del_strava")
     def delete_user_callback(self, callback):
@@ -369,12 +371,3 @@ class StravaCommands:
         self.strava_engine.save_group_meta(tipo_meta, None)
         return f"Meta {tipo_meta.title()} removida com sucesso"
 
-    @TelegramCallback("strava_")
-    def rank_callback(self, callback):
-        """
-        Retorna ranking do esporte
-        Args:
-            callback (Callback): telegram callback
-        """
-        sport_type = callback.data.replace("strava_", "")
-        return self.strava_engine.get_ranking_str(sport_type)
