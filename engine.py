@@ -237,7 +237,7 @@ class StravaDataEngine:
 
             user_dict = {
                 'sport_stats_dict':{},
-                'total_points':{},
+                'total_points':0,
                 'activity_dict':{}
             }
             for sport_name, activity_list in activity_dict.items():
