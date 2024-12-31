@@ -607,8 +607,11 @@ class StravaDataEngine:
             total_elevation_gain_ride_m (int): total de elevação
             distance_km (int): distancia
         """
+        if distance_km >= 1 and sport_type == 'Swim':
+            total_user_points += 1
+            return total_user_points
 
-        if distance_km > 2 and sport_type in ['Run', 'Walk', 'Hike', 'Swim']:
+        if distance_km > 2 and sport_type in ['Run', 'Walk', 'Hike']:
             total_user_points += 1
             return total_user_points
 
