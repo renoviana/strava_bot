@@ -75,7 +75,7 @@ class DbManager:
 
     def __init__(self, group_id):
         self.group_id = int(group_id)
-        
+
     def get_strava_group(self) -> Strava_group:
         strava_group = Strava_group.objects(telegram_group_id=self.group_id).first()
 
@@ -143,7 +143,7 @@ class DbManager:
         StravaActivity.objects(__raw__=query).delete()
         strava_group.save()
         return strava_group.membros
-    
+
     def update_meta(self, tipo_meta, km):
         strava_group = self.get_strava_group()
         metas = strava_group.metas
@@ -153,7 +153,7 @@ class DbManager:
             metas[tipo_meta] = km
         else:
             del metas[tipo_meta]
-        
+
         strava_group.metas = metas
         strava_group.save()
         return strava_group.metas
@@ -172,6 +172,11 @@ class DbManager:
         return strava_group.ignored_activities
     
     def process_activities(self, new_activity_list):
+        """
+        Processa atividades
+        Args:
+            new_activity_list (list): lista de atividades
+        """
         if not new_activity_list:
             return
 
@@ -186,5 +191,5 @@ class DbManager:
             del activity_dict['id']
             del activity_dict['map']
             mongo_lista.append(StravaActivity(**activity_dict))
-        
+
         StravaActivity.objects.insert(mongo_lista)
