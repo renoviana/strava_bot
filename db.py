@@ -1,75 +1,6 @@
-from mongoengine import Document, EmbeddedDocument, EmbeddedDocumentField, IntField, StringField, BooleanField, DictField, FloatField, ListField, DateTimeField
+from model.strava_activity import StravaActivity
+from model.strava_group import Strava_group
 
-class Strava_group(Document):
-    telegram_group_id = IntField()
-    ignored_activities = ListField()
-    metas = DictField(default={})
-    membros = DictField(default=[])
-    segments_ids = ListField(required=False, default=[])
-    medalhas = DictField(default={}, required=False)
-    cache_data = ListField(required=False, default=[])
-
-class Athlete(EmbeddedDocument):
-    id = IntField()
-    resource_state = IntField()
-
-class StravaActivity(Document):
-    resource_state = IntField()
-    athlete = EmbeddedDocumentField(Athlete)
-    name = StringField()
-    distance = FloatField()
-    moving_time = IntField()
-    elapsed_time = IntField()
-    total_elevation_gain = FloatField()
-    activity_type = StringField()
-    sport_type = StringField()
-    activity_id = IntField()
-    start_date = DateTimeField()
-    start_date_local = DateTimeField()
-    timezone = StringField()
-    utc_offset = IntField()
-    location_city = StringField()
-    location_state = StringField()
-    location_country = StringField()
-    achievement_count = IntField()
-    kudos_count = IntField()
-    comment_count = IntField()
-    athlete_count = IntField()
-    photo_count = IntField()
-    activity_map = DictField()
-    trainer = BooleanField()
-    commute = BooleanField()
-    manual = BooleanField()
-    private = BooleanField()
-    visibility = StringField()
-    flagged = BooleanField()
-    gear_id = StringField()
-    start_latlng = ListField()
-    end_latlng = ListField()
-    average_speed = FloatField()
-    max_speed = FloatField()
-    has_heartrate = BooleanField()
-    average_heartrate = FloatField()
-    max_heartrate = FloatField()
-    heartrate_opt_out = BooleanField()
-    display_hide_heartrate_option = BooleanField()
-    elev_high = FloatField()
-    elev_low = FloatField()
-    upload_id = IntField()
-    upload_id_str = StringField()
-    external_id = StringField()
-    from_accepted_tag = BooleanField()
-    pr_count = IntField()
-    total_photo_count = IntField()
-    has_kudoed = BooleanField()
-    average_watts = FloatField()
-    average_temp = FloatField()
-    device_watts = BooleanField()
-    kilojoules = FloatField()
-    workout_type = IntField()
-    average_cadence = FloatField()
-    suffer_score = IntField()
-    group_id = IntField()
 
 class DbManager:
 
@@ -106,19 +37,7 @@ class DbManager:
             }
         }
 
-        data = StravaActivity.objects(__raw__=query).order_by('-start_date_local').all()
-
-        new_data = []
-        for i in data:
-            data_dict = i.to_mongo().to_dict()
-            data_dict['type'] = data_dict['activity_type']
-            data_dict['id'] = data_dict['activity_id']
-            data_dict['map'] = data_dict['activity_map']
-            del data_dict['activity_type']
-            del data_dict['activity_id']
-            del data_dict['activity_map']
-            new_data.append(data_dict)
-        return new_data
+        return StravaActivity.objects(__raw__=query).order_by('-start_date_local').all()
 
     def update_membro(self, user, data):
         group = self.get_strava_group()

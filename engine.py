@@ -1,14 +1,14 @@
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
-from service import StravaService
+from service import StravaApiProvider
 
 class StravaDataEngine:
-    provider :StravaService
+    provider :StravaApiProvider
     membros = {}
     metas = {}
     ignored_activities = []
 
-    def __init__(self, group_id, provider: StravaService, db_manager) -> None:
+    def __init__(self, group_id, provider: StravaApiProvider, db_manager) -> None:
         self.db_manager = db_manager(group_id)
         self.group_id = group_id
         self.strava_entity = self.db_manager.get_strava_group()
@@ -58,18 +58,18 @@ class StravaDataEngine:
 
         return msg
 
-    def last_id_in_list(self, activity_list, last_db_id):
+    def last_id_in_list(self, api_activity_list, db_activity_list):
         """
         Retorna o index da ultima atividade
         Args:
-            activity_list (list): lista de atividades
-            last_db_id (int): ultimo id do banco de dados
+            api_activity_list (list): lista de atividades da api
+            db_activity_list (list): lista de atividades do banco de dados
         """
-        if not last_db_id:
+        if not db_activity_list:
             return None
 
-        for index, data in enumerate(activity_list):
-            if last_db_id == data['id']:
+        for index, data in enumerate(api_activity_list):
+            if db_activity_list[0].get('id') == data['id']:
                 return index
         
         return None
@@ -97,10 +97,10 @@ class StravaDataEngine:
         if not last_day:
             last_day = datetime.now() + timedelta(minutes=1)
 
-        db_activity_list, last_db_activity_id = self.list_db_activity(first_day, last_day, self.membros.get(user_name, {}).get('athlete_id'))        
+        db_activity_list = self.list_db_activity(first_day, last_day, self.membros.get(user_name, {}).get('athlete_id'))
         api_activity_list = self.provider.list_activity(user_name, after=first_day.timestamp(), before=last_day.timestamp())
 
-        last_index_db = self.last_id_in_list(api_activity_list, last_db_activity_id)
+        last_index_db = self.last_id_in_list(api_activity_list, db_activity_list)
         if last_index_db is not None:
             api_activity_list = api_activity_list[:last_index_db]
 
@@ -109,7 +109,7 @@ class StravaDataEngine:
         while api_activity_list and len(api_activity_list) % 100 == 0:
             api_activity_list = self.provider.list_activity(user_name, after=first_day.timestamp(), before=last_day.timestamp(), page=page)
 
-            last_index_db = self.last_id_in_list(api_activity_list, last_db_activity_id)
+            last_index_db = self.last_id_in_list(api_activity_list, db_activity_list)
             if last_index_db is not None:
                 activity_list += api_activity_list[:last_index_db]
                 break
@@ -129,10 +129,17 @@ class StravaDataEngine:
             user_id (int): id do usuário
         """
         db_activity_list = self.db_manager.list_strava_activities(user_id, first_day, last_day)
-        activity_id = None
-        if db_activity_list:
-            activity_id = db_activity_list[0]['id']
-        return db_activity_list, activity_id
+        activity_list = []
+        for i in db_activity_list:
+            data_dict = i.to_mongo().to_dict()
+            data_dict['type'] = data_dict['activity_type']
+            data_dict['id'] = data_dict['activity_id']
+            data_dict['map'] = data_dict['activity_map']
+            del data_dict['activity_type']
+            del data_dict['activity_id']
+            del data_dict['activity_map']
+            activity_list.append(data_dict)
+        return activity_list
 
     def list_activity_by_sport_type(self, user, first_day=None, last_day=None):
         """

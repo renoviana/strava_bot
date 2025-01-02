@@ -4,10 +4,10 @@ import threading
 import requests
 import telebot
 from mongoengine import connect
-from model import DbManager
+from db import DbManager
 from command import StravaCommands, command_dict, callback_dict
 from engine import StravaDataEngine
-from service import StravaService
+from service import StravaApiProvider
 from tools import is_group_message, send_reply_return
 from secure import TELEGRAM_BOT_TOKEN, MONGO_URI, TELEGRAM_BOT_ID, HEALTH_CHECK_URL
 
@@ -24,7 +24,7 @@ def get_strava_command_group(group_id) -> StravaCommands:
         group_id (int): Id do grupo
     """
     if group_id not in strava_dict:
-            strava_dict[group_id] = StravaCommands(StravaDataEngine(group_id, StravaService, DbManager))
+            strava_dict[group_id] = StravaCommands(StravaDataEngine(group_id, StravaApiProvider, DbManager))
     return strava_dict[group_id]
 
 @bot.message_handler(content_types=["new_chat_members"])

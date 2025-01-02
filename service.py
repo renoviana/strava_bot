@@ -2,7 +2,7 @@ import requests
 
 from secure import STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET
 
-class StravaService:
+class StravaApiProvider:
     url = 'https://www.strava.com/api/v3'
 
     def __init__(self, membros, db_manager):
