@@ -335,17 +335,6 @@ class StravaDataEngine:
         distance_greater_than_400 = round(activity.get("distance") / 1000, 2) > 400
         return total_distance_and_moving_time_zero or total_moving_time_less_than_5 or distance_greater_than_400 or ignore_min_distance
 
-    def format_seconds_to_mm_ss(self, seconds):
-        """
-        Formata segundos para mm:ss
-        Args:
-            seconds (int): segundos
-        """
-        hours = seconds // 3600
-        minutes = (seconds % 3600) // 60
-        seconds = seconds % 60
-        return f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
-
     def list_points(self, first_day=None, last_day=None):
         """
         Retorna lista de pontos dos usuários
@@ -367,7 +356,7 @@ class StravaDataEngine:
 
     def get_stats(self, first_day=None, last_day=None):
         """
-        Retorna lista de pontos dos usuários
+        Retorna estatísticas do grupo
         Args:
             first_day (datetime): data de inicio
             last_day (datetime): data de fim
@@ -431,7 +420,7 @@ class StravaDataEngine:
                 emoji = "✅"
 
             if rank_params == 'total_moving_time':
-                rank_data = self.format_seconds_to_mm_ss(rank_data)
+                rank_data = f"{int(rank_data // 3600):02}:{int((rank_data % 3600) // 60):02}:{int(rank_data % 60):02}"
                 rank_unit = ""
 
             user_id = user.get("user_id")
@@ -924,7 +913,7 @@ class StravaDataEngine:
     #                 continue
 
     #             athelete_list.append(segment_athlete)
-    #             segment_min = self.format_seconds_to_mm_ss(segment['moving_time'])
+    #             segment_min = f"{int(segment['moving_time'] // 3600):02}:{int((segment['moving_time'] % 3600) // 60):02}:{int(segment['moving_time'] % 60):02}"
     #             msg_str = f"- <a href=\"https://www.strava.com/activities/{segment['activity']['id']}/segments/{segment['id']}\">{segment_athlete} - {segment_min}</a>"
     #             str_list.append(msg_str)
     #         str_list.append("")
