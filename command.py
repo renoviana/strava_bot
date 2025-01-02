@@ -127,7 +127,7 @@ class StravaCommands:
         point_list = self.strava_engine.list_points(first_day=first_day, last_day=last_day)
 
         if not point_list:
-            return "Nenhuma atividade encontrada nesse mês"
+            return "Nenhuma atividade encontrada nesse ano"
 
         rules_str = '\n'.join(rules_list)
         points_str = '\n'.join()
