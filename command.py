@@ -80,8 +80,14 @@ class StravaCommands:
             "+1 ponto - Pedal acima de 50km",
             "+1 ponto - Pedal acima de 100km",
         ]
+
+        point_list = self.strava_engine.list_points()
+
+        if not point_list:
+            return "Nenhuma atividade encontrada nesse mês"
+
         rules_str = '\n'.join(rules_list)
-        points_str = '\n'.join(self.strava_engine.get_point_str())
+        points_str = '\n'.join(point_list)
         pontos_msg = f"Score Mensal:\n{points_str}\n\n{rules_str}"
         return pontos_msg
 
@@ -117,8 +123,14 @@ class StravaCommands:
             "+1 ponto - Pedal acima de 50km",
             "+1 ponto - Pedal acima de 100km",
         ]
+
+        point_list = self.strava_engine.list_points(first_day=first_day, last_day=last_day)
+
+        if not point_list:
+            return "Nenhuma atividade encontrada nesse mês"
+
         rules_str = '\n'.join(rules_list)
-        points_str = '\n'.join(self.strava_engine.get_point_str(first_day, last_day))
+        points_str = '\n'.join()
         pontos_msg = f"Score Anual:\n{points_str}\n\n{rules_str}"
         return pontos_msg
 
@@ -237,7 +249,12 @@ class StravaCommands:
         Args:
             message (Message): telegram message
         """
-        return self.strava_engine.get_frequency()
+        frequency = self.strava_engine.get_frequency()
+
+        if not frequency:
+            return "Nenhuma atividade encontrada nesse mês"
+
+        return frequency
     
     @TelegramCommand("yfrequency")
     def year_frequency_command(self, _):
@@ -265,7 +282,13 @@ class StravaCommands:
             year=datetime.now().year + 1
         )
         data = datetime.now().timetuple().tm_yday
-        return self.strava_engine.get_frequency(first_day, last_day, data, "Quantidade de dias com atividades no ano:")
+
+        frequency = self.strava_engine.get_frequency(first_day, last_day, data, "Quantidade de dias com atividades no ano:")
+
+        if not frequency:
+            return "Nenhuma atividade encontrada nesse ano"
+
+        return frequency
     
     @TelegramCommand("segment")
     def segment_command(self, message):

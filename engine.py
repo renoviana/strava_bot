@@ -346,7 +346,7 @@ class StravaDataEngine:
         seconds = seconds % 60
         return f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
 
-    def get_point_str(self, first_day=None, last_day=None):
+    def list_points(self, first_day=None, last_day=None):
         """
         Retorna lista de pontos dos usuários
         """
@@ -710,6 +710,10 @@ class StravaDataEngine:
                 continue
 
             date_dict[membro] = len(date_dict[membro])
+
+        if not date_dict:
+            return
+
         # Order by value
         date_dict = dict(sorted(date_dict.items(), key=lambda item: item[1], reverse=True))
         msg_list = [title]
