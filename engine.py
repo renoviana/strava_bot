@@ -365,32 +365,13 @@ class StravaDataEngine:
             )
         )
 
-    def get_stats_str(self, year_stats=False):
+    def get_stats(self, first_day=None, last_day=None):
         """
         Retorna lista de pontos dos usuários
+        Args:
+            first_day (datetime): data de inicio
+            last_day (datetime): data de fim
         """
-        first_day, last_day = None, None
-        date_str = "mês"
-        if year_stats:
-            first_day = datetime.now().replace(
-                day=1,
-                hour=0,
-                minute=0,
-                second=0,
-                microsecond=0,
-                month=1,
-            )
-            last_day = datetime.now().replace(
-                day=1,
-                hour=0,
-                minute=0,
-                second=0,
-                microsecond=0,
-                month=1,
-                year=datetime.now().year + 1
-            )
-            date_str = "ano"
-
         max_metrics = {
             "max_distance": {},
             "max_velocity": {},
@@ -413,16 +394,7 @@ class StravaDataEngine:
                         "activity_id": ride_dict[metric]["activity_id"]
                     }
 
-        if not max_metrics["max_distance"]:
-            return "Não há atividades de bicicleta para gerar estatísticas"
-
-        msg_texto = f"🚲💨  Estatísticas do {date_str} 🚲💨\n"
-        msg_texto += f"Maior distância: <a href=\"https://www.strava.com/activities/{max_metrics['max_distance']['activity_id']}\">{round(max_metrics['max_distance']['value'],2)}km - {max_metrics['max_distance']['user'].title()}</a>\n"
-        msg_texto += f"Maior velocidade: <a href=\"https://www.strava.com/activities/{max_metrics['max_velocity']['activity_id']}\">{round(max_metrics['max_velocity']['value'],2)}km/h - {max_metrics['max_velocity']['user'].title()}</a>\n"
-        msg_texto += f"Maior velocidade média: <a href=\"https://www.strava.com/activities/{max_metrics['max_average_speed']['activity_id']}\">{round(max_metrics['max_average_speed']['value'],2)}km/h - {max_metrics['max_average_speed']['user'].title()}</a>\n"
-        msg_texto += f"Maior ganho de elevação: <a href=\"https://www.strava.com/activities/{max_metrics['max_elevation_gain']['activity_id']}\">{round(max_metrics['max_elevation_gain']['value'],2)}m - {max_metrics['max_elevation_gain']['user'].title()}</a>\n"
-        msg_texto += f"Maior tempo de movimento: <a href=\"https://www.strava.com/activities/{max_metrics['max_moving_time']['activity_id']}\">{self.format_seconds_to_mm_ss(max_metrics['max_moving_time']['value'])} - {max_metrics['max_moving_time']['user'].title()}</a>\n"
-        return msg_texto
+        return max_metrics
 
     def list_type_activities(self, first_day=None, last_day=None):
         """
