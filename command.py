@@ -419,15 +419,15 @@ class StravaCommands:
         self.strava_engine.save_group_meta(tipo_meta, None)
         return f"Meta {tipo_meta.title()} removida com sucesso"
 
-    # @TelegramCommand("segments")
-    # def segments_command(self, message):
-    #     """
-    #     Send strava segments
-    #     Args:
-    #         message (Message): telegram message
-    #     """
-    #     max_distance = None
-    #     distance = message.text.split(" ")
-    #     if len(distance) > 1:
-    #         max_distance = distance[1]
-    #     return self.strava_engine.get_segments_str(max_distance)
+    @TelegramCommand("segments")
+    def segments_command(self, message):
+        """
+        Send strava segments
+        Args:
+            message (Message): telegram message
+        """
+        max_distance = None
+        distance = message.text.split(" ")
+        if len(distance) > 1:
+            max_distance = distance[1]
+        return self.strava_engine.get_segments_str(max_distance)
