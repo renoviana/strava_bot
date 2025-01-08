@@ -34,7 +34,7 @@ def new_chat_handler(message):
     """
     strava_command_group = get_strava_command_group(message.chat.id)
     new_user = message.json.get("new_chat_member")
-    link = strava_command_group.get_link_command(message)
+    link = strava_command_group.link_command(message)
 
     if new_user.get('id') == TELEGRAM_BOT_ID:
         bot.reply_to(
