@@ -1,3 +1,4 @@
+import functools
 from telebot.types import (
     InlineKeyboardMarkup,
     InlineKeyboardButton,
@@ -39,12 +40,12 @@ def send_reply_return(message_return, message, telegram_bot, save_log=True, disa
             message_id = message.chat.id
 
             if "photo" in message_return:
-                    return telegram_bot.send_photo(
-                        message_id,
-                        message_return.get("photo", ""),
-                        caption=texto_result,
-                        reply_markup=reply_markup
-                    )
+                return telegram_bot.send_photo(
+                    message_id,
+                    message_return.get("photo", ""),
+                    caption=texto_result,
+                    reply_markup=reply_markup
+                )
 
             if "video" in message_return:
                 return telegram_bot.send_video(message_id, message_return.get("video", ""))
@@ -259,12 +260,26 @@ def get_markup(
     return markup
 
 
-def is_group_message(message):
-    """
-    Verifica se é mensagem de grupo
-    Args:
-        message (Message): Mensagem recebida
-    """
-    return hasattr(message,'chat') and message.chat.type in ["group", "supergroup"]
 
 
+
+def TelegramCommand(command: str):
+    """
+    Decora
+    """
+    def decorator(func):
+        func.telegram_command = command
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
+
+def TelegramCallback(command: str):
+    def decorator(func):
+        func.telegram_callback_command = command
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator

@@ -1,29 +1,7 @@
 from datetime import datetime, timedelta
-import functools
 from secure import STRAVA_CLIENT_ID, STRAVA_REDIRECT_URI, TICKET_MESSAGE
-from tools import get_markup
+from tools import TelegramCommand, TelegramCallback, get_markup
 from engine import StravaDataEngine
-
-command_dict = {}
-callback_dict = {}
-
-def TelegramCommand(command: str):
-        def decorator(func):
-            command_dict[command] = func.__name__
-            @functools.wraps(func)
-            def wrapper(*args, **kwargs):
-                return func(*args, **kwargs)
-            return wrapper
-        return decorator
-
-def TelegramCallback(command: str):
-    def decorator(func):
-        callback_dict[command] = func.__name__
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            return func(*args, **kwargs)
-        return wrapper
-    return decorator
 
 class StravaCommands:
     strava_engine: StravaDataEngine = None
@@ -130,7 +108,7 @@ class StravaCommands:
             return "Nenhuma atividade encontrada nesse ano"
 
         rules_str = '\n'.join(rules_list)
-        points_str = '\n'.join()
+        points_str = '\n'.join(point_list)
         pontos_msg = f"Score Anual:\n{points_str}\n\n{rules_str}"
         return pontos_msg
 
@@ -178,9 +156,6 @@ class StravaCommands:
         msg_texto += f"Maior ganho de elevação: <a href=\"https://www.strava.com/activities/{max_metrics['max_elevation_gain']['activity_id']}\">{round(max_metrics['max_elevation_gain']['value'],2)}m - {max_metrics['max_elevation_gain']['user'].title()}</a>\n"
         msg_texto += f"Maior tempo de movimento: <a href=\"https://www.strava.com/activities/{max_metrics['max_moving_time']['activity_id']}\">{int(max_metrics['max_moving_time']['value'] // 3600):02}:{int((max_metrics['max_moving_time']['value'] % 3600) // 60):02}:{int(max_metrics['max_moving_time']['value'] % 60):02} - {max_metrics['max_moving_time']['user'].title()}</a>\n"
         return msg_texto
-
-
-        return 
 
     @TelegramCommand("admin")
     def admin_command(self, _):
