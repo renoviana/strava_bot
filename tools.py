@@ -13,7 +13,6 @@ def handler_parse_error(exc, telegram_bot, message, texto_result, disable_web_pa
     """
     if "parse entities" in exc.description:
         return telegram_bot.reply_to(message, texto_result, disable_web_page_preview=disable_web_page_preview)
-
 def send_reply_return(message_return, message, telegram_bot, save_log=True, disable_web_page_preview=False, reply_markup=None) -> None:
     """
     Retorna resultado da mensagem
@@ -24,19 +23,41 @@ def send_reply_return(message_return, message, telegram_bot, save_log=True, disa
         save_log (bool, optional): Salvar log. Defaults to True.
     """
     if not message_return:
-        return None
+        return
+
     try:
         if isinstance(message_return, list):
-            return list(map(lambda item: send_reply_return(item, message, telegram_bot, save_log, disable_web_page_preview), message_return))
+            return [
+                send_reply_return(
+                    item, message, telegram_bot, save_log, disable_web_page_preview
+                )
+                for item in message_return
+            ]
 
         if isinstance(message_return, str):
             if len(message_return) > 4000:
-                return list(map(lambda i: send_reply_return(message_return[i : i + 4000], message, telegram_bot, save_log, disable_web_page_preview, reply_markup), range(0, len(message_return), 4000)))
-            return telegram_bot.send_message(message.chat.id, message_return, reply_markup=reply_markup, parse_mode = "HTML", disable_web_page_preview=disable_web_page_preview)
+                return [
+                    send_reply_return(
+                        message_return[i:i + 4000],
+                        message,
+                        telegram_bot,
+                        save_log,
+                        disable_web_page_preview,
+                        reply_markup,
+                    )
+                    for i in range(0, len(message_return), 4000)
+                ]
+            return telegram_bot.send_message(
+                message.chat.id,
+                message_return,
+                reply_markup=reply_markup,
+                parse_mode="HTML",
+                disable_web_page_preview=disable_web_page_preview,
+            )
 
         if isinstance(message_return, dict):
             texto_result = message_return.get("texto", "")
-            reply_markup = message_return.get("markup", None)
+            reply_markup = message_return.get("markup", reply_markup)
             message_id = message.chat.id
 
             if "photo" in message_return:
@@ -44,168 +65,46 @@ def send_reply_return(message_return, message, telegram_bot, save_log=True, disa
                     message_id,
                     message_return.get("photo", ""),
                     caption=texto_result,
-                    reply_markup=reply_markup
+                    reply_markup=reply_markup,
                 )
 
             if "video" in message_return:
-                return telegram_bot.send_video(message_id, message_return.get("video", ""))
+                return telegram_bot.send_video(
+                    message_id, message_return.get("video", "")
+                )
 
             if "function" in message_return:
-                if message_return.get("function_data"):
+                function = message_return.get("function", "")
+                function_data = message_return.get("function_data")
+                if function_data:
                     telegram_bot.register_next_step_handler(
-                        message,
-                        lambda m: message_return.get("function", "")(m, message_return.get("function_data")),
+                        message, lambda m: function(m, function_data)
                     )
                 else:
-                    telegram_bot.register_next_step_handler(
-                        message, message_return.get("function", "")
-                    )
-                return send_reply_return(texto_result, message, telegram_bot, save_log, disable_web_page_preview, reply_markup=reply_markup)
+                    telegram_bot.register_next_step_handler(message, function)
+                return send_reply_return(
+                    texto_result,
+                    message,
+                    telegram_bot,
+                    save_log,
+                    disable_web_page_preview,
+                    reply_markup=reply_markup,
+                )
 
-            if "texto" in message_return:
-                return send_reply_return(texto_result, message, telegram_bot, save_log, disable_web_page_preview, reply_markup=reply_markup)
+            if texto_result:
+                return send_reply_return(
+                    texto_result,
+                    message,
+                    telegram_bot,
+                    save_log,
+                    disable_web_page_preview,
+                    reply_markup=reply_markup,
+                )
+
     except ApiTelegramException as exc:
-        handler_parse_error(exc, telegram_bot, message, message_return, disable_web_page_preview)
-
-def add_edit_option_markup(query, name):
-    """
-    Adiciona botão de edição
-    Args:
-        query (str): Query
-        name (str): Nome
-    """
-    return InlineKeyboardButton("✏️", callback_data=f"edit_{query}_{name}")
-
-
-def add_del_option_markup(query, name):
-    """
-    Adiciona botão de exclusão
-    Args:
-        query (str): Query
-        name (str): Nome
-    """
-    return InlineKeyboardButton("❌", callback_data=f"del_{query}_{name}")
-
-
-def add_text_option_markup(text, callback_data):
-    """
-    Adiciona botão de texto
-    Args:
-        text (str): Texto
-        callback_data (str): Callback data
-    """
-    return InlineKeyboardButton(text, callback_data=callback_data)
-
-
-def add_opts_markup(delete_option, delete_data, addopts, markup):
-    """
-    Adiciona opções de adição e exclusão
-    Args:
-        delete_option (bool): Excluir opção
-        delete_data (str): Dados de exclusão
-        addopts (bool): Adicionar opção
-        markup (InlineKeyboardMarkup): Markup
-    """
-    if addopts:
-        markup.add(
-            add_text_option_markup("Adicionar", callback_data=f"add_{delete_data}"),
+        handler_parse_error(
+            exc, telegram_bot, message, message_return, disable_web_page_preview
         )
-
-        if not delete_option:
-            markup.add(
-                add_text_option_markup("Excluir", callback_data=f"del_{delete_data}"),
-            )
-    return markup
-
-
-def add_more_options_markup(prefix, more_option, markup):
-    """
-    Adiciona opções de mais
-    Args:
-        prefix (str): Prefixo
-        more_option (str): Mais opção
-        markup (InlineKeyboardMarkup): Markup
-    """
-
-    if more_option:
-        obj = format_markup(more_option, prefix)
-        for item in obj:
-            markup.add(
-                add_text_option_markup(item["nome"], callback_data=item["callback"]),
-            )
-    return markup
-
-
-def format_markup(array: list, prefix: str) -> list:
-    """
-    Formata markup
-    Args:
-        array (list): Array
-        prefix (str): Prefixo
-    """
-    array_data = []
-
-    if isinstance(array, dict):
-        array = array.items()
-
-    for item_index in array:
-        data_key = data_value = item_index
-
-        if isinstance(item_index, tuple):
-            data_key, data_value = item_index
-
-        call_back = data_value
-
-        if prefix:
-            call_back = prefix + data_value
-
-        array_data.append({"nome": data_key, "callback": call_back.replace("ç", "c")})
-    return array_data
-
-
-def split_array(arr, x):
-    """
-    Divide array
-    Args:
-        arr (list): Array
-        x (int): Quantidade de itens
-    """
-    result = []
-    for i in range(0, len(arr), x):
-        result.append(arr[i : i + x])
-    return result
-
-
-def get_markup_edit_delete(
-    delete_option, delete_data, edit_option, edit_data, item, markup
-):
-    """
-    Retorna markup de edição e exclusão
-    Args:
-        delete_option (bool): Excluir opção
-        delete_data (str): Dados de exclusão
-        edit_option (bool): Editar opção
-        edit_data (str): Dados de edição
-        item (list): Item
-        markup (InlineKeyboardMarkup): Markup
-    """
-    markup.row_width = 2
-    if len(item) == 1:
-        item = item[0]
-
-    if delete_option and edit_option:
-        markup.row_width = 3
-
-    elements = [add_text_option_markup(item["nome"], callback_data=item["callback"])]
-
-    if edit_option:
-        elements.append(add_edit_option_markup(edit_data, item["nome"]))
-
-    if delete_option:
-        elements.append(add_del_option_markup(delete_data, item["callback"] or item["nome"]))
-
-    markup.add(*elements)
-    return markup if elements else None
 
 def get_markup(
     array: list = None,
@@ -231,37 +130,44 @@ def get_markup(
         more_option (str): Mais opção
         row_width (int): Largura da linha
     """
-    if not array:
-        array = {}
-    obj = format_markup(array, prefix)
-    markup = InlineKeyboardMarkup()
-    markup.row_width = row_width
+    array = array or {}
+    obj = []
 
-    obj = split_array(obj, row_width)
-    for item in obj:
+    array = array.items() if isinstance(array, dict) else array
+
+    for item_index in array:
+        data_key, data_value = item_index if isinstance(item_index, tuple) else (item_index, item_index)
+        call_back = (prefix + data_value if prefix else data_value).replace("ç", "c")
+        obj.append({"nome": data_key, "callback": call_back})
+
+    markup = InlineKeyboardMarkup(row_width=row_width)
+    rows = [obj[i:i + row_width] for i in range(0, len(obj), row_width)]
+
+    for row in rows:
         if delete_option or edit_option:
-            markup = get_markup_edit_delete(
-                delete_option, delete_data, edit_option, edit_data, item, markup
-            )
-            continue
+            markup.row_width = 2 + int(delete_option) + int(edit_option)
+            elements = [InlineKeyboardButton(item["nome"], callback_data=item["callback"]) for item in row]
 
-        markup_list = list(
-            map(
-                lambda button: add_text_option_markup(
-                    button["nome"], callback_data=button["callback"]
-                ),
-                item,
-            )
-        )
-        markup.add(*markup_list)
+            if edit_option:
+                elements.append(InlineKeyboardButton("✏️", callback_data=f"edit_{edit_data}_{row[0]['nome']}"))
 
-    markup = add_opts_markup(delete_option, delete_data, addopts, markup)
-    markup = add_more_options_markup(prefix, more_option, markup)
+            if delete_option:
+                elements.append(InlineKeyboardButton("❌", callback_data=f"del_{delete_data}_{row[0]['callback']}"))
+
+            markup.add(*elements)
+        else:
+            markup.add(*[InlineKeyboardButton(item["nome"], callback_data=item["callback"]) for item in row])
+
+    if addopts:
+        markup.add(InlineKeyboardButton("Adicionar", callback_data=f"add_{delete_data}"))
+        if not delete_option:
+            markup.add(InlineKeyboardButton("Excluir", callback_data=f"del_{delete_data}"))
+
+    if more_option:
+        for item in obj:
+            markup.add(InlineKeyboardButton(item["nome"], callback_data=item["callback"]))
+
     return markup
-
-
-
-
 
 def TelegramCommand(command: str):
     """
