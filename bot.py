@@ -1,10 +1,3 @@
-from abc import abstractmethod
-import time
-import inspect
-import queue
-import threading
-import requests
-import telebot
 from mongoengine import connect
 from db import DbManager
 from command import StravaCommands
@@ -32,7 +25,7 @@ class StravaBot(TelegramBot):
         if group_id not in self.strava_dict:
             self.strava_dict[group_id] = StravaCommands(StravaDataEngine(group_id, StravaApiProvider, DbManager))
         return self.strava_dict[group_id]
- 
+
     def new_chat_member(self, message):
         """
         Handler para novos usuários e também a entrada do bot no grupo
@@ -79,7 +72,7 @@ class StravaBot(TelegramBot):
             send_reply_return(resultado, call.message, self.bot, disable_web_page_preview=True)
             try:
                 self.bot.answer_callback_query(call.id)
-            except Exception as exc:
+            except Exception:
                 pass
         except Exception as exc:
             if exc.args:

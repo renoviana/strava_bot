@@ -8,6 +8,9 @@ import telebot
 
 
 class TelegramBot:
+    """
+    Classe para criar um bot do telegram
+    """
     callback_dict = {}
     command_dict = {}
     callback_queue = queue.Queue()
@@ -66,7 +69,7 @@ class TelegramBot:
                 call = command_queue.get()
                 function(call)
                 command_queue.task_done()
-        except:
+        except Exception:
             pass
 
         current = None
@@ -88,25 +91,25 @@ class TelegramBot:
                     self.command_dict[command_param] = name
 
     @abstractmethod
-    def commands_handler(self):
+    def commands_handler(self, message):
         """
         Handler para escutar comandos
         """
 
     @abstractmethod
-    def callback_query(self):
+    def callback_query(self, call):
         """
         Handler para escutar os callbacks
         """
 
     @abstractmethod
-    def group_commands_handler(self):
+    def group_commands_handler(self, message):
         """
         Handler para escutar comandos de grupo
         """
 
     @abstractmethod
-    def new_chat_member(self):
+    def new_chat_member(self, message):
         """
         Handler para novos usuários
         """
@@ -132,5 +135,5 @@ class TelegramBot:
         while True:
             try:
                 self.bot.polling(none_stop=True)
-            except Exception as exc:
+            except Exception:
                 self.bot.stop_polling()

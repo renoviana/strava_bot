@@ -265,7 +265,7 @@ def get_markup(
 
 def TelegramCommand(command: str):
     """
-    Decora
+    Decorator para comandos do telegram
     """
     def decorator(func):
         func.telegram_command = command
@@ -276,6 +276,9 @@ def TelegramCommand(command: str):
     return decorator
 
 def TelegramCallback(command: str):
+    """
+    Decorator para callbacks do telegram
+    """
     def decorator(func):
         func.telegram_callback_command = command
         @functools.wraps(func)
