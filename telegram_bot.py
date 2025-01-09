@@ -84,11 +84,13 @@ class TelegramBot:
             if inspect.isfunction(member) or inspect.ismethod(member):
                 if hasattr(member, 'telegram_callback_command'):
                     command_param = getattr(member, 'telegram_callback_command')
-                    self.callback_dict[command_param] = name
+                    for command in command_param:
+                        self.callback_dict[command] = name
 
                 if hasattr(member, 'telegram_command'):
                     command_param = getattr(member, 'telegram_command')
-                    self.command_dict[command_param] = name
+                    for command in command_param:
+                        self.command_dict[command] = name
 
     @abstractmethod
     def commands_handler(self, message):

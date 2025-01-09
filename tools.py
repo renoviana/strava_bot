@@ -167,7 +167,10 @@ def TelegramCommand(command: str):
     Decorator para comandos do telegram
     """
     def decorator(func):
-        func.telegram_command = command
+        if not hasattr(func, 'telegram_command'):
+            func.telegram_command = [command]
+        else:
+            func.telegram_command.append(command)
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             return func(*args, **kwargs)
@@ -179,7 +182,10 @@ def TelegramCallback(command: str):
     Decorator para callbacks do telegram
     """
     def decorator(func):
-        func.telegram_callback_command = command
+        if not hasattr(func,'telegram_callback_command'):
+            func.telegram_callback_command = [command]
+        else:
+            func.telegram_callback_command.append(command)
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             return func(*args, **kwargs)
