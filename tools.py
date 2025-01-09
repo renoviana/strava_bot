@@ -111,7 +111,6 @@ def get_markup(
     prefix: str = None,
     delete_option: bool = False,
     delete_data: str = None,
-    addopts: bool = False,
     edit_option=False,
     edit_data=None,
     more_option=None,
@@ -124,7 +123,6 @@ def get_markup(
         prefix (str): Prefixo
         delete_option (bool): Excluir opção
         delete_data (str): Dados de exclusão
-        addopts (bool): Adicionar opção
         edit_option (bool): Editar opção
         edit_data (str): Dados de edição
         more_option (str): Mais opção
@@ -158,14 +156,9 @@ def get_markup(
         else:
             markup.add(*[InlineKeyboardButton(item["nome"], callback_data=item["callback"]) for item in row])
 
-    if addopts:
-        markup.add(InlineKeyboardButton("Adicionar", callback_data=f"add_{delete_data}"))
-        if not delete_option:
-            markup.add(InlineKeyboardButton("Excluir", callback_data=f"del_{delete_data}"))
-
     if more_option:
-        for item in obj:
-            markup.add(InlineKeyboardButton(item["nome"], callback_data=item["callback"]))
+        for item in more_option:
+            markup.add(InlineKeyboardButton(item[0], callback_data=item[1]))
 
     return markup
 
