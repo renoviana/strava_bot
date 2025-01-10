@@ -898,3 +898,9 @@ class StravaDataEngine:
 
         return "\n".join(str_list)
     
+    def reset_rank(self):
+        """
+        Reseta o rank
+        """
+        self.db_manager.remove_activities({"group_id": self.group_id})
+        self.get_sport_rank("Ride", year_rank=True)

@@ -112,3 +112,11 @@ class DbManager:
             mongo_lista.append(StravaActivity(**activity_dict))
 
         StravaActivity.objects.insert(mongo_lista)
+
+    def remove_activities(self, query):
+        """
+        Remove atividades
+        Args:
+            query (dict): query de busca
+        """
+        StravaActivity.objects(__raw__=query).delete()

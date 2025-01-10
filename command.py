@@ -406,3 +406,13 @@ class StravaCommands:
         if len(distance) > 1:
             max_distance = distance[1]
         return self.strava_engine.get_segments_str(max_distance)
+    
+    @TelegramCommand("resetar")
+    def resetar_rank(self, _):
+        """
+        Resetar rank
+        Args:
+            message (Message): telegram message
+        """
+        self.strava_engine.reset_rank()
+        return "Dados resetados com sucesso"
