@@ -8,6 +8,9 @@ class DbManager:
         self.group_id = int(group_id)
 
     def get_strava_group(self) -> Strava_group:
+        """
+        Retorna dados de um grupo
+        """
         strava_group = Strava_group.objects(telegram_group_id=self.group_id).first()
 
         if not strava_group:
@@ -17,6 +20,9 @@ class DbManager:
         return strava_group
 
     def add_strava_group(self):
+        """
+        Adiciona grupo do telegram a base de dados
+        """
         return Strava_group(
             telegram_group_id=self.group_id,
             membros={},
@@ -28,6 +34,13 @@ class DbManager:
         ).save()
 
     def list_strava_activities(self, user_id, first_day, last_day):
+        """
+        Lista atividades de um usuário
+        Args:
+            user_id (int): id do usuário
+            first_day (datetime): data inicial
+            last_day (datetime): data final
+        """
         query = {
             'group_id': self.group_id,
             'athlete.id': user_id,
@@ -39,9 +52,15 @@ class DbManager:
 
         return StravaActivity.objects(__raw__=query).order_by('-start_date_local').all()
 
-    def update_membro(self, user, data):
+    def update_membro(self, user_name, data):
+        """
+        Atualiza dados de um membro
+        Args:
+            user_name (str): nome do usuário
+            data (dict): dados do usuário
+        """
         group = self.get_strava_group()
-        group.membros[user] = data
+        group.membros[user_name] = data
         group.save()
 
     def remove_strava_user(self, user_name):
@@ -63,15 +82,21 @@ class DbManager:
         strava_group.save()
         return strava_group.membros
 
-    def update_meta(self, tipo_meta, km):
+    def update_meta(self, sport_name, km):
+        """
+        Atualiza meta de algum esporte
+        Args:
+            sport_name (str): tipo de meta
+            km (int): km da meta
+        """
         strava_group = self.get_strava_group()
         metas = strava_group.metas
 
         if km:
             km = int(km)
-            metas[tipo_meta] = km
+            metas[sport_name] = km
         else:
-            del metas[tipo_meta]
+            del metas[sport_name]
 
         strava_group.metas = metas
         strava_group.save()

@@ -7,9 +7,6 @@ from telegram_bot import TelegramBot
 from tools import send_reply_return
 from secure import TELEGRAM_BOT_TOKEN, MONGO_URI, TELEGRAM_BOT_ID, HEALTH_CHECK_URL
 
-
-connect(host=MONGO_URI)
-
 class StravaBot(TelegramBot):
     strava_dict = {}
 
@@ -125,6 +122,6 @@ class StravaBot(TelegramBot):
             "\nEsse bot foi desenvolvido para funcionar apenas em grupos do telegram"\
             ", para utiliza-lo crie um grupo e me adicione. :)")
 
-
 if __name__ == "__main__":
+    connect(host=MONGO_URI)
     StravaBot(TELEGRAM_BOT_TOKEN).run()

@@ -13,19 +13,26 @@ class TelegramBot:
     """
     callback_dict = {}
     command_dict = {}
-    callback_queue = queue.Queue()
-    current_callback = None
-    command_queue = queue.Queue()
-    current_command = None
-    group_command_queue = queue.Queue()
-    current_group_command = None
 
     def __init__(self, bot_token, command_class, use_queue=False, health_check_url=None):
         self.bot = telebot.TeleBot(bot_token)
         self.use_queue = use_queue
+        self.create_queue()
         self.start_handler()
         self.get_methods_and_decorators(command_class)
         self.health_check_url = health_check_url
+
+    def create_queue(self):
+        """
+        Cria as filas de comandos
+        """
+        if not self.use_queue:
+            return
+
+        queue_list = ['callback_queue', 'command_queue', 'group_command_queue']
+
+        for queue_name in queue_list:
+            setattr(self, queue_name, queue.Queue())
 
     def is_group_message(self, message):
         """
@@ -40,16 +47,18 @@ class TelegramBot:
         Inicia os handlers do bot
         """
         self.bot.message_handler(func=lambda x: x.json.get("new_chat_member"))(self.new_chat_member)
-        if self.use_queue:
-            self.bot.callback_query_handler(func=lambda _: True)(lambda call: self.process_queue(call, self.current_callback, self.callback_queue, self.callback_query))
-            self.bot.message_handler(func=lambda x: not self.is_group_message(x))(lambda message: self.process_queue(message, self.current_command, self.command_queue, self.commands_handler))
-            self.bot.message_handler(func=self.is_group_message)(lambda message: self.process_queue(message, self.current_group_command, self.group_command_queue, self.group_commands_handler))
-        else:
-            self.bot.callback_query_handler(func=lambda _: True)(self.callback_query)
-            self.bot.message_handler(func=self.is_group_message)(self.group_commands_handler)
-            self.bot.message_handler(func=lambda x: not self.is_group_message(x))(self.commands_handler)
 
-    def process_queue(self, call, current, command_queue, function) -> None:
+        if self.use_queue:
+            self.bot.callback_query_handler(func=lambda _: True)(lambda call: self.process_queue(call, getattr(self, 'callback_queue'), self.callback_query))
+            self.bot.message_handler(func=lambda x: not self.is_group_message(x))(lambda message: self.process_queue(message, getattr(self, 'command_queue'), self.commands_handler))
+            self.bot.message_handler(func=self.is_group_message)(lambda message: self.process_queue(message, getattr(self, 'group_command_queue'), self.group_commands_handler))
+            return
+
+        self.bot.callback_query_handler(func=lambda _: True)(self.callback_query)
+        self.bot.message_handler(func=self.is_group_message)(self.group_commands_handler)
+        self.bot.message_handler(func=lambda x: not self.is_group_message(x))(self.commands_handler)
+
+    def process_queue(self, call, command_queue, function) -> None:
         """
         Handler para responder os callbacks:
         Quando um usuário clica em algum botão no bot
@@ -59,20 +68,17 @@ class TelegramBot:
             command_queue (Queue): Fila de comandos
             function (function): Função a ser executada
         """
-        if current:
-            return command_queue.put(call)
-
-        current = call
         try:
-            function(call)
+            # Adiciona o callback à fila
+            command_queue.put(call)
+            
+            # Processa todos os callbacks na fila
             while not command_queue.empty():
                 call = command_queue.get()
                 function(call)
                 command_queue.task_done()
         except Exception:
             pass
-
-        current = None
 
     def get_methods_and_decorators(self, command_class):
         """
