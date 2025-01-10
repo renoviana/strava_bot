@@ -207,7 +207,7 @@ class StravaCommands:
         }
 
     @TelegramCommand("rank")
-    @TelegramCommand("sport")
+    @TelegramCommand("sports")
     def list_sport_command(self, _):
         """
         Send sport menu
