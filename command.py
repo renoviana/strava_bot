@@ -347,7 +347,7 @@ class StravaCommands:
         """
         user_name = callback.data.replace("del_strava_", "")
         user_name_admin = callback.from_user.first_name or callback.from_user.username
-        self.strava_engine.remove_strava_user(user_name, user_name_admin)
+        self.strava_engine.remove_strava_user(user_name)
         return f"Usuário {user_name} removido com sucesso pelo {user_name_admin}!"
 
     @TelegramCallback("meta_")
