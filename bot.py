@@ -1,11 +1,10 @@
-from mongoengine import connect
 from db import DbManager
 from command import StravaCommands
 from engine import StravaDataEngine
 from service import StravaApiProvider
 from telegram_bot import TelegramBot
 from tools import send_reply_return
-from secure import TELEGRAM_BOT_TOKEN, MONGO_URI, TELEGRAM_BOT_ID, HEALTH_CHECK_URL
+from secure import TELEGRAM_BOT_TOKEN, TELEGRAM_BOT_ID, HEALTH_CHECK_URL
 
 class StravaBot(TelegramBot):
     strava_dict = {}
@@ -123,5 +122,4 @@ class StravaBot(TelegramBot):
             ", para utiliza-lo crie um grupo e me adicione. :)")
 
 if __name__ == "__main__":
-    connect(host=MONGO_URI)
     StravaBot(TELEGRAM_BOT_TOKEN).run()

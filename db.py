@@ -1,3 +1,6 @@
+from mongoengine import connect
+
+from secure import MONGO_URI
 from model.strava_activity import StravaActivity
 from model.strava_group import Strava_group
 
@@ -5,6 +8,7 @@ from model.strava_group import Strava_group
 class DbManager:
 
     def __init__(self, group_id):
+        connect(host=MONGO_URI)
         self.group_id = int(group_id)
 
     def get_strava_group(self) -> Strava_group:
