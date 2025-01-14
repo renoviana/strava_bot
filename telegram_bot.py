@@ -14,7 +14,7 @@ class TelegramBot:
     callback_dict = {}
     command_dict = {}
 
-    def __init__(self, bot_token, command_class, use_queue=False, health_check_url=None):
+    def __init__(self, bot_token, command_class, use_queue=True, health_check_url=None):
         self.bot = telebot.TeleBot(bot_token)
         self.use_queue = use_queue
         self.create_queue()
@@ -29,10 +29,30 @@ class TelegramBot:
         if not self.use_queue:
             return
 
-        queue_list = ['callback_queue', 'command_queue', 'group_command_queue']
+        queue_dict = {
+            'callback_queue': self.callback_query,
+            'command_queue': self.commands_handler,
+            'group_command_queue': self.group_commands_handler,
+            'health_check_queue': self.health_check
+        }
 
-        for queue_name in queue_list:
+        for queue_name, queue_function in queue_dict.items():
             setattr(self, queue_name, queue.Queue())
+            consumer_thread = threading.Thread(target=self.queue_consumer, args=(getattr(self, queue_name), queue_function))
+            consumer_thread.daemon = True
+            consumer_thread.start()
+
+    def queue_consumer(self, fila, function):
+        """
+        Função para consumir as filas
+        Args:
+            fila (Queue): Fila de comandos
+            function (function): Função a ser executada
+        """
+        while True:
+            mensagem = fila.get()
+            function(mensagem)
+            fila.task_done()
 
     def is_group_message(self, message):
         """
@@ -49,16 +69,16 @@ class TelegramBot:
         self.bot.message_handler(func=lambda x: x.json.get("new_chat_member"))(self.new_chat_member)
 
         if self.use_queue:
-            self.bot.callback_query_handler(func=lambda _: True)(lambda call: self.process_queue(call, getattr(self, 'callback_queue'), self.callback_query))
-            self.bot.message_handler(func=lambda x: not self.is_group_message(x))(lambda message: self.process_queue(message, getattr(self, 'command_queue'), self.commands_handler))
-            self.bot.message_handler(func=self.is_group_message)(lambda message: self.process_queue(message, getattr(self, 'group_command_queue'), self.group_commands_handler))
+            self.bot.callback_query_handler(func=lambda _: True)(lambda call: self.process_queue(call, getattr(self, 'callback_queue')))
+            self.bot.message_handler(func=lambda x: not self.is_group_message(x))(lambda message: self.process_queue(message, getattr(self, 'command_queue')))
+            self.bot.message_handler(func=self.is_group_message)(lambda message: self.process_queue(message, getattr(self, 'group_command_queue')))
             return
 
         self.bot.callback_query_handler(func=lambda _: True)(self.callback_query)
         self.bot.message_handler(func=self.is_group_message)(self.group_commands_handler)
         self.bot.message_handler(func=lambda x: not self.is_group_message(x))(self.commands_handler)
 
-    def process_queue(self, call, command_queue, function) -> None:
+    def process_queue(self, call, command_queue) -> None:
         """
         Handler para responder os callbacks:
         Quando um usuário clica em algum botão no bot
@@ -69,14 +89,7 @@ class TelegramBot:
             function (function): Função a ser executada
         """
         try:
-            # Adiciona o callback à fila
             command_queue.put(call)
-            
-            # Processa todos os callbacks na fila
-            while not command_queue.empty():
-                call = command_queue.get()
-                function(call)
-                command_queue.task_done()
         except Exception:
             pass
 
@@ -135,11 +148,6 @@ class TelegramBot:
         """
         Função para rodar o bot
         """
-        if self.health_check_url:
-            health_check_thread = threading.Thread(target=self.health_check)
-            health_check_thread.daemon = True
-            health_check_thread.start()
-
         while True:
             try:
                 self.bot.polling(none_stop=True)
