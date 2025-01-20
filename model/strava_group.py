@@ -1,5 +1,6 @@
 from mongoengine import Document, IntField, DictField, ListField
 
+
 class Strava_group(Document):
     telegram_group_id = IntField()
     ignored_activities = ListField()

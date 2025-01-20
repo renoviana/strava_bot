@@ -11,6 +11,7 @@ class TelegramBot:
     """
     Classe para criar um bot do telegram
     """
+
     callback_dict = {}
     command_dict = {}
 
@@ -30,15 +31,18 @@ class TelegramBot:
             return
 
         queue_dict = {
-            'callback_queue': self.callback_query,
-            'command_queue': self.commands_handler,
-            'group_command_queue': self.group_commands_handler,
-            'health_check_queue': self.health_check
+            "callback_queue": self.callback_query,
+            "command_queue": self.commands_handler,
+            "group_command_queue": self.group_commands_handler,
+            "health_check_queue": self.health_check,
         }
 
         for queue_name, queue_function in queue_dict.items():
             setattr(self, queue_name, queue.Queue())
-            consumer_thread = threading.Thread(target=self.queue_consumer, args=(getattr(self, queue_name), queue_function))
+            consumer_thread = threading.Thread(
+                target=self.queue_consumer,
+                args=(getattr(self, queue_name), queue_function),
+            )
             consumer_thread.daemon = True
             consumer_thread.start()
 
@@ -60,23 +64,39 @@ class TelegramBot:
         Args:
             message (Message): Mensagem recebida
         """
-        return hasattr(message,'chat') and message.chat.type in ["group", "supergroup"]
+        return hasattr(message, "chat") and message.chat.type in ["group", "supergroup"]
 
     def start_handler(self):
         """
         Inicia os handlers do bot
         """
-        self.bot.message_handler(func=lambda x: x.json.get("new_chat_member"))(self.new_chat_member)
+        self.bot.message_handler(func=lambda x: x.json.get("new_chat_member"))(
+            self.new_chat_member
+        )
 
         if self.use_queue:
-            self.bot.callback_query_handler(func=lambda _: True)(lambda call: self.process_queue(call, getattr(self, 'callback_queue')))
-            self.bot.message_handler(func=lambda x: not self.is_group_message(x))(lambda message: self.process_queue(message, getattr(self, 'command_queue')))
-            self.bot.message_handler(func=self.is_group_message)(lambda message: self.process_queue(message, getattr(self, 'group_command_queue')))
+            self.bot.callback_query_handler(func=lambda _: True)(
+                lambda call: self.process_queue(call, getattr(self, "callback_queue"))
+            )
+            self.bot.message_handler(func=lambda x: not self.is_group_message(x))(
+                lambda message: self.process_queue(
+                    message, getattr(self, "command_queue")
+                )
+            )
+            self.bot.message_handler(func=self.is_group_message)(
+                lambda message: self.process_queue(
+                    message, getattr(self, "group_command_queue")
+                )
+            )
             return
 
         self.bot.callback_query_handler(func=lambda _: True)(self.callback_query)
-        self.bot.message_handler(func=self.is_group_message)(self.group_commands_handler)
-        self.bot.message_handler(func=lambda x: not self.is_group_message(x))(self.commands_handler)
+        self.bot.message_handler(func=self.is_group_message)(
+            self.group_commands_handler
+        )
+        self.bot.message_handler(func=lambda x: not self.is_group_message(x))(
+            self.commands_handler
+        )
 
     def process_queue(self, call, command_queue) -> None:
         """
@@ -101,13 +121,13 @@ class TelegramBot:
         """
         for name, member in inspect.getmembers(command_class):
             if inspect.isfunction(member) or inspect.ismethod(member):
-                if hasattr(member, 'telegram_callback_command'):
-                    command_param = getattr(member, 'telegram_callback_command')
+                if hasattr(member, "telegram_callback_command"):
+                    command_param = getattr(member, "telegram_callback_command")
                     for command in command_param:
                         self.callback_dict[command] = name
 
-                if hasattr(member, 'telegram_command'):
-                    command_param = getattr(member, 'telegram_command')
+                if hasattr(member, "telegram_command"):
+                    command_param = getattr(member, "telegram_command")
                     for command in command_param:
                         self.command_dict[command] = name
 
@@ -134,7 +154,6 @@ class TelegramBot:
         """
         Handler para novos usuários
         """
-
 
     def health_check(self):
         """

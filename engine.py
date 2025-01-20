@@ -2,8 +2,9 @@ from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from service import StravaApiProvider
 
+
 class StravaDataEngine:
-    provider :StravaApiProvider
+    provider: StravaApiProvider
     membros = {}
     metas = {}
     ignored_activities = []
@@ -36,7 +37,7 @@ class StravaDataEngine:
             sport_dict = month_dict.get(sport_type, {})
             for user, user_position in sport_dict.items():
                 if user not in user_medal_dict:
-                    user_medal_dict[user] = { user_position: 1 }
+                    user_medal_dict[user] = {user_position: 1}
                     continue
 
                 if user_position not in user_medal_dict[user]:
@@ -58,9 +59,9 @@ class StravaDataEngine:
             return None
 
         for index, data in enumerate(api_activity_list):
-            if db_activity_list[0].get('id') == data['id']:
+            if db_activity_list[0].get("id") == data["id"]:
                 return index
-        
+
         return None
 
     def list_activity(self, user_name, first_day=None, last_day=None):
@@ -86,8 +87,12 @@ class StravaDataEngine:
         if not last_day:
             last_day = datetime.now() + timedelta(minutes=1)
 
-        db_activity_list = self.list_db_activity(first_day, last_day, self.membros.get(user_name, {}).get('athlete_id'))
-        api_activity_list = self.provider.list_activity(user_name, after=first_day.timestamp(), before=last_day.timestamp())
+        db_activity_list = self.list_db_activity(
+            first_day, last_day, self.membros.get(user_name, {}).get("athlete_id")
+        )
+        api_activity_list = self.provider.list_activity(
+            user_name, after=first_day.timestamp(), before=last_day.timestamp()
+        )
 
         last_index_db = self.last_db_activity_list(api_activity_list, db_activity_list)
         if last_index_db is not None:
@@ -96,9 +101,16 @@ class StravaDataEngine:
         activity_list += api_activity_list
         page = 2
         while api_activity_list and len(api_activity_list) % 100 == 0:
-            api_activity_list = self.provider.list_activity(user_name, after=first_day.timestamp(), before=last_day.timestamp(), page=page)
+            api_activity_list = self.provider.list_activity(
+                user_name,
+                after=first_day.timestamp(),
+                before=last_day.timestamp(),
+                page=page,
+            )
 
-            last_index_db = self.last_db_activity_list(api_activity_list, db_activity_list)
+            last_index_db = self.last_db_activity_list(
+                api_activity_list, db_activity_list
+            )
             if last_index_db is not None:
                 activity_list += api_activity_list[:last_index_db]
                 break
@@ -117,16 +129,18 @@ class StravaDataEngine:
             last_day (datetime): data de fim
             user_id (int): id do usuário
         """
-        db_activity_list = self.db_manager.list_strava_activities(user_id, first_day, last_day)
+        db_activity_list = self.db_manager.list_strava_activities(
+            user_id, first_day, last_day
+        )
         activity_list = []
         for i in db_activity_list:
             data_dict = i.to_mongo().to_dict()
-            data_dict['type'] = data_dict['activity_type']
-            data_dict['id'] = data_dict['activity_id']
-            data_dict['map'] = data_dict['activity_map']
-            del data_dict['activity_type']
-            del data_dict['activity_id']
-            del data_dict['activity_map']
+            data_dict["type"] = data_dict["activity_type"]
+            data_dict["id"] = data_dict["activity_id"]
+            data_dict["map"] = data_dict["activity_map"]
+            del data_dict["activity_type"]
+            del data_dict["activity_id"]
+            del data_dict["activity_map"]
             activity_list.append(data_dict)
         return activity_list
 
@@ -149,20 +163,24 @@ class StravaDataEngine:
         gym_dict = {}
         for activity in activity_list:
             if isinstance(activity["start_date_local"], str):
-                activity["start_date_local"] = datetime.strptime(activity["start_date_local"], '%Y-%m-%dT%H:%M:%SZ')
+                activity["start_date_local"] = datetime.strptime(
+                    activity["start_date_local"], "%Y-%m-%dT%H:%M:%SZ"
+                )
 
             activity_sport_type = activity["sport_type"]
 
-            if activity_sport_type == 'WeightTraining' and activity["moving_time"] > 7200:
+            if (
+                activity_sport_type == "WeightTraining"
+                and activity["moving_time"] > 7200
+            ):
                 activity["moving_time"] = 7200
-                
+
             gym_dict = self.apply_gym_rules(gym_dict, activity)
 
             if activity_sport_type not in activity_dict:
                 activity_dict[activity_sport_type] = []
 
             activity_dict[activity_sport_type].append(activity)
-
 
         return activity_dict
 
@@ -173,10 +191,12 @@ class StravaDataEngine:
             gym_dict (dict): dicionario de atividades
             activity (dict): atividade
         """
-        if activity["type"] != 'WeightTraining':
+        if activity["type"] != "WeightTraining":
             return gym_dict
-    
-        date_activity = activity['start_date_local'].replace(hour=0, minute=0, second=0, microsecond=0)
+
+        date_activity = activity["start_date_local"].replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
         moving_time_ride = activity["moving_time"]
 
         if date_activity not in gym_dict:
@@ -188,14 +208,16 @@ class StravaDataEngine:
             gym_dict[date_activity] = activity
         return gym_dict
 
-    def calculate_group_stats(self, ignore_stats_ids=None, first_day=None, last_day=None):
+    def calculate_group_stats(
+        self, ignore_stats_ids=None, first_day=None, last_day=None
+    ):
         """
         Calcula estatísticas de atividades para cada usuário do grupo.
-        Esta função gera um resumo 
-        das atividades de cada usuário, incluindo totais de distância, 
-        tempo em movimento, pontos e os valores máximos para 
-        distância, velocidade, velocidade média, ganho de elevação e 
-        tempo em movimento, juntamente com o ID da atividade 
+        Esta função gera um resumo
+        das atividades de cada usuário, incluindo totais de distância,
+        tempo em movimento, pontos e os valores máximos para
+        distância, velocidade, velocidade média, ganho de elevação e
+        tempo em movimento, juntamente com o ID da atividade
         correspondente a cada máximo.
         Args:
             ignore_stats_ids (list): lista de ids de atividades ignoradas
@@ -223,76 +245,154 @@ class StravaDataEngine:
             return self.cache_last_activity
 
         group_members_dict = {}
-        
 
         for user in self.membros:
-            activity_dict = self.list_activity_by_sport_type(user, first_day=first_day, last_day=last_day)
+            activity_dict = self.list_activity_by_sport_type(
+                user, first_day=first_day, last_day=last_day
+            )
 
             if not activity_dict:
                 continue
 
-            user_dict = {
-                'sport_stats_dict':{},
-                'total_points':0,
-                'activity_dict':{}
-            }
+            user_dict = {"sport_stats_dict": {}, "total_points": 0, "activity_dict": {}}
             for sport_name, activity_list in activity_dict.items():
                 if sport_name not in user_dict:
-                    user_dict['sport_stats_dict'][sport_name] = {
+                    user_dict["sport_stats_dict"][sport_name] = {
                         "total_distance": 0,
                         "total_user_points": 0,
                         "total_moving_time": 0,
-                        "max_distance": {"activity_id":None, "value":0},
-                        "max_velocity": {"activity_id":None, "value":0},
-                        "max_average_speed": {"activity_id":None, "value":0},
-                        "max_elevation_gain": {"activity_id":None, "value":0},
-                        "max_moving_time": {"activity_id":None, "value":0},
+                        "max_distance": {"activity_id": None, "value": 0},
+                        "max_velocity": {"activity_id": None, "value": 0},
+                        "max_average_speed": {"activity_id": None, "value": 0},
+                        "max_elevation_gain": {"activity_id": None, "value": 0},
+                        "max_moving_time": {"activity_id": None, "value": 0},
                     }
 
                 for activity in activity_list:
                     max_speed_ride_km = round(activity["max_speed"] * 3.6, 2)
-                    max_average_speed_ride_km = round(activity["average_speed"] * 3.6, 2)
-                    total_elevation_gain_ride = round(activity["total_elevation_gain"], 2)
+                    max_average_speed_ride_km = round(
+                        activity["average_speed"] * 3.6, 2
+                    )
+                    total_elevation_gain_ride = round(
+                        activity["total_elevation_gain"], 2
+                    )
                     distance_km = round(activity["distance"] / 1000, 2)
                     moving_time_ride = activity["moving_time"]
 
                     if self.ignore_activity_rules(activity):
                         continue
 
-                    ignore_stats = str(activity.get('id', activity.get('activity_id'))) in ignore_stats_ids
-                    
-                    if distance_km > user_dict['sport_stats_dict'][sport_name]["max_distance"]['value'] and not ignore_stats:
-                        user_dict['sport_stats_dict'][sport_name]["max_distance"]['value'] = round(distance_km, 2)
-                        user_dict['sport_stats_dict'][sport_name]["max_distance"]['activity_id'] = activity.get('id')
-
-                    if max_speed_ride_km > user_dict['sport_stats_dict'][sport_name]["max_velocity"]['value'] and not ignore_stats:
-                        user_dict['sport_stats_dict'][sport_name]["max_velocity"]['value'] = round(max_speed_ride_km, 2)
-                        user_dict['sport_stats_dict'][sport_name]["max_velocity"]['activity_id'] = activity.get('id')
+                    ignore_stats = (
+                        str(activity.get("id", activity.get("activity_id")))
+                        in ignore_stats_ids
+                    )
 
                     if (
-                        max_average_speed_ride_km > user_dict['sport_stats_dict'][sport_name]["max_average_speed"]['value']
+                        distance_km
+                        > user_dict["sport_stats_dict"][sport_name]["max_distance"][
+                            "value"
+                        ]
                         and not ignore_stats
                     ):
-                        user_dict['sport_stats_dict'][sport_name]["max_average_speed"]['value'] = round(max_average_speed_ride_km, 2)
-                        user_dict['sport_stats_dict'][sport_name]["max_average_speed"]['activity_id'] = activity.get('id')
+                        user_dict["sport_stats_dict"][sport_name]["max_distance"][
+                            "value"
+                        ] = round(distance_km, 2)
+                        user_dict["sport_stats_dict"][sport_name]["max_distance"][
+                            "activity_id"
+                        ] = activity.get("id")
 
-                    if total_elevation_gain_ride > user_dict['sport_stats_dict'][sport_name]["max_elevation_gain"]['value']  and not ignore_stats:
-                        user_dict['sport_stats_dict'][sport_name]["max_elevation_gain"]['value'] = round(total_elevation_gain_ride, 2)
-                        user_dict['sport_stats_dict'][sport_name]["max_elevation_gain"]['activity_id'] = activity.get('id')
+                    if (
+                        max_speed_ride_km
+                        > user_dict["sport_stats_dict"][sport_name]["max_velocity"][
+                            "value"
+                        ]
+                        and not ignore_stats
+                    ):
+                        user_dict["sport_stats_dict"][sport_name]["max_velocity"][
+                            "value"
+                        ] = round(max_speed_ride_km, 2)
+                        user_dict["sport_stats_dict"][sport_name]["max_velocity"][
+                            "activity_id"
+                        ] = activity.get("id")
 
-                    if moving_time_ride > user_dict['sport_stats_dict'][sport_name]["max_moving_time"]['value'] and not ignore_stats:
-                        user_dict['sport_stats_dict'][sport_name]["max_moving_time"]['value'] = moving_time_ride
-                        user_dict['sport_stats_dict'][sport_name]["max_moving_time"]['activity_id'] = activity.get('id')
+                    if (
+                        max_average_speed_ride_km
+                        > user_dict["sport_stats_dict"][sport_name][
+                            "max_average_speed"
+                        ]["value"]
+                        and not ignore_stats
+                    ):
+                        user_dict["sport_stats_dict"][sport_name]["max_average_speed"][
+                            "value"
+                        ] = round(max_average_speed_ride_km, 2)
+                        user_dict["sport_stats_dict"][sport_name]["max_average_speed"][
+                            "activity_id"
+                        ] = activity.get("id")
 
-                    user_dict['sport_stats_dict'][sport_name]["total_user_points"] = round(self.calc_point_rank(
-                        user_dict['sport_stats_dict'][sport_name]["total_user_points"], total_elevation_gain_ride, distance_km, sport_name
-                    ), 2)
-                    user_dict['total_points'] = round(user_dict['total_points'] + user_dict['sport_stats_dict'][sport_name]["total_user_points"], 2)
-                    user_dict['sport_stats_dict'][sport_name]["total_distance"] = round(user_dict['sport_stats_dict'][sport_name]["total_distance"] + distance_km, 2)
-                    user_dict['sport_stats_dict'][sport_name]["total_moving_time"] = round(user_dict['sport_stats_dict'][sport_name]["total_moving_time"] + moving_time_ride)
+                    if (
+                        total_elevation_gain_ride
+                        > user_dict["sport_stats_dict"][sport_name][
+                            "max_elevation_gain"
+                        ]["value"]
+                        and not ignore_stats
+                    ):
+                        user_dict["sport_stats_dict"][sport_name]["max_elevation_gain"][
+                            "value"
+                        ] = round(total_elevation_gain_ride, 2)
+                        user_dict["sport_stats_dict"][sport_name]["max_elevation_gain"][
+                            "activity_id"
+                        ] = activity.get("id")
+
+                    if (
+                        moving_time_ride
+                        > user_dict["sport_stats_dict"][sport_name]["max_moving_time"][
+                            "value"
+                        ]
+                        and not ignore_stats
+                    ):
+                        user_dict["sport_stats_dict"][sport_name]["max_moving_time"][
+                            "value"
+                        ] = moving_time_ride
+                        user_dict["sport_stats_dict"][sport_name]["max_moving_time"][
+                            "activity_id"
+                        ] = activity.get("id")
+
+                    user_dict["sport_stats_dict"][sport_name]["total_user_points"] = (
+                        round(
+                            self.calc_point_rank(
+                                user_dict["sport_stats_dict"][sport_name][
+                                    "total_user_points"
+                                ],
+                                total_elevation_gain_ride,
+                                distance_km,
+                                sport_name,
+                            ),
+                            2,
+                        )
+                    )
+                    user_dict["total_points"] = round(
+                        user_dict["total_points"]
+                        + user_dict["sport_stats_dict"][sport_name][
+                            "total_user_points"
+                        ],
+                        2,
+                    )
+                    user_dict["sport_stats_dict"][sport_name]["total_distance"] = round(
+                        user_dict["sport_stats_dict"][sport_name]["total_distance"]
+                        + distance_km,
+                        2,
+                    )
+                    user_dict["sport_stats_dict"][sport_name]["total_moving_time"] = (
+                        round(
+                            user_dict["sport_stats_dict"][sport_name][
+                                "total_moving_time"
+                            ]
+                            + moving_time_ride
+                        )
+                    )
 
                 user_dict["activity_dict"] = activity_dict
-            
+
             group_members_dict[user] = user_dict
 
         self.cache_last_activity = group_members_dict
@@ -308,7 +408,12 @@ class StravaDataEngine:
             first_day (datetime): data de inicio
             last_day (datetime): data de fim
         """
-        return self.last_run and datetime.now() - timedelta(minutes=2) < self.last_run and self.cache_last_day == last_day and self.cache_first_day == first_day
+        return (
+            self.last_run
+            and datetime.now() - timedelta(minutes=2) < self.last_run
+            and self.cache_last_day == last_day
+            and self.cache_first_day == first_day
+        )
 
     def ignore_activity_rules(self, activity, min_distance=None):
         """
@@ -318,11 +423,19 @@ class StravaDataEngine:
         """
         ignore_min_distance = False
         if min_distance:
-            ignore_min_distance = activity['distance'] < int(min_distance)
-        total_distance_and_moving_time_zero = activity.get("total_distance") == 0 and activity.get("total_moving_time") == 0
+            ignore_min_distance = activity["distance"] < int(min_distance)
+        total_distance_and_moving_time_zero = (
+            activity.get("total_distance") == 0
+            and activity.get("total_moving_time") == 0
+        )
         total_moving_time_less_than_5 = activity.get("moving_time") < 300
         distance_greater_than_400 = round(activity.get("distance") / 1000, 2) > 400
-        return total_distance_and_moving_time_zero or total_moving_time_less_than_5 or distance_greater_than_400 or ignore_min_distance
+        return (
+            total_distance_and_moving_time_zero
+            or total_moving_time_less_than_5
+            or distance_greater_than_400
+            or ignore_min_distance
+        )
 
     def list_points(self, first_day=None, last_day=None):
         """
@@ -330,14 +443,18 @@ class StravaDataEngine:
         """
         distance_list = []
         ignore_stats_ids = self.ignored_activities or []
-        group_members_dict = self.calculate_group_stats(ignore_stats_ids=ignore_stats_ids, first_day=first_day, last_day=last_day)
+        group_members_dict = self.calculate_group_stats(
+            ignore_stats_ids=ignore_stats_ids, first_day=first_day, last_day=last_day
+        )
         for user, activity_dict in group_members_dict.items():
-            if activity_dict['total_points'] == 0:
+            if activity_dict["total_points"] == 0:
                 continue
 
-            distance_list.append({"user": user, "point": activity_dict['total_points']})
+            distance_list.append({"user": user, "point": activity_dict["total_points"]})
 
-        sort_distance_list = sorted(distance_list, key=lambda k: k["point"], reverse=True)
+        sort_distance_list = sorted(
+            distance_list, key=lambda k: k["point"], reverse=True
+        )
 
         return list(
             map(
@@ -358,21 +475,28 @@ class StravaDataEngine:
             "max_velocity": {},
             "max_average_speed": {},
             "max_elevation_gain": {},
-            "max_moving_time": {}
+            "max_moving_time": {},
         }
-        group_members_dict = self.calculate_group_stats(ignore_stats_ids=self.ignored_activities, first_day=first_day, last_day=last_day)
+        group_members_dict = self.calculate_group_stats(
+            ignore_stats_ids=self.ignored_activities,
+            first_day=first_day,
+            last_day=last_day,
+        )
         for user_name, activity_dict in group_members_dict.items():
-            ride_dict = activity_dict['sport_stats_dict'].get("Ride")
+            ride_dict = activity_dict["sport_stats_dict"].get("Ride")
             if not ride_dict:
                 continue
 
             for metric, _ in max_metrics.items():
                 current_value = ride_dict[metric]["value"]
-                if not max_metrics[metric] or current_value > max_metrics[metric]["value"]:
+                if (
+                    not max_metrics[metric]
+                    or current_value > max_metrics[metric]["value"]
+                ):
                     max_metrics[metric] = {
                         "user": user_name,
                         "value": current_value,
-                        "activity_id": ride_dict[metric]["activity_id"]
+                        "activity_id": ride_dict[metric]["activity_id"],
                     }
 
         return max_metrics
@@ -382,14 +506,18 @@ class StravaDataEngine:
         Retorna lista de distancias dos usuários
         """
         all_types = []
-        group_members_dict = self.calculate_group_stats(first_day=first_day, last_day=last_day)
+        group_members_dict = self.calculate_group_stats(
+            first_day=first_day, last_day=last_day
+        )
         for activity_list in group_members_dict.values():
-            all_types += list(activity_list['sport_stats_dict'].keys())
+            all_types += list(activity_list["sport_stats_dict"].keys())
 
         all_types = list(set(all_types))
         return sorted(all_types)
 
-    def get_sport_rank(self, sport_type, year_rank=False, first_day=None, last_day=None):
+    def get_sport_rank(
+        self, sport_type, year_rank=False, first_day=None, last_day=None
+    ):
         """
         Retorna lista de distancias dos usuários
         Args:
@@ -400,12 +528,12 @@ class StravaDataEngine:
         """
         if year_rank:
             first_day = datetime.now().replace(
-            day=1,
-            hour=0,
-            minute=0,
-            second=0,
-            microsecond=0,
-            month=1,
+                day=1,
+                hour=0,
+                minute=0,
+                second=0,
+                microsecond=0,
+                month=1,
             )
             last_day = datetime.now().replace(
                 day=1,
@@ -414,24 +542,26 @@ class StravaDataEngine:
                 second=0,
                 microsecond=0,
                 month=1,
-                year=datetime.now().year + 1
+                year=datetime.now().year + 1,
             )
         ignore_stats_ids = self.ignored_activities
         distance_list = []
-        group_members_dict = self.calculate_group_stats(ignore_stats_ids=ignore_stats_ids, first_day=first_day, last_day=last_day)
+        group_members_dict = self.calculate_group_stats(
+            ignore_stats_ids=ignore_stats_ids, first_day=first_day, last_day=last_day
+        )
         for user_name, activity_dict in group_members_dict.items():
-            json_data = activity_dict['sport_stats_dict'].get(sport_type)
+            json_data = activity_dict["sport_stats_dict"].get(sport_type)
 
             if not json_data:
                 continue
 
-            json_data['user'] = user_name
-            json_data['user_id'] = self.membros.get(user_name).get("athlete_id")
+            json_data["user"] = user_name
+            json_data["user_id"] = self.membros.get(user_name).get("athlete_id")
             distance_list.append(json_data)
-        
+
         return distance_list
 
-    def get_ranking_str(self, sport_type , year_rank=False):
+    def get_ranking_str(self, sport_type, year_rank=False):
         """
         Calcula o rank dos usuários
         Args:
@@ -464,7 +594,9 @@ class StravaDataEngine:
         metas = self.metas.get(sport_type.lower())
         msg_template = f"Ranking {today_str} {emoji}:\n"
         rank_params, rank_unit = self.get_rank_params_and_unit(sport_type)
-        distance_list = self.get_sport_rank(sport_type, year_rank, first_day=None, last_day=None)
+        distance_list = self.get_sport_rank(
+            sport_type, year_rank, first_day=None, last_day=None
+        )
         sort_distance_list = sorted(
             distance_list, key=lambda k: k[rank_params], reverse=True
         )
@@ -476,8 +608,8 @@ class StravaDataEngine:
             emoji = ""
             medal_str = ""
             activity_value = distance_user.get(rank_params)
-            user_name = distance_user.get('user').title()
-            user_id = distance_user.get('user_id')
+            user_name = distance_user.get("user").title()
+            user_id = distance_user.get("user_id")
 
             if distance_user.get(rank_params) <= 0:
                 continue
@@ -489,15 +621,19 @@ class StravaDataEngine:
             if metas and activity_value >= metas:
                 emoji = "✅"
 
-            if rank_params == 'total_moving_time':
+            if rank_params == "total_moving_time":
                 activity_value = f"{int(activity_value // 3600):02}:{int((activity_value % 3600) // 60):02}:{int(activity_value % 60):02}"
-            
-            user_medal = dict(sorted(user_medal_dict.get(user_name, {})  .items()))
+
+            user_medal = dict(sorted(user_medal_dict.get(user_name, {}).items()))
             for medal_position, count in user_medal.items():
                 medal_str += f"{medal_dict[medal_position]}{count}"
 
-            user_link = f"<a href=\"https://www.strava.com/athletes/{user_id}\">{user_name}</a>"
-            rank_msg_list.append(f"{position}º - {user_link}{medal_str} - {activity_value}{rank_unit} {emoji}")
+            user_link = (
+                f'<a href="https://www.strava.com/athletes/{user_id}">{user_name}</a>'
+            )
+            rank_msg_list.append(
+                f"{position}º - {user_link}{medal_str} - {activity_value}{rank_unit} {emoji}"
+            )
 
         msg = "\n".join(rank_msg_list)
         msg = msg_template + msg
@@ -513,12 +649,19 @@ class StravaDataEngine:
         Args:
             sport_type (str): tipo de esporte
         """
-        sport_rank_by_time_list = ['workout', 'weighttraining', 'velomobile', 'standuppaddling', 'yoga', 'stairstepper']
-        rank_params = 'total_distance'
-        rank_unit="km"
-        
+        sport_rank_by_time_list = [
+            "workout",
+            "weighttraining",
+            "velomobile",
+            "standuppaddling",
+            "yoga",
+            "stairstepper",
+        ]
+        rank_params = "total_distance"
+        rank_unit = "km"
+
         if sport_type.lower() in sport_rank_by_time_list:
-            rank_params = 'total_moving_time'
+            rank_params = "total_moving_time"
             rank_unit = ""
         return rank_params, rank_unit
 
@@ -543,7 +686,9 @@ class StravaDataEngine:
         metas = self.db_manager.update_meta(tipo_meta, km)
         self.metas = metas
 
-    def calc_point_rank(self, total_user_points, total_elevation_gain_ride_m, distance_km, sport_type):
+    def calc_point_rank(
+        self, total_user_points, total_elevation_gain_ride_m, distance_km, sport_type
+    ):
         """
         Calcula o rank de pontos
         Args:
@@ -551,11 +696,11 @@ class StravaDataEngine:
             total_elevation_gain_ride_m (int): total de elevação
             distance_km (int): distancia
         """
-        if distance_km >= 1 and sport_type == 'Swim':
+        if distance_km >= 1 and sport_type == "Swim":
             total_user_points += 1
             return total_user_points
 
-        if distance_km > 2 and sport_type in ['Run', 'Walk', 'Hike']:
+        if distance_km > 2 and sport_type in ["Run", "Walk", "Hike"]:
             total_user_points += 1
             return total_user_points
 
@@ -585,6 +730,7 @@ class StravaDataEngine:
         Retorna o ranking geral de medalhas
         """
         from collections import defaultdict
+
         medals = defaultdict(lambda: {"🥇": 0, "🥈": 0, "🥉": 0, "pontos": 0})
 
         for _, sports in self.medalhas.items():
@@ -601,17 +747,22 @@ class StravaDataEngine:
                         medals[person]["pontos"] += 1
 
         # Ordenar por pontos, e em caso de empate, ordenar por medalhas de ouro, prata, e bronze
-        sorted_medals = sorted(medals.items(), key=lambda x: (-x[1]["pontos"], -x[1]["🥇"], -x[1]["🥈"], -x[1]["🥉"]))
+        sorted_medals = sorted(
+            medals.items(),
+            key=lambda x: (-x[1]["pontos"], -x[1]["🥇"], -x[1]["🥈"], -x[1]["🥉"]),
+        )
 
         # Exibir os resultados no formato desejado
         msg_list = []
         rank = 1
-        pontos = sorted_medals[0][1]['pontos']
+        pontos = sorted_medals[0][1]["pontos"]
         for rank, (person, counts) in enumerate(sorted_medals, 1):
-            if counts['pontos'] < pontos:
+            if counts["pontos"] < pontos:
                 rank = rank + 1
-                pontos = counts['pontos']
-            msg_list.append(f"{rank}º - {person} 🥇{counts['🥇']} 🥈{counts['🥈']} 🥉{counts['🥉']} | {counts['pontos']} pts")
+                pontos = counts["pontos"]
+            msg_list.append(
+                f"{rank}º - {person} 🥇{counts['🥇']} 🥈{counts['🥈']} 🥉{counts['🥉']} | {counts['pontos']} pts"
+            )
 
         return "\n".join(msg_list)
 
@@ -630,15 +781,19 @@ class StravaDataEngine:
 
         date_dict = {}
         for membro in self.membros:
-            activity = self.list_activity(membro, first_day=first_day, last_day=last_day)
+            activity = self.list_activity(
+                membro, first_day=first_day, last_day=last_day
+            )
             if membro not in date_dict:
                 date_dict[membro] = {}
 
             for a in activity:
-                start_date_local = a['start_date_local']
+                start_date_local = a["start_date_local"]
                 if isinstance(start_date_local, str):
-                    start_date_local = datetime.strptime(start_date_local, '%Y-%m-%dT%H:%M:%SZ')
-                date = start_date_local.strftime('%Y-%m-%d')
+                    start_date_local = datetime.strptime(
+                        start_date_local, "%Y-%m-%dT%H:%M:%SZ"
+                    )
+                date = start_date_local.strftime("%Y-%m-%d")
                 date_dict[membro][date] = True
                 pass
 
@@ -652,7 +807,9 @@ class StravaDataEngine:
             return
 
         # Order by value
-        date_dict = dict(sorted(date_dict.items(), key=lambda item: item[1], reverse=True))
+        date_dict = dict(
+            sorted(date_dict.items(), key=lambda item: item[1], reverse=True)
+        )
         msg_list = [title]
         rank_position = 1
         current_value = list(date_dict.values())[0]
@@ -662,15 +819,21 @@ class StravaDataEngine:
                 current_value = valor
             msg_list.append(f"{rank_position}º - {name.title()} - {valor}/{month_days}")
         return "\n".join(msg_list)
-    
+
     def get_medalhas_var(self):
         """
         Retorna o ranking de medalhas por esporte e mês
         """
         from collections import defaultdict
-        medals = defaultdict(lambda: {
-            "🥇": 0, "🥈": 0, "🥉": 0, "detalhes": defaultdict(lambda: {"🥇": [], "🥈": [], "🥉": []})
-        })
+
+        medals = defaultdict(
+            lambda: {
+                "🥇": 0,
+                "🥈": 0,
+                "🥉": 0,
+                "detalhes": defaultdict(lambda: {"🥇": [], "🥈": [], "🥉": []}),
+            }
+        )
 
         # Iterar sobre os meses e esportes
         for month, sports in self.medalhas.items():
@@ -687,19 +850,23 @@ class StravaDataEngine:
                         medals[person]["🥉"] += 1
                         medals[person]["detalhes"][sport]["🥉"].append(month)
 
-        sorted_medals = sorted(medals.items(), key=lambda x: (-x[1]["🥇"], -x[1]["🥈"], -x[1]["🥉"]))
+        sorted_medals = sorted(
+            medals.items(), key=lambda x: (-x[1]["🥇"], -x[1]["🥈"], -x[1]["🥉"])
+        )
         msg_list = []
 
         for rank, (person, counts) in enumerate(sorted_medals, 1):
-            msg_list.append(f"\n{rank}º - {person} 🥇{counts['🥇']} 🥈{counts['🥈']} 🥉{counts['🥉']}")
-            for sport, detalhes in counts['detalhes'].items():
+            msg_list.append(
+                f"\n{rank}º - {person} 🥇{counts['🥇']} 🥈{counts['🥈']} 🥉{counts['🥉']}"
+            )
+            for sport, detalhes in counts["detalhes"].items():
                 msg_list.append(f"{sport} -")
                 for medalha, meses in detalhes.items():
                     if meses:
                         msg_list.append(f"{medalha} - {', '.join(meses)}")
 
         return "\n".join(msg_list)
-    
+
     def get_segments_rank(self, segment_id):
         """
         Retorna o ranking de um segmento
@@ -714,25 +881,37 @@ class StravaDataEngine:
                 raise Exception(f"Erro ao buscar segmento: {segment_data['message']}")
 
             athlete_has_segment = segment_data.get("athlete_segment_stats")
-            if not athlete_has_segment['pr_elapsed_time']:
+            if not athlete_has_segment["pr_elapsed_time"]:
                 continue
 
-            pr_elapsed_time = athlete_has_segment['pr_elapsed_time']
-            pr_elapsed_time =  f"{pr_elapsed_time // 60}:{pr_elapsed_time % 60:02}"
-            pr_date = datetime.strptime(athlete_has_segment['pr_date'], "%Y-%m-%d").strftime("%d/%m/%Y")
-            lista_membros.append({
-                "membro_name": membro_name,
-                "pr_elapsed_time": pr_elapsed_time,
-                "pr_date": pr_date,
-                "str": f"<a href='https://www.strava.com/activities/{athlete_has_segment['pr_activity_id']}'>{membro_name} - {pr_elapsed_time} {pr_date}</a>"
-            })
-        lista_membros = sorted(lista_membros, key=lambda x: x['pr_elapsed_time'])
-        
+            pr_elapsed_time = athlete_has_segment["pr_elapsed_time"]
+            pr_elapsed_time = f"{pr_elapsed_time // 60}:{pr_elapsed_time % 60:02}"
+            pr_date = datetime.strptime(
+                athlete_has_segment["pr_date"], "%Y-%m-%d"
+            ).strftime("%d/%m/%Y")
+            lista_membros.append(
+                {
+                    "membro_name": membro_name,
+                    "pr_elapsed_time": pr_elapsed_time,
+                    "pr_date": pr_date,
+                    "str": f"<a href='https://www.strava.com/activities/{athlete_has_segment['pr_activity_id']}'>{membro_name} - {pr_elapsed_time} {pr_date}</a>",
+                }
+            )
+        lista_membros = sorted(lista_membros, key=lambda x: x["pr_elapsed_time"])
+
         if not lista_membros:
             return "Nenhum membro tem o segmento"
-        
-        msg = [f"<a href='https://www.strava.com/segments/{segment_id}'>{segment_data['name']} - {round(segment_data['distance'] / 1000, 2)}km</a>"]
-        return "\n".join(msg + [f"{membro[0]} - {membro[1]['str']}" for membro in enumerate(lista_membros, 1)])
+
+        msg = [
+            f"<a href='https://www.strava.com/segments/{segment_id}'>{segment_data['name']} - {round(segment_data['distance'] / 1000, 2)}km</a>"
+        ]
+        return "\n".join(
+            msg
+            + [
+                f"{membro[0]} - {membro[1]['str']}"
+                for membro in enumerate(lista_membros, 1)
+            ]
+        )
 
     def get_segments(self, min_distance=None):
         """
@@ -749,7 +928,9 @@ class StravaDataEngine:
 
         ignore_stats_ids = self.ignored_activities
         group_members = list(self.membros.items())
-        group_members_dict = self.calculate_group_stats(ignore_stats_ids=ignore_stats_ids)
+        group_members_dict = self.calculate_group_stats(
+            ignore_stats_ids=ignore_stats_ids
+        )
         all_segments = {}
 
         for name, token in group_members:
@@ -778,21 +959,23 @@ class StravaDataEngine:
         Returns:
             list: A list of filtered activities.
         """
-        activity_list = user_data.get(name, {}).get('activity_dict', {}).get('Ride', [])
+        activity_list = user_data.get(name, {}).get("activity_dict", {}).get("Ride", [])
         filtered_activities = []
 
         for activity in activity_list:
-            if activity['distance'] < int(min_distance):
+            if activity["distance"] < int(min_distance):
                 continue
-            activity_id = activity['id']
+            activity_id = activity["id"]
             if str(activity_id) in ignore_stats_ids:
                 continue
-            activity['id'] = activity_id
+            activity["id"] = activity_id
             filtered_activities.append(activity)
 
         return filtered_activities
 
-    def _process_activity_segments(self, activity, user_name, token, min_distance, all_segments):
+    def _process_activity_segments(
+        self, activity, user_name, token, min_distance, all_segments
+    ):
         """
         Processes an activity to collect segment efforts.
 
@@ -803,23 +986,25 @@ class StravaDataEngine:
             min_distance (int): The minimum distance.
             all_segments (dict): Dictionary to collect all segment efforts.
         """
-        activity_data = self.provider.get_activity(user_name, activity['id'])
-        segment_efforts = activity_data.get('segment_efforts', [])
+        activity_data = self.provider.get_activity(user_name, activity["id"])
+        segment_efforts = activity_data.get("segment_efforts", [])
 
         for segment_effort in segment_efforts:
-            if segment_effort['distance'] < int(min_distance):
+            if segment_effort["distance"] < int(min_distance):
                 continue
 
-            if segment_effort['segment']['id'] in [18536734, 683759]:
+            if segment_effort["segment"]["id"] in [18536734, 683759]:
                 continue
 
-            segment_effort.update({
-                'user': user_name,
-                'access_token': token['access_token'],
-                'refresh_token': token['refresh_token'],
-                'atividade_id': activity['id']
-            })
-            segment_id = segment_effort['segment']['id']
+            segment_effort.update(
+                {
+                    "user": user_name,
+                    "access_token": token["access_token"],
+                    "refresh_token": token["refresh_token"],
+                    "atividade_id": activity["id"],
+                }
+            )
+            segment_id = segment_effort["segment"]["id"]
 
             all_segments.setdefault(segment_id, []).append(segment_effort)
 
@@ -835,23 +1020,22 @@ class StravaDataEngine:
         """
         segment_dict = {}
         athlete_ids = {}
-        filtered_segments = {
-            k: v for k, v in all_segments.items() if len(v) > 2
-        }
+        filtered_segments = {k: v for k, v in all_segments.items() if len(v) > 2}
 
         for segment_list in filtered_segments.values():
             for segment in segment_list:
                 try:
-                    segment_data = self.provider.get_segment_effort(segment['user'], segment['id'])
+                    segment_data = self.provider.get_segment_effort(
+                        segment["user"], segment["id"]
+                    )
                 except Exception as e:
                     continue
 
-                activity_id = segment_data['segment']['id']
-                segment_data.update({
-                    'user': segment['user'],
-                    'atividade_id': segment['atividade_id']
-                })
-                athlete_ids[segment['athlete']['id']] = True
+                activity_id = segment_data["segment"]["id"]
+                segment_data.update(
+                    {"user": segment["user"], "atividade_id": segment["atividade_id"]}
+                )
+                athlete_ids[segment["athlete"]["id"]] = True
 
                 segment_dict.setdefault(activity_id, []).append(segment_data)
 
@@ -870,22 +1054,23 @@ class StravaDataEngine:
                 continue
 
             data = [
-                segments[0]['name'],
+                segments[0]["name"],
                 " - ",
-                str(round(segments[0]['distance']/1000, 2)),
+                str(round(segments[0]["distance"] / 1000, 2)),
                 "km",
                 " - ",
-                str(segments[0]['segment']['id']),
-
+                str(segments[0]["segment"]["id"]),
             ]
 
             str_list.append(f"{''.join(data)}")
-            segments = sorted(segments, key=lambda x: x['moving_time'])
+            segments = sorted(segments, key=lambda x: x["moving_time"])
             athelete_list = []
             for segment in segments:
-                segment_athlete = segment['user']
-                start_date_local = segment['start_date_local']
-                segment['start_date_local'] = datetime.strptime(start_date_local, '%Y-%m-%dT%H:%M:%SZ')
+                segment_athlete = segment["user"]
+                start_date_local = segment["start_date_local"]
+                segment["start_date_local"] = datetime.strptime(
+                    start_date_local, "%Y-%m-%dT%H:%M:%SZ"
+                )
 
                 if segment_athlete in athelete_list:
                     continue
@@ -897,7 +1082,7 @@ class StravaDataEngine:
             str_list.append("")
 
         return "\n".join(str_list)
-    
+
     def reset_rank(self):
         """
         Reseta o rank

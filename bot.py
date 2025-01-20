@@ -6,11 +6,17 @@ from telegram_bot import TelegramBot
 from tools import send_reply_return
 from secure import TELEGRAM_BOT_TOKEN, TELEGRAM_BOT_ID, HEALTH_CHECK_URL
 
+
 class StravaBot(TelegramBot):
     strava_dict = {}
 
     def __init__(self, telegram_bot_token):
-        super().__init__(telegram_bot_token, StravaCommands, use_queue=True, health_check_url=HEALTH_CHECK_URL)
+        super().__init__(
+            telegram_bot_token,
+            StravaCommands,
+            use_queue=True,
+            health_check_url=HEALTH_CHECK_URL,
+        )
 
     def get_strava_command_group(self, group_id) -> StravaCommands:
         """
@@ -19,7 +25,9 @@ class StravaBot(TelegramBot):
             group_id (int): Id do grupo
         """
         if group_id not in self.strava_dict:
-            self.strava_dict[group_id] = StravaCommands(StravaDataEngine(group_id, StravaApiProvider, DbManager))
+            self.strava_dict[group_id] = StravaCommands(
+                StravaDataEngine(group_id, StravaApiProvider, DbManager)
+            )
         return self.strava_dict[group_id]
 
     def new_chat_member(self, message):
@@ -30,15 +38,14 @@ class StravaBot(TelegramBot):
         new_user = message.json.get("new_chat_member")
         link = strava_command_group.link_command(message)
 
-        if new_user.get('id') == TELEGRAM_BOT_ID:
+        if new_user.get("id") == TELEGRAM_BOT_ID:
             self.bot.reply_to(
                 message,
-                "Strava Bot configurado com sucesso!\nAcesse o menu para ver os comandos disponiveis."
+                "Strava Bot configurado com sucesso!\nAcesse o menu para ver os comandos disponiveis.",
             )
             self.bot.reply_to(
                 message,
-                f"Para começar a usar, autorize seu strava nesse link"\
-                f"\n{link}"
+                f"Para começar a usar, autorize seu strava nesse link" f"\n{link}",
             )
             DbManager(message.chat.id).add_strava_group()
             return "Grupo adicionado com sucesso!"
@@ -46,7 +53,10 @@ class StravaBot(TelegramBot):
         if new_user.get("is_bot"):
             return
 
-        self.bot.reply_to(message, f"Bem vindo ao grupo {new_user.get('first_name')}!\n\n Autorize seu strava nesse link para participar \n{link}")
+        self.bot.reply_to(
+            message,
+            f"Bem vindo ao grupo {new_user.get('first_name')}!\n\n Autorize seu strava nesse link para participar \n{link}",
+        )
 
     def callback_query(self, call):
         """
@@ -57,7 +67,9 @@ class StravaBot(TelegramBot):
         try:
             strava_command_group = self.get_strava_command_group(call.message.chat.id)
             command_list = list(
-                filter(lambda command: command[0] in call.data, self.callback_dict.items())
+                filter(
+                    lambda command: command[0] in call.data, self.callback_dict.items()
+                )
             )
 
             if not self.callback_dict:
@@ -65,7 +77,9 @@ class StravaBot(TelegramBot):
 
             _, command_function_name = command_list[0]
             resultado = getattr(strava_command_group, command_function_name)(call)
-            send_reply_return(resultado, call.message, self.bot, disable_web_page_preview=True)
+            send_reply_return(
+                resultado, call.message, self.bot, disable_web_page_preview=True
+            )
             try:
                 self.bot.answer_callback_query(call.id)
             except Exception:
@@ -78,7 +92,10 @@ class StravaBot(TelegramBot):
                 return
 
             send_reply_return(
-                "Erro ao executar o comando, tente novamente.", call.message, self.bot, disable_web_page_preview=True
+                "Erro ao executar o comando, tente novamente.",
+                call.message,
+                self.bot,
+                disable_web_page_preview=True,
             )
 
     def group_commands_handler(self, message) -> None:
@@ -95,7 +112,9 @@ class StravaBot(TelegramBot):
                 return
 
             result = getattr(strava_command_group, self.command_dict[command])(message)
-            data = send_reply_return(result, message, self.bot, disable_web_page_preview=True)
+            data = send_reply_return(
+                result, message, self.bot, disable_web_page_preview=True
+            )
         except Exception as exc:
             if exc.args:
                 send_reply_return(
@@ -104,7 +123,10 @@ class StravaBot(TelegramBot):
                 return
 
             send_reply_return(
-                "Erro ao executar o comando, tente novamente.", message, self.bot, disable_web_page_preview=True
+                "Erro ao executar o comando, tente novamente.",
+                message,
+                self.bot,
+                disable_web_page_preview=True,
             )
             return
 
@@ -117,9 +139,11 @@ class StravaBot(TelegramBot):
         """
         return self.bot.reply_to(
             message,
-            "Bem vindo ao Strava Bot!"\
-            "\nEsse bot foi desenvolvido para funcionar apenas em grupos do telegram"\
-            ", para utiliza-lo crie um grupo e me adicione. :)")
+            "Bem vindo ao Strava Bot!"
+            "\nEsse bot foi desenvolvido para funcionar apenas em grupos do telegram"
+            ", para utiliza-lo crie um grupo e me adicione. :)",
+        )
+
 
 if __name__ == "__main__":
     StravaBot(TELEGRAM_BOT_TOKEN).run()

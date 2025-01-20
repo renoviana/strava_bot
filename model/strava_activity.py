@@ -1,5 +1,16 @@
-from mongoengine import Document, EmbeddedDocumentField, IntField, StringField, BooleanField, DictField, FloatField, ListField, DateTimeField
+from mongoengine import (
+    Document,
+    EmbeddedDocumentField,
+    IntField,
+    StringField,
+    BooleanField,
+    DictField,
+    FloatField,
+    ListField,
+    DateTimeField,
+)
 from model.athlete import Athlete
+
 
 class StravaActivity(Document):
     resource_state = IntField()

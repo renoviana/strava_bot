@@ -6,14 +6,26 @@ from telebot.types import (
 from telebot.apihelper import ApiTelegramException
 
 
-
-def handler_parse_error(exc, telegram_bot, message, texto_result, disable_web_page_preview):
+def handler_parse_error(
+    exc, telegram_bot, message, texto_result, disable_web_page_preview
+):
     """
-    Error 
+    Error
     """
     if "parse entities" in exc.description:
-        return telegram_bot.reply_to(message, texto_result, disable_web_page_preview=disable_web_page_preview)
-def send_reply_return(message_return, message, telegram_bot, save_log=True, disable_web_page_preview=False, reply_markup=None) -> None:
+        return telegram_bot.reply_to(
+            message, texto_result, disable_web_page_preview=disable_web_page_preview
+        )
+
+
+def send_reply_return(
+    message_return,
+    message,
+    telegram_bot,
+    save_log=True,
+    disable_web_page_preview=False,
+    reply_markup=None,
+) -> None:
     """
     Retorna resultado da mensagem
     Args:
@@ -38,7 +50,7 @@ def send_reply_return(message_return, message, telegram_bot, save_log=True, disa
             if len(message_return) > 4000:
                 return [
                     send_reply_return(
-                        message_return[i:i + 4000],
+                        message_return[i : i + 4000],
                         message,
                         telegram_bot,
                         save_log,
@@ -106,6 +118,7 @@ def send_reply_return(message_return, message, telegram_bot, save_log=True, disa
             exc, telegram_bot, message, message_return, disable_web_page_preview
         )
 
+
 def get_markup(
     array: list = None,
     prefix: str = None,
@@ -134,27 +147,45 @@ def get_markup(
     array = array.items() if isinstance(array, dict) else array
 
     for item_index in array:
-        data_key, data_value = item_index if isinstance(item_index, tuple) else (item_index, item_index)
+        data_key, data_value = (
+            item_index if isinstance(item_index, tuple) else (item_index, item_index)
+        )
         call_back = (prefix + data_value if prefix else data_value).replace("ç", "c")
         obj.append({"nome": data_key, "callback": call_back})
 
     markup = InlineKeyboardMarkup(row_width=row_width)
-    rows = [obj[i:i + row_width] for i in range(0, len(obj), row_width)]
+    rows = [obj[i : i + row_width] for i in range(0, len(obj), row_width)]
 
     for row in rows:
         if delete_option or edit_option:
             markup.row_width = 2 + int(delete_option) + int(edit_option)
-            elements = [InlineKeyboardButton(item["nome"], callback_data=item["callback"]) for item in row]
+            elements = [
+                InlineKeyboardButton(item["nome"], callback_data=item["callback"])
+                for item in row
+            ]
 
             if edit_option:
-                elements.append(InlineKeyboardButton("✏️", callback_data=f"edit_{edit_data}_{row[0]['nome']}"))
+                elements.append(
+                    InlineKeyboardButton(
+                        "✏️", callback_data=f"edit_{edit_data}_{row[0]['nome']}"
+                    )
+                )
 
             if delete_option:
-                elements.append(InlineKeyboardButton("❌", callback_data=f"del_{delete_data}_{row[0]['callback']}"))
+                elements.append(
+                    InlineKeyboardButton(
+                        "❌", callback_data=f"del_{delete_data}_{row[0]['callback']}"
+                    )
+                )
 
             markup.add(*elements)
         else:
-            markup.add(*[InlineKeyboardButton(item["nome"], callback_data=item["callback"]) for item in row])
+            markup.add(
+                *[
+                    InlineKeyboardButton(item["nome"], callback_data=item["callback"])
+                    for item in row
+                ]
+            )
 
     if more_option:
         for item in more_option:
@@ -162,32 +193,42 @@ def get_markup(
 
     return markup
 
+
 def TelegramCommand(command: str):
     """
     Decorator para comandos do telegram
     """
+
     def decorator(func):
-        if not hasattr(func, 'telegram_command'):
+        if not hasattr(func, "telegram_command"):
             func.telegram_command = [command]
         else:
             func.telegram_command.append(command)
+
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             return func(*args, **kwargs)
+
         return wrapper
+
     return decorator
+
 
 def TelegramCallback(command: str):
     """
     Decorator para callbacks do telegram
     """
+
     def decorator(func):
-        if not hasattr(func,'telegram_callback_command'):
+        if not hasattr(func, "telegram_callback_command"):
             func.telegram_callback_command = [command]
         else:
             func.telegram_callback_command.append(command)
+
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             return func(*args, **kwargs)
+
         return wrapper
+
     return decorator

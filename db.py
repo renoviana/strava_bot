@@ -33,8 +33,8 @@ class DbManager:
             metas={},
             ignored_activities=[],
             segments_ids=[],
-            medalhas={'ride':{}},
-            cache_data=[]
+            medalhas={"ride": {}},
+            cache_data=[],
         ).save()
 
     def list_strava_activities(self, user_id, first_day, last_day):
@@ -46,15 +46,15 @@ class DbManager:
             last_day (datetime): data final
         """
         query = {
-            'group_id': self.group_id,
-            'athlete.id': user_id,
-            'start_date_local': {
+            "group_id": self.group_id,
+            "athlete.id": user_id,
+            "start_date_local": {
                 "$gte": first_day,
                 "$lt": last_day,
-            }
+            },
         }
 
-        return StravaActivity.objects(__raw__=query).order_by('-start_date_local').all()
+        return StravaActivity.objects(__raw__=query).order_by("-start_date_local").all()
 
     def update_membro(self, user_name, data):
         """
@@ -75,11 +75,15 @@ class DbManager:
             user_name_admin (str): nome do admin
         """
         strava_group = self.get_strava_group()
-        removed_user_id = strava_group.membros[user_name].get('athlete_id')
-        strava_group.membros = {key: value for key, value in strava_group.membros.items() if key != user_name}
+        removed_user_id = strava_group.membros[user_name].get("athlete_id")
+        strava_group.membros = {
+            key: value
+            for key, value in strava_group.membros.items()
+            if key != user_name
+        }
 
         query = {
-            "athlete.id":  removed_user_id,
+            "athlete.id": removed_user_id,
             "group_id": self.group_id,
         }
         StravaActivity.objects(__raw__=query).delete()
@@ -118,7 +122,7 @@ class DbManager:
         strava_group.ignored_activities = ignored_activities
         strava_group.save()
         return strava_group.ignored_activities
-    
+
     def process_activities(self, new_activity_list):
         """
         Processa atividades
@@ -131,13 +135,13 @@ class DbManager:
         mongo_lista = []
         for activity in new_activity_list:
             activity_dict = activity.copy()
-            activity_dict['group_id'] = self.group_id
-            activity_dict['activity_type'] = activity_dict['type']
-            activity_dict['activity_id'] = activity_dict['id']
-            activity_dict['activity_map'] = activity_dict['map']
-            del activity_dict['type']
-            del activity_dict['id']
-            del activity_dict['map']
+            activity_dict["group_id"] = self.group_id
+            activity_dict["activity_type"] = activity_dict["type"]
+            activity_dict["activity_id"] = activity_dict["id"]
+            activity_dict["activity_map"] = activity_dict["map"]
+            del activity_dict["type"]
+            del activity_dict["id"]
+            del activity_dict["map"]
             mongo_lista.append(StravaActivity(**activity_dict))
 
         StravaActivity.objects.insert(mongo_lista)

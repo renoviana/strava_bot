@@ -3,8 +3,10 @@ from secure import STRAVA_CLIENT_ID, STRAVA_REDIRECT_URI, TICKET_MESSAGE
 from tools import TelegramCommand, TelegramCallback, get_markup
 from engine import StravaDataEngine
 
+
 class StravaCommands:
     strava_engine: StravaDataEngine = None
+
     def __init__(self, strava_engine: StravaDataEngine):
         self.strava_engine = strava_engine
 
@@ -30,9 +32,11 @@ class StravaCommands:
             second=0,
             microsecond=0,
             month=1,
-            year=datetime.now().year + 1
+            year=datetime.now().year + 1,
         )
-        year_activities_list = self.strava_engine.list_type_activities(first_day=first_day, last_day=last_day)
+        year_activities_list = self.strava_engine.list_type_activities(
+            first_day=first_day, last_day=last_day
+        )
 
         if not year_activities_list:
             return "Nenhuma atividade encontrada"
@@ -64,8 +68,8 @@ class StravaCommands:
         if not point_list:
             return "Nenhuma atividade encontrada nesse mês"
 
-        rules_str = '\n'.join(rules_list)
-        points_str = '\n'.join(point_list)
+        rules_str = "\n".join(rules_list)
+        points_str = "\n".join(point_list)
         pontos_msg = f"Score Mensal:\n{points_str}\n\n{rules_str}"
         return pontos_msg
 
@@ -91,7 +95,7 @@ class StravaCommands:
             second=0,
             microsecond=0,
             month=1,
-            year=datetime.now().year + 1
+            year=datetime.now().year + 1,
         )
         rules_list = [
             "Como funciona: ",
@@ -102,13 +106,15 @@ class StravaCommands:
             "+1 ponto - Pedal acima de 100km",
         ]
 
-        point_list = self.strava_engine.list_points(first_day=first_day, last_day=last_day)
+        point_list = self.strava_engine.list_points(
+            first_day=first_day, last_day=last_day
+        )
 
         if not point_list:
             return "Nenhuma atividade encontrada nesse ano"
 
-        rules_str = '\n'.join(rules_list)
-        points_str = '\n'.join(point_list)
+        rules_str = "\n".join(rules_list)
+        points_str = "\n".join(point_list)
         pontos_msg = f"Score Anual:\n{points_str}\n\n{rules_str}"
         return pontos_msg
 
@@ -125,12 +131,7 @@ class StravaCommands:
 
         if message.text == "/ystats@bsbpedalbot":
             first_day = datetime.now().replace(
-                day=1,
-                hour=0,
-                minute=0,
-                second=0,
-                microsecond=0,
-                month=1
+                day=1, hour=0, minute=0, second=0, microsecond=0, month=1
             )
             last_day = datetime.now().replace(
                 day=1,
@@ -139,10 +140,9 @@ class StravaCommands:
                 second=0,
                 microsecond=0,
                 month=1,
-                year=datetime.now().year + 1
+                year=datetime.now().year + 1,
             )
             date_str = "ano"
-
 
         max_metrics = self.strava_engine.get_stats(first_day, last_day)
 
@@ -167,7 +167,7 @@ class StravaCommands:
         dict_user = self.strava_engine.membros
         lista_user = []
         for membro, data in dict_user.items():
-            data = data.get('created_at')
+            data = data.get("created_at")
             data_str = data.strftime("%d/%m/%Y %H:%M")
             lista_user.append(f"{membro} - {data_str}")
 
@@ -232,7 +232,7 @@ class StravaCommands:
             message (Message): telegram message
         """
         return self.strava_engine.get_medalhas_rank()
-    
+
     @TelegramCommand("medalhasvar")
     def group_medals_var_command(self, _):
         """
@@ -250,7 +250,7 @@ class StravaCommands:
             message (Message): telegram message
         """
         texto = message.text.replace("/ticket ", "")
-        from_user= message.from_user
+        from_user = message.from_user
         first_name = from_user.first_name or from_user.username
         data_future = (datetime.now() + timedelta(hours=48)).strftime("%d/%m/%Y %H:%M")
         return f"Oi {first_name}!\nParabéns, você foi sorteado para desenvolver o ticket  '{texto}'.\n\n{TICKET_MESSAGE}\nSeu tempo termina: {data_future}"
@@ -268,7 +268,7 @@ class StravaCommands:
             return "Nenhuma atividade encontrada nesse mês"
 
         return frequency
-    
+
     @TelegramCommand("yfrequency")
     def year_frequency_command(self, _):
         """
@@ -292,17 +292,19 @@ class StravaCommands:
             second=0,
             microsecond=0,
             month=1,
-            year=datetime.now().year + 1
+            year=datetime.now().year + 1,
         )
         data = datetime.now().timetuple().tm_yday
 
-        frequency = self.strava_engine.get_frequency(first_day, last_day, data, "Quantidade de dias com atividades no ano:")
+        frequency = self.strava_engine.get_frequency(
+            first_day, last_day, data, "Quantidade de dias com atividades no ano:"
+        )
 
         if not frequency:
             return "Nenhuma atividade encontrada nesse ano"
 
         return frequency
-    
+
     @TelegramCommand("segment")
     def segment_command(self, message):
         """
@@ -312,7 +314,7 @@ class StravaCommands:
         """
         segment_id = message.text.replace("/segment ", "")
         return self.strava_engine.get_segments_rank(int(segment_id))
-    
+
     @TelegramCommand("ignore")
     def ignore_ativities_command(self, message):
         """
@@ -325,7 +327,7 @@ class StravaCommands:
         atividade_id = atividade_link.split("/")[-1]
         self.strava_engine.add_ignore_activity(atividade_id)
         return "Atividade ignorada com sucesso!"
-    
+
     @TelegramCallback("strava_")
     @TelegramCallback("syear_")
     def rank_callback(self, callback):
@@ -336,7 +338,7 @@ class StravaCommands:
         """
         year_rank = "syear" in callback.data
         sport_name = callback.data.replace("syear_", "").replace("strava_", "")
-        return self.strava_engine.get_ranking_str(sport_name,year_rank=year_rank)
+        return self.strava_engine.get_ranking_str(sport_name, year_rank=year_rank)
 
     @TelegramCallback("del_strava")
     def delete_user_callback(self, callback):
@@ -357,6 +359,7 @@ class StravaCommands:
         Args:
             callback (Callback): telegram callback
         """
+
         def add_meta_callback(message, data):
             """
             Add sport goal
@@ -382,7 +385,7 @@ class StravaCommands:
                 "tipo_meta": tipo_meta,
             },
         }
-    
+
     @TelegramCallback("del_meta")
     def delete_meta_callback(self, callback):
         """
@@ -406,7 +409,7 @@ class StravaCommands:
         if len(distance) > 1:
             max_distance = distance[1]
         return self.strava_engine.get_segments_str(max_distance)
-    
+
     @TelegramCommand("resetar")
     def resetar_rank(self, _):
         """
