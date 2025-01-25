@@ -34,7 +34,6 @@ class TelegramBot:
             "callback_queue": self.callback_query,
             "command_queue": self.commands_handler,
             "group_command_queue": self.group_commands_handler,
-            "health_check_queue": self.health_check,
         }
 
         for queue_name, queue_function in queue_dict.items():
@@ -167,6 +166,12 @@ class TelegramBot:
         """
         Função para rodar o bot
         """
+        if self.health_check_url:
+            health_check_thread = threading.Thread(target=self.health_check)
+            health_check_thread.daemon = True
+            health_check_thread.start()
+
+
         while True:
             try:
                 self.bot.polling(none_stop=True)
