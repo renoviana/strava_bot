@@ -312,7 +312,11 @@ class StravaCommands:
         Args:
             message (Message): telegram message
         """
-        segment_id = message.text.replace("/segment ", "")
+        segment_id = message.text.split(" ")
+
+        if len(segment_id) < 2 or segment_id[1] == "":
+            return "Informe o ID do segmento"
+
         return self.strava_engine.get_segments_rank(int(segment_id))
 
     @TelegramCommand("ignore")
