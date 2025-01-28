@@ -592,6 +592,7 @@ class StravaDataEngine:
 
         user_medal_dict = self.get_users_medal_dict(sport_type)
         metas = self.metas.get(sport_type.lower())
+        metas_str = metas
         msg_template = f"Ranking {today_str} {emoji}:\n"
         rank_params, rank_unit = self.get_rank_params_and_unit(sport_type)
         distance_list = self.get_sport_rank(
@@ -622,7 +623,7 @@ class StravaDataEngine:
                 emoji = "✅"
 
             if rank_params == "total_moving_time":
-                metas = f"{int(metas // 3600):02}:{int((metas % 3600) // 60):02}:{int(metas % 60):02}"
+                metas_str = f"{int(metas // 3600):02}:{int((metas % 3600) // 60):02}:{int(metas % 60):02}"
                 activity_value = f"{int(activity_value // 3600):02}:{int((activity_value % 3600) // 60):02}:{int(activity_value % 60):02}"
 
             user_medal = dict(sorted(user_medal_dict.get(user_name, {}).items()))
@@ -640,7 +641,7 @@ class StravaDataEngine:
         msg = msg_template + msg
 
         if not year_rank and metas:
-            msg += f"\n\n⚠️ Meta individual do mês: {metas}{rank_unit}"
+            msg += f"\n\n⚠️ Meta individual do mês: {metas_str}{rank_unit}"
 
         return msg
 
