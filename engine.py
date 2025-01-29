@@ -623,7 +623,8 @@ class StravaDataEngine:
                 emoji = "✅"
 
             if rank_params == "total_moving_time":
-                metas_str = f"{int(metas // 3600):02}:{int((metas % 3600) // 60):02}:{int(metas % 60):02}"
+                if metas:
+                    metas_str = f"{int(metas // 3600):02}:{int((metas % 3600) // 60):02}:{int(metas % 60):02}"
                 activity_value = f"{int(activity_value // 3600):02}:{int((activity_value % 3600) // 60):02}:{int(activity_value % 60):02}"
 
             user_medal = dict(sorted(user_medal_dict.get(user_name, {}).items()))
