@@ -783,7 +783,7 @@ class StravaDataEngine:
             month_days = datetime.now().day
 
         date_dict = {}
-        for membro in self.membros.items():
+        for membro in self.membros:
             activity = self.list_activity(
                 membro, first_day=first_day, last_day=last_day
             )
