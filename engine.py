@@ -783,7 +783,7 @@ class StravaDataEngine:
             month_days = datetime.now().day
 
         date_dict = {}
-        for membro in self.membros:
+        for membro in self.membros.items():
             activity = self.list_activity(
                 membro, first_day=first_day, last_day=last_day
             )
@@ -820,7 +820,8 @@ class StravaDataEngine:
             if valor != current_value:
                 rank_position = rank_position + 1
                 current_value = valor
-            msg_list.append(f"{rank_position}º - {name.title()} - {valor}/{month_days}")
+            user_link = f'<a href="https://www.strava.com/athletes/{self.membros[membro].athlete_id}">{name.title()}</a>'
+            msg_list.append(f"{rank_position}º - {user_link} - {valor}/{month_days}")
         return "\n".join(msg_list)
 
     def get_medalhas_var(self):
