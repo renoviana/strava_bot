@@ -10,19 +10,23 @@ class StravaDataEngine:
     ignored_activities = []
 
     def __init__(self, group_id, provider: StravaApiProvider, db_manager) -> None:
+        self.provider_class = provider
         self.db_manager = db_manager(group_id)
         self.group_id = group_id
-        self.strava_entity = self.db_manager.get_strava_group()
-        self.provider = provider(self.strava_entity.membros, self.db_manager)
-        self.membros = self.strava_entity.membros
-        self.metas = self.strava_entity.metas
-        self.ignored_activities = self.strava_entity.ignored_activities
-        self.medalhas = self.strava_entity.medalhas or {}
+        self.load_strava_entity()
         self.list_activities = []
         self.last_run = None
         self.cache_last_activity = None
         self.cache_first_day = None
         self.cache_last_day = None
+
+    def load_strava_entity(self):
+        self.strava_entity = self.db_manager.get_strava_group()
+        self.provider = self.provider_class(self.strava_entity.membros, self.db_manager)
+        self.membros = self.strava_entity.membros
+        self.metas = self.strava_entity.metas
+        self.ignored_activities = self.strava_entity.ignored_activities
+        self.medalhas = self.strava_entity.medalhas or {}
 
     def get_users_medal_dict(self, sport_type):
         """

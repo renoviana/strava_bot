@@ -164,6 +164,7 @@ class StravaCommands:
         Args:
             message (Message): telegram message
         """
+        self.strava_engine.load_strava_entity()
         dict_user = self.strava_engine.membros
         lista_user = []
         for membro, data in dict_user.items():
