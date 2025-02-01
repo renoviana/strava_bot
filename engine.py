@@ -820,7 +820,7 @@ class StravaDataEngine:
             if valor != current_value:
                 rank_position = rank_position + 1
                 current_value = valor
-            athlete_id = self.membros[membro].athlete_id
+            athlete_id = self.membros.get(name).get("athlete_id")
             user_link = f'<a href="https://www.strava.com/athletes/{athlete_id}">{name.title()}</a>'
             msg_list.append(f"{rank_position}º - {user_link} - {valor}/{month_days}")
         return "\n".join(msg_list)
