@@ -1,6 +1,10 @@
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
+import telebot
 from service import StravaApiProvider
+from dateutil import parser
+
+from secure import TELEGRAM_BOT_TOKEN
 
 
 class StravaDataEngine:
@@ -68,6 +72,20 @@ class StravaDataEngine:
 
         return None
 
+    def is_month_rank(self, first_day, last_day):
+        """
+        Verifica se é o rank do mês
+        """
+        first_day_c = datetime.now().replace(
+            day=1,
+            hour=0,
+            minute=0,
+            second=0,
+            microsecond=0,
+        )
+        last_day_c = first_day_c + relativedelta(months=+1)
+        return first_day == first_day_c and last_day == last_day_c
+
     def list_activity(self, user_name, first_day=None, last_day=None):
         """
         Retorna lista de atividades do mês e filtra de acordo com o sport_list
@@ -89,7 +107,7 @@ class StravaDataEngine:
             )
 
         if not last_day:
-            last_day = datetime.now() + timedelta(minutes=1)
+            last_day = first_day + relativedelta(months=+1)
 
         db_activity_list = self.list_db_activity(
             first_day, last_day, self.membros.get(user_name, {}).get("athlete_id")
@@ -122,8 +140,105 @@ class StravaDataEngine:
             activity_list += api_activity_list
             page += 1
 
+        activity_list = self.warning_ignored_activites(
+            activity_list, user_name, first_day, last_day
+        )
+
+        activity_list = self.warning_ignored_activites_last_day_month(
+            activity_list, user_name, first_day, last_day
+        )
+
         self.db_manager.process_activities(activity_list)
         return activity_list + list(db_activity_list)
+
+    def warning_ignored_activites(self, activity_list, user_name, first_day, last_day):
+        """
+        Ignora atividades mais antigas que ontem até meio dia
+        """
+
+        month_rank = self.is_month_rank(first_day, last_day)
+        if not activity_list or not month_rank:
+            return activity_list
+
+        bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
+        yesterday = datetime.now() - timedelta(days=1)
+        yesterday = yesterday.replace(hour=12, minute=0, second=0, microsecond=0)
+        ignored_list = list(
+            filter(
+                lambda x: parser.isoparse(x["start_date_local"]).replace(tzinfo=None)
+                < yesterday,
+                activity_list,
+            )
+        )
+        activity_list = list(
+            filter(
+                lambda x: parser.isoparse(x["start_date_local"]).replace(tzinfo=None)
+                > yesterday,
+                activity_list,
+            )
+        )
+
+        if not ignored_list:
+            return activity_list
+
+        for i in ignored_list:
+            bot.send_message(
+                self.group_id,
+                f'👮⚠️ A <a href="https://www.strava.com/activities/{i["id"]}">Atividade de {user_name}</a> foi ignorada porque é mais antiga que ontem ao meio dia.',
+                parse_mode="HTML",
+            )
+
+        return activity_list
+
+    def warning_ignored_activites_last_day_month(
+        self, activity_list, user_name, first_day, last_day
+    ):
+        """
+        Ignora atividades mais antigas que ontem até meio dia
+        """
+        month_rank = self.is_month_rank(first_day, last_day)
+        if not activity_list or not month_rank:
+            return activity_list
+
+        last_month_day = (
+            datetime.now().replace(
+                day=1,
+                hour=0,
+                minute=0,
+                second=0,
+                microsecond=0,
+            )
+            + relativedelta(months=+1)
+        ) - relativedelta(days=1)
+
+        if last_month_day:
+            return activity_list
+
+        bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
+        last_hour = datetime.now() - timedelta(hours=1)
+        activity_list_filter = []
+        ignored_list = []
+        for i in activity_list:
+            start_date_local = parser.isoparse(i["start_date_local"]).replace(
+                tzinfo=None
+            )
+            finish_datetime = start_date_local - timedelta(seconds=i["elapsed_time"])
+            if finish_datetime < last_hour:
+                ignored_list.append(i)
+                continue
+            activity_list_filter.append(i)
+
+        if not ignored_list:
+            return activity_list_filter
+
+        for i in ignored_list:
+            bot.send_message(
+                self.group_id,
+                f'👮⚠️ A <a href="https://www.strava.com/activities/{i["id"]}">Atividade de {user_name}</a> foi ignorada porque violou a regra do ultimo dia do mês de publicar a atividade até 1 hora depois que ela completou.',
+                parse_mode="HTML",
+            )
+
+        return activity_list_filter
 
     def list_db_activity(self, first_day, last_day, user_id):
         """
