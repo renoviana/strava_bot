@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from secure import STRAVA_CLIENT_ID, STRAVA_REDIRECT_URI, TICKET_MESSAGE
+from secure import STRAVA_CLIENT_ID, STRAVA_REDIRECT_URI, TICKET_MESSAGE, ADMIN_ID
 from tools import TelegramCommand, TelegramCallback, get_markup
 from engine import StravaDataEngine
 
@@ -416,11 +416,14 @@ class StravaCommands:
         return self.strava_engine.get_segments_str(max_distance)
 
     @TelegramCommand("resetar")
-    def resetar_rank(self, _):
+    def resetar_rank(self, user):
         """
         Resetar rank
         Args:
             message (Message): telegram message
         """
+        if user.from_user.id != ADMIN_ID:
+            return "Você não tem permissão para executar esse comando"
+
         self.strava_engine.reset_rank()
         return "Dados resetados com sucesso"

@@ -182,12 +182,16 @@ class StravaDataEngine:
         if not ignored_list:
             return activity_list
 
+        msg_list = []
         for i in ignored_list:
-            bot.send_message(
-                self.group_id,
+            msg_list.append(
                 f'👮⚠️ A <a href="https://www.strava.com/activities/{i["id"]}">Atividade de {user_name}</a> foi ignorada porque é mais antiga que ontem ao meio dia.',
-                parse_mode="HTML",
             )
+        bot.send_message(
+            self.group_id,
+            "\n".join(msg_list),
+            parse_mode="HTML",
+        )
 
         return activity_list
 
@@ -231,12 +235,16 @@ class StravaDataEngine:
         if not ignored_list:
             return activity_list_filter
 
+        msg_list = []
         for i in ignored_list:
-            bot.send_message(
-                self.group_id,
+            msg_list.append(
                 f'👮⚠️ A <a href="https://www.strava.com/activities/{i["id"]}">Atividade de {user_name}</a> foi ignorada porque violou a regra do ultimo dia do mês de publicar a atividade até 1 hora depois que ela completou.',
-                parse_mode="HTML",
             )
+        bot.send_message(
+            self.group_id,
+            "\n".join(msg_list),
+            parse_mode="HTML",
+        )
 
         return activity_list_filter
 
