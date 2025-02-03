@@ -86,7 +86,9 @@ class StravaDataEngine:
         last_day_c = first_day_c + relativedelta(months=+1)
         return first_day == first_day_c and last_day == last_day_c
 
-    def list_activity(self, user_name, first_day=None, last_day=None):
+    def list_activity(
+        self, user_name, first_day=None, last_day=None, resetar_rank=False
+    ):
         """
         Retorna lista de atividades do mês e filtra de acordo com o sport_list
         Args:
@@ -141,23 +143,22 @@ class StravaDataEngine:
             page += 1
 
         activity_list = self.warning_ignored_activites(
-            activity_list, user_name, first_day, last_day
+            activity_list, user_name, resetar_rank
         )
 
         activity_list = self.warning_ignored_activites_last_day_month(
-            activity_list, user_name, first_day, last_day
+            activity_list, user_name, resetar_rank
         )
 
         self.db_manager.process_activities(activity_list)
         return activity_list + list(db_activity_list)
 
-    def warning_ignored_activites(self, activity_list, user_name, first_day, last_day):
+    def warning_ignored_activites(self, activity_list, user_name, resetar_rank):
         """
         Ignora atividades mais antigas que ontem até meio dia
         """
 
-        month_rank = self.is_month_rank(first_day, last_day)
-        if not activity_list or not month_rank:
+        if not activity_list or resetar_rank:
             return activity_list
 
         bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
@@ -191,13 +192,12 @@ class StravaDataEngine:
         return activity_list
 
     def warning_ignored_activites_last_day_month(
-        self, activity_list, user_name, first_day, last_day
+        self, activity_list, user_name, resetar_rank
     ):
         """
         Ignora atividades mais antigas que ontem até meio dia
         """
-        month_rank = self.is_month_rank(first_day, last_day)
-        if not activity_list or not month_rank:
+        if not activity_list or resetar_rank:
             return activity_list
 
         last_month_day = (
@@ -263,7 +263,9 @@ class StravaDataEngine:
             activity_list.append(data_dict)
         return activity_list
 
-    def list_activity_by_sport_type(self, user, first_day=None, last_day=None):
+    def list_activity_by_sport_type(
+        self, user, first_day=None, last_day=None, resetar_rank=False
+    ):
         """
         Lista atividades por tipo de esporte
         Args:
@@ -276,6 +278,7 @@ class StravaDataEngine:
             user,
             first_day=first_day,
             last_day=last_day,
+            resetar_rank=resetar_rank,
         )
 
         activity_dict = {}
@@ -328,7 +331,11 @@ class StravaDataEngine:
         return gym_dict
 
     def calculate_group_stats(
-        self, ignore_stats_ids=None, first_day=None, last_day=None
+        self,
+        ignore_stats_ids=None,
+        first_day=None,
+        last_day=None,
+        resetar_rank=False,
     ):
         """
         Calcula estatísticas de atividades para cada usuário do grupo.
@@ -342,8 +349,7 @@ class StravaDataEngine:
             ignore_stats_ids (list): lista de ids de atividades ignoradas
             first_day (datetime): data de inicio
             last_day (datetime): data de fim.
-            include_activity_dict (bool): incluir dicionario de atividades no retorno. Default: False
-            min_distance (int): distancia minima para considerar atividade
+            resetar_rank (bool): resetar rank
         """
         if not first_day:
             first_day = datetime.now().replace(
@@ -367,7 +373,7 @@ class StravaDataEngine:
 
         for user in self.membros:
             activity_dict = self.list_activity_by_sport_type(
-                user, first_day=first_day, last_day=last_day
+                user, first_day=first_day, last_day=last_day, resetar_rank=resetar_rank
             )
 
             if not activity_dict:
@@ -635,7 +641,12 @@ class StravaDataEngine:
         return sorted(all_types)
 
     def get_sport_rank(
-        self, sport_type, year_rank=False, first_day=None, last_day=None
+        self,
+        sport_type,
+        year_rank=False,
+        first_day=None,
+        last_day=None,
+        resetar_rank=False,
     ):
         """
         Retorna lista de distancias dos usuários
@@ -666,7 +677,10 @@ class StravaDataEngine:
         ignore_stats_ids = self.ignored_activities
         distance_list = []
         group_members_dict = self.calculate_group_stats(
-            ignore_stats_ids=ignore_stats_ids, first_day=first_day, last_day=last_day
+            ignore_stats_ids=ignore_stats_ids,
+            first_day=first_day,
+            last_day=last_day,
+            resetar_rank=resetar_rank,
         )
         for user_name, activity_dict in group_members_dict.items():
             json_data = activity_dict["sport_stats_dict"].get(sport_type)
@@ -1212,4 +1226,4 @@ class StravaDataEngine:
         Reseta o rank
         """
         self.db_manager.remove_activities({"group_id": self.group_id})
-        self.get_sport_rank("Ride", year_rank=True)
+        self.get_sport_rank("Ride", year_rank=True, resetar_rank=True)
