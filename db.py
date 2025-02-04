@@ -153,3 +153,13 @@ class DbManager:
             query (dict): query de busca
         """
         StravaActivity.objects(__raw__=query).delete()
+
+    def add_ignored_activity_rank(self, ignored_activities_rank):
+        """
+        Adiciona atividades ignoradas
+        Args:
+            ignored_activities_rank (list): lista de atividades ignoradas
+        """
+        strava_group = self.get_strava_group()
+        strava_group.ignored_activities_rank = ignored_activities_rank
+        strava_group.save()

@@ -24,12 +24,39 @@ class StravaDataEngine:
         self.cache_first_day = None
         self.cache_last_day = None
 
+    def handler_pre_method(self, _):
+        """
+        Handler para executar antes de qualquer método
+        """
+        self.load_strava_entity()
+
+    @staticmethod
+    def pre_method_handler(handler_name="handler_pre_method"):
+        """
+        Decorator para executar função antes de qualquer método
+        """
+
+        def decorator(method):
+            def wrapped(self, *args, **kwargs):
+                # Chama o handler antes de executar o método
+                getattr(self, handler_name)(method.__name__)
+                # Executa o método original
+                return method(self, *args, **kwargs)
+
+            return wrapped
+
+        return decorator
+
     def load_strava_entity(self):
+        """
+        Carrega entidade do strava
+        """
         self.strava_entity = self.db_manager.get_strava_group()
         self.provider = self.provider_class(self.strava_entity.membros, self.db_manager)
         self.membros = self.strava_entity.membros
         self.metas = self.strava_entity.metas
         self.ignored_activities = self.strava_entity.ignored_activities
+        self.ignored_activities_rank = self.strava_entity.ignored_activities_rank
         self.medalhas = self.strava_entity.medalhas or {}
 
     def get_users_medal_dict(self, sport_type):
@@ -164,36 +191,43 @@ class StravaDataEngine:
         bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
         yesterday = datetime.now() - timedelta(days=1)
         yesterday = yesterday.replace(hour=12, minute=0, second=0, microsecond=0)
-        ignored_list = list(
-            filter(
-                lambda x: parser.isoparse(x["start_date_local"]).replace(tzinfo=None)
-                < yesterday,
-                activity_list,
+        ignored_list = []
+        activity_list_filter = []
+        for i in activity_list:
+            start_date_local = parser.isoparse(i["start_date_local"]).replace(
+                tzinfo=None
             )
-        )
-        activity_list = list(
-            filter(
-                lambda x: parser.isoparse(x["start_date_local"]).replace(tzinfo=None)
-                > yesterday,
-                activity_list,
+            finish_datetime = start_date_local + timedelta(seconds=i["elapsed_time"])
+            rule_datetime = finish_datetime + timedelta(days=1)
+            rule_datetime = rule_datetime.replace(
+                hour=12, minute=0, second=0, microsecond=0
             )
-        )
+            if datetime.now() > rule_datetime:
+                ignored_list.append(i)
+                continue
+
+            activity_list_filter.append(i)
 
         if not ignored_list:
-            return activity_list
+            return activity_list_filter
 
         msg_list = []
         for i in ignored_list:
+            if i["id"] in self.ignored_activities_rank:
+                continue
+            self.ignored_activities_rank.append(i["id"])
             msg_list.append(
                 f'👮⚠️ A <a href="https://www.strava.com/activities/{i["id"]}">Atividade de {user_name}</a> foi ignorada porque é mais antiga que ontem ao meio dia.',
             )
-        bot.send_message(
-            self.group_id,
-            "\n".join(msg_list),
-            parse_mode="HTML",
-        )
+        self.db_manager.add_ignored_activity_rank(self.ignored_activities_rank)
+        if msg_list:
+            bot.send_message(
+                self.group_id,
+                "\n".join(msg_list),
+                parse_mode="HTML",
+            )
 
-        return activity_list
+        return activity_list_filter
 
     def warning_ignored_activites_last_day_month(
         self, activity_list, user_name, resetar_rank
@@ -226,7 +260,7 @@ class StravaDataEngine:
             start_date_local = parser.isoparse(i["start_date_local"]).replace(
                 tzinfo=None
             )
-            finish_datetime = start_date_local - timedelta(seconds=i["elapsed_time"])
+            finish_datetime = start_date_local + timedelta(seconds=i["elapsed_time"])
             if finish_datetime < last_hour:
                 ignored_list.append(i)
                 continue
@@ -237,14 +271,19 @@ class StravaDataEngine:
 
         msg_list = []
         for i in ignored_list:
+            if i["id"] in self.ignored_activities_rank:
+                continue
+            self.ignored_activities_rank.append(i["id"])
             msg_list.append(
                 f'👮⚠️ A <a href="https://www.strava.com/activities/{i["id"]}">Atividade de {user_name}</a> foi ignorada porque violou a regra do ultimo dia do mês de publicar a atividade até 1 hora depois que ela completou.',
             )
-        bot.send_message(
-            self.group_id,
-            "\n".join(msg_list),
-            parse_mode="HTML",
-        )
+        self.db_manager.add_ignored_activity_rank(self.ignored_activities_rank)
+        if msg_list:
+            bot.send_message(
+                self.group_id,
+                "\n".join(msg_list),
+                parse_mode="HTML",
+            )
 
         return activity_list_filter
 
@@ -570,6 +609,7 @@ class StravaDataEngine:
             or ignore_min_distance
         )
 
+    @pre_method_handler.__func__()
     def list_points(self, first_day=None, last_day=None):
         """
         Retorna lista de pontos dos usuários
@@ -596,6 +636,7 @@ class StravaDataEngine:
             )
         )
 
+    @pre_method_handler.__func__()
     def get_stats(self, first_day=None, last_day=None):
         """
         Retorna estatísticas do grupo
@@ -634,6 +675,7 @@ class StravaDataEngine:
 
         return max_metrics
 
+    @pre_method_handler.__func__()
     def list_type_activities(self, first_day=None, last_day=None):
         """
         Retorna lista de distancias dos usuários
@@ -702,6 +744,7 @@ class StravaDataEngine:
 
         return distance_list
 
+    @pre_method_handler.__func__()
     def get_ranking_str(self, sport_type, year_rank=False):
         """
         Calcula o rank dos usuários
@@ -809,6 +852,7 @@ class StravaDataEngine:
             rank_unit = ""
         return rank_params, rank_unit
 
+    @pre_method_handler.__func__()
     def remove_strava_user(self, user_name):
         """
         Remove usuário do strava
@@ -820,6 +864,7 @@ class StravaDataEngine:
         membros = self.db_manager.remove_strava_user(user_name)
         self.membros = membros
 
+    @pre_method_handler.__func__()
     def save_group_meta(self, tipo_meta, km):
         """
         Salva meta do grupo
@@ -861,6 +906,7 @@ class StravaDataEngine:
             total_user_points += 1
         return total_user_points
 
+    @pre_method_handler.__func__()
     def add_ignore_activity(self, activity_id):
         """
         Ignora atividade
@@ -869,6 +915,7 @@ class StravaDataEngine:
         """
         self.ignored_activities = self.db_manager.add_ignore_activity(activity_id)
 
+    @pre_method_handler.__func__()
     def get_medalhas_rank(self):
         """
         Retorna o ranking geral de medalhas
@@ -910,6 +957,7 @@ class StravaDataEngine:
 
         return "\n".join(msg_list)
 
+    @pre_method_handler.__func__()
     def get_frequency(self, first_day=None, last_day=None, month_days=None, title=""):
         """
         Retorna a frequência de atividades dos usuários
@@ -966,6 +1014,7 @@ class StravaDataEngine:
             msg_list.append(f"{rank_position}º - {user_link} - {valor}/{month_days}")
         return "\n".join(msg_list)
 
+    @pre_method_handler.__func__()
     def get_medalhas_var(self):
         """
         Retorna o ranking de medalhas por esporte e mês
@@ -1013,6 +1062,7 @@ class StravaDataEngine:
 
         return "\n".join(msg_list)
 
+    @pre_method_handler.__func__()
     def get_segments_rank(self, segment_id):
         """
         Retorna o ranking de um segmento
@@ -1187,6 +1237,7 @@ class StravaDataEngine:
 
         return segment_dict
 
+    @pre_method_handler.__func__()
     def get_segments_str(self, min_distance):
         """
         Retorna segmentos em formato de string
@@ -1229,6 +1280,7 @@ class StravaDataEngine:
 
         return "\n".join(str_list)
 
+    @pre_method_handler.__func__()
     def reset_rank(self):
         """
         Reseta o rank
