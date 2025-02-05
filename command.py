@@ -432,14 +432,14 @@ class StravaCommands:
     def regras_command(self, _):
         regras_list = [
             "<b>Regras 👨‍⚖️</b>",
-            "\n<b>Medalhas</b>:",
+            "\n<b>Medalhas:</b>",
             "- <b>Atividades com 1 participante</b>: Não geram medalhas.",
             "- <b>Atividades com 2 a 3 participantes</b>: Apenas a medalha de ouro será concedida.",
             "- <b>Atividades com 4 ou mais participantes</b>: Serão concedidas medalhas de ouro, prata e bronze.",
-            "\n<b>Registro de Atividades</b>",
+            "\n<b>Registro de Atividades:</b>",
             "- O usuário deve publicar a atividade <b>até 12:00 (meio-dia) do dia seguinte</b> à realização da atividade. Publicações feitas após esse prazo serão desconsideradas no ranking.",
             "- <b>No último dia do mês</b>, o usuário precisa publicar a atividade <b>até 1 hora após o término</b> da mesma. Caso contrário, a atividade será desconsiderada no ranking.",
-            "\n<b>Tempo de Atividade</b>",
+            "\n<b>Tempo de Atividade:</b>",
             "- Para atividades de musculação, o <b>tempo máximo contabilizado por dia será de 2 horas</b>, mesmo que o usuário registre um tempo superior.",
         ]
         return "\n".join(regras_list)
