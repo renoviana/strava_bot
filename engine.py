@@ -1,8 +1,9 @@
 from datetime import datetime, timedelta
+from dateutil import parser
 from dateutil.relativedelta import relativedelta
 import telebot
 from service import StravaApiProvider
-from dateutil import parser
+
 
 from secure import TELEGRAM_BOT_TOKEN
 
