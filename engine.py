@@ -413,7 +413,7 @@ class StravaDataEngine:
         if not ignore_stats_ids:
             ignore_stats_ids = []
 
-        if self.has_activities_cached(first_day, last_day):
+        if self.has_activities_cached(first_day, last_day) and not resetar_rank:
             return self.cache_last_activity
 
         group_members_dict = {}
