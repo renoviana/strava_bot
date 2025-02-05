@@ -429,7 +429,7 @@ class StravaCommands:
         return "Dados resetados com sucesso"
 
     @TelegramCommand("regras")
-    def regras_command(self):
+    def regras_command(self, _):
         regras_list = [
             "<b>Regras 👨‍⚖️</b>",
             "<b>Medalhas</b>:",
