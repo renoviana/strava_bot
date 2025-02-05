@@ -433,9 +433,9 @@ class StravaCommands:
         regras_list = [
             "<b>Regras 👨‍⚖️</b>",
             "\n<b>Medalhas:</b>",
-            "- <b>Atividades com 1 participante</b>: Não geram medalhas.",
-            "- <b>Atividades com 2 a 3 participantes</b>: Apenas a medalha de ouro será concedida.",
-            "- <b>Atividades com 4 ou mais participantes</b>: Serão concedidas medalhas de ouro, prata e bronze.",
+            "- <b>Esportes com 1 participante</b>: Não geram medalhas.",
+            "- <b>Esportes com 2 a 3 participantes</b>: Apenas a medalha de ouro será concedida.",
+            "- <b>Esportes com 4 ou mais participantes</b>: Serão concedidas medalhas de ouro, prata e bronze.",
             "\n<b>Registro de Atividades:</b>",
             "- O usuário deve publicar a atividade <b>até 12:00 (meio-dia) do dia seguinte</b> à realização da atividade. Publicações feitas após esse prazo serão desconsideradas no ranking.",
             "- <b>No último dia do mês</b>, o usuário precisa publicar a atividade <b>até 1 hora após o término</b> da mesma. Caso contrário, a atividade será desconsiderada no ranking.",
