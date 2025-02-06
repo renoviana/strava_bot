@@ -844,6 +844,7 @@ class StravaDataEngine:
             "standuppaddling",
             "yoga",
             "stairstepper",
+            "pilates",
         ]
         rank_params = "total_distance"
         rank_unit = "km"
