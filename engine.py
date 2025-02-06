@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from collections import defaultdict
 from dateutil import parser
 from dateutil.relativedelta import relativedelta
 import telebot
@@ -922,7 +923,6 @@ class StravaDataEngine:
         """
         Retorna o ranking geral de medalhas
         """
-        from collections import defaultdict
 
         medals = defaultdict(lambda: {"🥇": 0, "🥈": 0, "🥉": 0, "pontos": 0})
 
@@ -989,7 +989,6 @@ class StravaDataEngine:
                     )
                 date = start_date_local.strftime("%Y-%m-%d")
                 date_dict[membro][date] = True
-                pass
 
             if len(date_dict[membro]) == 0:
                 del date_dict[membro]
@@ -1021,8 +1020,6 @@ class StravaDataEngine:
         """
         Retorna o ranking de medalhas por esporte e mês
         """
-        from collections import defaultdict
-
         medals = defaultdict(
             lambda: {
                 "🥇": 0,
@@ -1226,7 +1223,7 @@ class StravaDataEngine:
                     segment_data = self.provider.get_segment_effort(
                         segment["user"], segment["id"]
                     )
-                except Exception as e:
+                except Exception:
                     continue
 
                 activity_id = segment_data["segment"]["id"]
