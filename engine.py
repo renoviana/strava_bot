@@ -868,6 +868,10 @@ class StravaDataEngine:
         """
         user_name = user_name.split(" - ")[0]
         membros = self.db_manager.remove_strava_user(user_name)
+
+        if not membros:
+            return None
+
         self.membros = membros
 
     @pre_method_handler.__func__()

@@ -75,6 +75,9 @@ class DbManager:
             user_name_admin (str): nome do admin
         """
         strava_group = self.get_strava_group()
+        if user_name not in strava_group.membros:
+            return None
+
         removed_user_id = strava_group.membros[user_name].get("athlete_id")
         strava_group.membros = {
             key: value
