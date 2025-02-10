@@ -788,6 +788,9 @@ class StravaDataEngine:
             distance_list, key=lambda k: k[rank_params], reverse=True
         )
 
+        if not sort_distance_list:
+            return f"Não há atividades de {sport_type} no mês."
+
         position = 1
         position_value = sort_distance_list[0].get(rank_params)
         rank_msg_list = []
