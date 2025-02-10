@@ -85,9 +85,14 @@ class StravaBot(TelegramBot):
             except Exception:
                 pass
         except Exception as exc:
+            fullname = call.from_user.full_name or call.from_user.username
+            data = call.data
             if exc.args:
                 send_reply_return(
-                    exc.args[0], call.message, self.bot, disable_web_page_preview=True
+                    f"Erro ao executar o comando {data} do usuário {fullname}.\n {exc.args[0]}",
+                    call.message,
+                    self.bot,
+                    disable_web_page_preview=True,
                 )
                 return
 
@@ -116,9 +121,14 @@ class StravaBot(TelegramBot):
                 result, message, self.bot, disable_web_page_preview=True
             )
         except Exception as exc:
+            fullname = message.from_user.full_name or message.from_user.username
+            data = message.text
             if exc.args:
                 send_reply_return(
-                    exc.args[0], message, self.bot, disable_web_page_preview=True
+                    f"Erro ao executar o comando {data} do usuário {fullname}.\n {exc.args[0]}",
+                    message,
+                    self.bot,
+                    disable_web_page_preview=True,
                 )
                 return
 
