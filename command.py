@@ -435,6 +435,9 @@ class StravaCommands:
 
     @TelegramCommand("regras")
     def regras_command(self, _):
+        """
+        Envia as regras do grupo
+        """
         regras_list = [
             "<b>Regras 👨‍⚖️</b>",
             "\n<b>Medalhas:</b>",
