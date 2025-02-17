@@ -69,7 +69,9 @@ class TelegramBot:
         """
         Inicia os handlers do bot
         """
-        self.bot.message_handler(func=lambda x: x.json.get("new_chat_member"))(
+        self.bot.message_handler(content_types=[
+            "new_chat_members"
+        ])(
             self.new_chat_member
         )
 
