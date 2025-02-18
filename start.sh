@@ -1,5 +1,5 @@
 cd strava_bot && git pull && cd ..
-killall screen
-docker compose down
-docker compose build
-screen -d -m -S docker bash -c  "docker compose up -d"
+docker compose down strava_bot
+docker compose rm -f strava_bot
+docker compose build strava_bot
+docker compose up -d strava_bot
