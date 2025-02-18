@@ -1,3 +1,5 @@
 cd strava_bot && git pull && cd ..
-screen -X -S strava_bot quit
-screen -d -m -S strava_bot bash -c  "cd strava_bot && python3 bot.py"
+killall screen
+docker compose down
+docker compose build
+screen -d -m -S docker bash -c  "docker compose up -d"
