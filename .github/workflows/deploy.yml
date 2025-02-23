@@ -23,8 +23,11 @@ jobs:
           key: ${{ secrets.KEY }}
           user: ${{ secrets.USER }}
           command: |
-            chmod +x ~/strava_bot/start.sh
-            ~/strava_bot/start.sh
+            cd strava_bot && git pull && cd ..
+            docker compose down strava_bot
+            docker compose rm -f strava_bot
+            docker compose build strava_bot
+            docker compose up -d strava_bot
       - name: Notificar falha no Telegram
         if: failure()
         env:
