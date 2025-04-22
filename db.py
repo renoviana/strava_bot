@@ -2,7 +2,7 @@ from mongoengine import connect
 
 from secure import MONGO_URI
 from model.strava_activity import StravaActivity
-from model.strava_group import Strava_group
+from model.strava_group import StravaGroup
 
 
 class DbManager:
@@ -11,15 +11,15 @@ class DbManager:
         connect(host=MONGO_URI)
         self.group_id = int(group_id)
 
-    def get_strava_group(self) -> Strava_group:
+    def get_strava_group(self) -> StravaGroup:
         """
         Retorna dados de um grupo
         """
-        strava_group = Strava_group.objects(telegram_group_id=self.group_id).first()
+        strava_group = StravaGroup.objects(telegram_group_id=self.group_id).first()
 
         if not strava_group:
             self.add_strava_group()
-            strava_group = Strava_group.objects(telegram_group_id=self.group_id).first()
+            strava_group = StravaGroup.objects(telegram_group_id=self.group_id).first()
 
         return strava_group
 
@@ -27,7 +27,7 @@ class DbManager:
         """
         Adiciona grupo do telegram a base de dados
         """
-        return Strava_group(
+        return StravaGroup(
             telegram_group_id=self.group_id,
             membros={},
             metas={},
