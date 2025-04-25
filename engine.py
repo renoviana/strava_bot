@@ -762,6 +762,12 @@ class StravaDataEngine:
             "Hike": "🥾",
             "Walk": "🚶",
             "Workout": "⚡︎",
+            "Rowing": "🚣",
+            "Canoeing": "🛶",
+            "Yoga": "🧘",
+            "Pilates": "🧘",
+            "StairStepper": "🪜",
+            "Elliptical": "🏋️",
         }
 
         medal_dict = {
