@@ -961,7 +961,7 @@ class StravaDataEngine:
         msg_list = []
         rank = 1
         pontos = sorted_medals[0][1]["pontos"]
-        for rank, (person, counts) in enumerate(sorted_medals, 1):
+        for (person, counts) in sorted_medals:
             if counts["pontos"] < pontos:
                 rank = rank + 1
                 pontos = counts["pontos"]
