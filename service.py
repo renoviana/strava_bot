@@ -55,7 +55,7 @@ class StravaApiProvider:
             params = self.get_params()
 
         params["access_token"] = self.membros[user_name]["access_token"]
-        response = requests.get(url, params=params)
+        response = requests.get(url, params=params, timeout=40)
 
         if response.status_code == 429:
             raise Exception(
