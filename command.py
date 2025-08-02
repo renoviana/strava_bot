@@ -441,6 +441,7 @@ class StravaCommands:
         regras_list = [
             "<b>Regras 👨‍⚖️</b>",
             "\n<b>Medalhas:</b>",
+            "- <b>Esportes onde o primeiro colocado tem menos de 10km ou menos de 8 horas de tempo de movimento</b>: Não geram medalhas.",
             "- <b>Esportes com 1 participante</b>: Não geram medalhas.",
             "- <b>Esportes com 2 a 3 participantes</b>: Apenas a medalha de ouro será concedida.",
             "- <b>Esportes com 4 ou mais participantes</b>: Serão concedidas medalhas de ouro, prata e bronze.",
