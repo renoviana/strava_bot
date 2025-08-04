@@ -1348,7 +1348,6 @@ class StravaDataEngine:
         for membro, streak in sort_streak_dict:
             if streak == streak_value:
                 rank_msg += f"{rank_position} - {membro.title()} - {streak} dias\n"
-                rank_position += 1
             else:
                 rank_position += 1
                 streak_value = streak
