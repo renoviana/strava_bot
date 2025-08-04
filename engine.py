@@ -1298,3 +1298,59 @@ class StravaDataEngine:
         """
         self.db_manager.remove_activities({"group_id": self.group_id})
         self.get_sport_rank("Ride", year_rank=True, resetar_rank=True)
+
+    @pre_method_handler.__func__()
+    def get_streak(self):
+        """
+        Retorna a sequência de atividades
+        """
+        first_year_day = datetime.now().replace(
+            day=1, hour=0, minute=0, second=0, microsecond=0, month=1, year=datetime.now().year
+        )
+        last_year_day = datetime.now().replace(
+            day=1,
+            hour=0,
+            minute=0,
+            second=0,
+            microsecond=0,
+            month=1,
+            year=datetime.now().year + 1,
+        )
+        streak_dict = {}
+        rank_msg = "Sequência de dias de atividades:\n"
+        for membro in self.membros:
+            streak = 0
+            atividades = self.list_activity(membro, first_day=first_year_day, last_day=last_year_day)
+            hoje = datetime.now().date()
+            sorted_activities = sorted(
+                atividades, key=lambda x: x["start_date_local"], reverse=True
+            )
+            
+            
+            for activity in sorted_activities:
+                start_date_local = activity["start_date_local"]
+                activity_date = start_date_local.date()
+                if hoje - timedelta(days=streak) == activity_date:
+                    streak += 1
+                else:
+                    break
+            if streak > 0:
+                streak_dict[membro] = streak
+
+        if not streak_dict:
+            return "Nenhum membro tem sequência de atividades."
+
+        sort_streak_dict = sorted(
+            streak_dict.items(), key=lambda x: x[1], reverse=True
+        )
+        rank_position = 1
+        streak_value = sort_streak_dict[0][1]
+        for membro, streak in sort_streak_dict:
+            if streak == streak_value:
+                rank_msg += f"{rank_position} - {membro.title()} - {streak} dias\n"
+                rank_position += 1
+            else:
+                rank_position += 1
+                streak_value = streak
+                rank_msg += f"{rank_position} - {membro.title()} - {streak} dias\n"
+        return rank_msg

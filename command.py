@@ -452,3 +452,10 @@ class StravaCommands:
             "- Para atividades de musculação, o <b>tempo máximo contabilizado por dia será de 2 horas</b>, mesmo que o usuário registre um tempo superior.",
         ]
         return "\n".join(regras_list)
+
+    @TelegramCommand("streak")
+    def streak_command(self, _):
+        """
+        Envia a sequência de dias de atividades
+        """
+        return self.strava_engine.get_streak()
