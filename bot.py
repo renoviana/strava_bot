@@ -1,3 +1,5 @@
+import traceback
+
 from db import DbManager
 from command import StravaCommands
 from engine import StravaDataEngine
@@ -89,7 +91,7 @@ class StravaBot(TelegramBot):
             data = call.data
             if exc.args:
                 send_reply_return(
-                    f"Erro ao executar o comando {data} do usuário {fullname}.\n {exc.args[0]}",
+                    f"Erro ao executar o comando {data} do usuário {fullname}.\n{self.erro_handler(exc)}",
                     call.message,
                     self.bot,
                     disable_web_page_preview=True,
@@ -125,7 +127,7 @@ class StravaBot(TelegramBot):
             data = message.text
             if exc.args:
                 send_reply_return(
-                    f"Erro ao executar o comando {data} do usuário {fullname}.\n {exc.args[0]}",
+                    f"Erro ao executar o comando {data} do usuário {fullname}.\n{self.erro_handler(exc)}",
                     message,
                     self.bot,
                     disable_web_page_preview=True,
@@ -153,6 +155,19 @@ class StravaBot(TelegramBot):
             "\nEsse bot foi desenvolvido para funcionar apenas em grupos do telegram"
             ", para utiliza-lo crie um grupo e me adicione. :)",
         )
+
+    def erro_handler(self, exc):
+        """
+        Trata erros e retorna uma mensagem formatada
+        Args:
+            exc (Exception): A exceção que ocorreu.
+        """
+        try:
+            exc_info = traceback.TracebackException.from_exception(exc)
+            file_line = f"{exc_info.stack[0].filename.split('/')[-1]}::{exc_info.stack[0].lineno}"
+            return f"Erro: {exc.args[0]}\nLocalização: {file_line}"
+        except Exception:
+            return f"Erro: {exc}"
 
 
 if __name__ == "__main__":
