@@ -1317,12 +1317,17 @@ class StravaDataEngine:
                 atividades, key=lambda x: x["start_date_local"], reverse=True
             )
             
-            
+            day_dict = {}
             for activity in sorted_activities:
                 start_date_local = activity["start_date_local"]
                 activity_date = start_date_local.date()
+                if day_dict.get(hoje - timedelta(days=streak)):
+                    continue
+
                 if hoje - timedelta(days=streak) == activity_date:
+                    day_dict[hoje - timedelta(days=streak)] = True
                     streak += 1
+
                 else:
                     break
             if streak > 0:
