@@ -164,7 +164,7 @@ class StravaBot(TelegramBot):
         """
         try:
             exc_info = traceback.TracebackException.from_exception(exc)
-            file_line = f"{exc_info.stack[0].filename.split('/')[-1]}::{exc_info.stack[0].lineno}"
+            file_line = f"{exc_info.stack[-1].filename.split('/')[-1]}::{exc_info.stack[-1].lineno}"
             return f"Erro: {exc.args[0]}\nLocalização: {file_line}"
         except Exception:
             return f"Erro: {exc}"
