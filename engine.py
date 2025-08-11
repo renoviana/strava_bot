@@ -1322,6 +1322,9 @@ class StravaDataEngine:
             for activity in sorted_activities:
                 start_date_local = activity["start_date_local"]
                 
+                if isinstance(start_date_local, str):
+                    start_date_local = self.convert_datetime_instance(start_date_local)
+
                 activity_date = start_date_local.date()
                 if day_dict.get(activity_date):
                     continue
@@ -1359,5 +1362,5 @@ class StravaDataEngine:
             x (str | datetime): A string a ser convertida ou um objeto datetime.
         """
         if isinstance(x, str):
-            return datetime.fromisoformat(x)
+            return datetime.fromisoformat(x).replace(tzinfo=None)
         return x
