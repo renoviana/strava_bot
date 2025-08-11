@@ -1312,14 +1312,16 @@ class StravaDataEngine:
         for membro in self.membros:
             streak = 0
             atividades = self.list_activity(membro, first_day=first_year_day, last_day=last_year_day)
+            
             hoje = datetime.now().date()
             sorted_activities = sorted(
-                atividades, key=lambda x: x["start_date_local"], reverse=True
+                atividades, key=lambda x: self.convert_datetime_instance(x["start_date_local"]), reverse=True
             )
             
             day_dict = {}
             for activity in sorted_activities:
                 start_date_local = activity["start_date_local"]
+                
                 activity_date = start_date_local.date()
                 if day_dict.get(activity_date):
                     continue
@@ -1349,3 +1351,13 @@ class StravaDataEngine:
                 streak_value = streak
                 rank_msg += f"{rank_position} - {membro.title()} - {streak} dias\n"
         return rank_msg
+    
+    def convert_datetime_instance(self, x):
+        """
+        Converte uma string em um objeto datetime.
+        Args:
+            x (str | datetime): A string a ser convertida ou um objeto datetime.
+        """
+        if isinstance(x, str):
+            return datetime.fromisoformat(x)
+        return x
