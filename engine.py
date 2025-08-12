@@ -333,6 +333,10 @@ class StravaDataEngine:
         activity_dict = {}
         gym_dict = {}
         for activity in activity_list:
+            if isinstance(activity["start_date_local"], str):
+                activity["start_date_local"] = datetime.strptime(
+                    activity["start_date_local"], "%Y-%m-%dT%H:%M:%SZ"
+                )
             activity_sport_type = activity["sport_type"]
 
             if (
@@ -990,6 +994,11 @@ class StravaDataEngine:
 
             for a in activity:
                 start_date_local = a["start_date_local"]
+                if isinstance(start_date_local, str):
+                    start_date_local = datetime.strptime(
+                        start_date_local, "%Y-%m-%dT%H:%M:%SZ"
+                    )
+                
                 date = start_date_local.strftime("%Y-%m-%d")
                 date_dict[membro][date] = True
 
