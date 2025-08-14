@@ -1,5 +1,4 @@
 from datetime import datetime
-import os
 import mongoengine
 import telebot
 from telebot.util import quick_markup
@@ -15,7 +14,7 @@ from application.commands.rank import (
   handle_rank_menu
 )
 from application.commands.medal import handle_medal_command
-from config import MONGO_URI, TELEGRAM_TOKEN
+from config import MONGO_URI, REDIRECT_URI, STRAVA_CLIENT_ID, TELEGRAM_TOKEN
 
 
 mongoengine.connect(host=MONGO_URI)
@@ -67,8 +66,8 @@ def streak_command_handler(message):
 @bot.message_handler(commands=['link'])
 def link_command_handler(message):
     group_id = message.chat.id
-    strava_client_id = os.getenv("STRAVA_CLIENT_ID")
-    redirect_uri = os.getenv("REDIRECT_URI", "").format(group_id)
+    strava_client_id = STRAVA_CLIENT_ID
+    redirect_uri = REDIRECT_URI.format(group_id)
     return f"https://www.strava.com/oauth/authorize?client_id={strava_client_id}&redirect_uri={redirect_uri}&response_type=code&scope=activity:read"
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('rank_'))
