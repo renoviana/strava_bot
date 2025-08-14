@@ -11,3 +11,4 @@ pymongo
 pytest
 requests
 urllib3
+pyTelegramBotAPI
