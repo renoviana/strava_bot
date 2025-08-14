@@ -46,7 +46,7 @@ def medal_command_handler(message):
 def rank_command_handler(message):
     group_id = message.chat.id
     command = message.text.strip().lower().split('/')[-1]
-    if command == 'rank':
+    if command.startswith('rank'):
         start = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         if start.month != 12:
             end = start.replace(month=start.month % 12 + 1)
