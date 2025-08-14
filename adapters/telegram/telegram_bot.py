@@ -1,4 +1,5 @@
 from datetime import datetime
+import os
 import mongoengine
 import telebot
 from telebot.util import quick_markup
@@ -62,6 +63,13 @@ def rank_command_handler(message):
 def streak_command_handler(message):
     group_id = message.chat.id
     bot.reply_to(message, handle_streak_command(group_id), parse_mode='HTML', disable_web_page_preview=True)
+
+@bot.message_handler(commands=['link'])
+def link_command_handler(message):
+    group_id = message.chat.id
+    strava_client_id = os.getenv("STRAVA_CLIENT_ID")
+    redirect_uri = os.getenv("REDIRECT_URI", "").format(group_id)
+    return f"https://www.strava.com/oauth/authorize?client_id={strava_client_id}&redirect_uri={redirect_uri}&response_type=code&scope=activity:read"
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('rank_'))
 def rank_month_callback_handler(call):
