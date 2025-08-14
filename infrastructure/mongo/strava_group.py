@@ -10,3 +10,10 @@ class StravaGroup(Document):
     segments_ids = ListField(required=False, default=[])
     medalhas = DictField(default={}, required=False)
     cache_data = ListField(required=False, default=[])
+
+    meta = {
+        'collection': 'strava_group_2'
+    }
+
+    def get_group(self, group_id: int):
+        return StravaGroup.objects(telegram_group_id=group_id).first()

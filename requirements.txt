@@ -1,4 +1,2 @@
-requests
-pyTelegramBotAPI
-mongoengine
-python-dateutil
+python-telegram-bot==20.0
+pymongo

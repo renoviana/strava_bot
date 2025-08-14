@@ -1,3 +1,5 @@
+from datetime import datetime
+from typing import Optional
 from mongoengine import (
     Document,
     EmbeddedDocumentField,
@@ -9,7 +11,7 @@ from mongoengine import (
     ListField,
     DateTimeField,
 )
-from model.athlete import Athlete
+from infrastructure.mongo.athlete import Athlete
 
 
 class StravaActivity(Document):
@@ -85,3 +87,49 @@ class StravaActivity(Document):
     embed_token = StringField(required=False)
     segment_leaderboard_opt_out = BooleanField(required=False)
     leaderboard_opt_out = BooleanField(required=False)
+
+    meta = {
+        'collection': 'strava_activity_2'
+    }
+
+    def get_activities(self, group_id: int, start: datetime, end: datetime, member_id:Optional[int] = None, sort = "-start_date_local"):
+        query = {
+            "group_id": group_id,
+            "start_date_local": {"$gte": start, "$lt": end}
+        }
+
+        if member_id:
+            query["athlete.id"] = member_id
+
+        return StravaActivity.objects(
+            __raw__=query
+        ).order_by(sort).all()
+
+    def exists(self, activity_id: str) -> bool:
+        return StravaActivity.objects(activity_id=activity_id).count() > 0
+
+    def save_activity(self, group_id: int, activity_data: dict):
+        activity_data["group_id"] = group_id
+        activity_data["activity_type"] = activity_data["type"]
+        activity_data["activity_id"] = activity_data["id"]
+        activity_data["activity_map"] = activity_data["map"]
+        del activity_data["type"]
+        del activity_data["id"]
+        del activity_data["map"]
+        
+        activity = StravaActivity.objects(
+            group_id=group_id,
+            activity_id=activity_data["activity_id"],
+        )
+        activity.update_one(
+            upsert=True,
+            **{f"set_on_insert__{k}": v for k, v in activity_data.items()}
+        )
+
+    def list_sports(self, group_id, start_date, end_date):
+        return StravaActivity.objects(
+            __raw__={
+                "group_id": group_id,
+                "start_date_local": {"$gte": start_date, "$lt": end_date}
+            }
+        ).only("sport_type").distinct("sport_type")
