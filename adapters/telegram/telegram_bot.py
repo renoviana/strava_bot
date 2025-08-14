@@ -3,7 +3,6 @@ import mongoengine
 import telebot
 from telebot.util import quick_markup
 
-from config import MONGO_URI, TELEGRAM_TOKEN
 from application.commands.streak import handle_streak_command
 from application.commands.frequency import (
   handle_month_frequency_command,
@@ -15,6 +14,7 @@ from application.commands.rank import (
   handle_rank_menu
 )
 from application.commands.medal import handle_medal_command
+from config import MONGO_URI, TELEGRAM_TOKEN
 
 
 mongoengine.connect(host=MONGO_URI)
