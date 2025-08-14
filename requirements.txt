@@ -1,2 +1,13 @@
-python-telegram-bot==20.0
+certifi
+charset-normalizer
+dnspython
+idna
+iniconfig
+mongoengine
+packaging
+pluggy
+Pygments
 pymongo
+pytest
+requests
+urllib3
