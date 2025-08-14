@@ -14,6 +14,7 @@ from application.commands.rank import (
   handle_rank_year_command,
   handle_rank_menu
 )
+from application.commands.medal import handle_medal_command
 
 
 mongoengine.connect(host=MONGO_URI)
@@ -35,6 +36,11 @@ def frequency_command_handler(message):
 def year_frequency_command_handler(message):
     group_id = message.chat.id
     bot.reply_to(message, handle_year_frequency_command(group_id), parse_mode='HTML', disable_web_page_preview=True)
+
+@bot.message_handler(commands=['medal'])
+def medal_command_handler(message):
+    group_id = message.chat.id
+    bot.reply_to(message, handle_medal_command(group_id), parse_mode='HTML', disable_web_page_preview=True)
 
 @bot.message_handler(commands=['rank', 'yrank'])
 def rank_command_handler(message):
