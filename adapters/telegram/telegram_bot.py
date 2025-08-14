@@ -37,7 +37,7 @@ def year_frequency_command_handler(message):
     group_id = message.chat.id
     bot.reply_to(message, handle_year_frequency_command(group_id), parse_mode='HTML', disable_web_page_preview=True)
 
-@bot.message_handler(commands=['medal'])
+@bot.message_handler(commands=['medalhas'])
 def medal_command_handler(message):
     group_id = message.chat.id
     bot.reply_to(message, handle_medal_command(group_id), parse_mode='HTML', disable_web_page_preview=True)
