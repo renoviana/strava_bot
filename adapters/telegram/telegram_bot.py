@@ -46,7 +46,7 @@ def rank_command_handler(message):
             end = start.replace(month=start.month % 12 + 1)
         else:
             end = start.replace(year=start.year + 1, month=1)
-        rank_command_menu(group_id, command, start, end)
+        return rank_command_menu(group_id, command, start, end)
     
     start = datetime.now().replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
     end = start.replace(year=start.year + 1)
