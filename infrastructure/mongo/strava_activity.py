@@ -101,8 +101,8 @@ class StravaActivity(Document):
             __raw__=query
         ).order_by(sort).all()
 
-    def exists(self, activity_id: str) -> bool:
-        return StravaActivity.objects(activity_id=activity_id).count() > 0
+    def exists(self, activity_id: str, group_id: int) -> bool:
+        return StravaActivity.objects(activity_id=activity_id, group_id=group_id).count() > 0
 
     def save_activity(self, group_id: int, activity_data: dict):
         activity_data["group_id"] = group_id
@@ -112,15 +112,13 @@ class StravaActivity(Document):
         del activity_data["type"]
         del activity_data["id"]
         del activity_data["map"]
-        
-        activity = StravaActivity.objects(
-            group_id=group_id,
-            activity_id=activity_data["activity_id"],
-        )
-        activity.update_one(
-            upsert=True,
-            **{f"set_on_insert__{k}": v for k, v in activity_data.items()}
-        )
+        activity_data['start_date'] = datetime.strptime(activity_data["start_date"], '%Y-%m-%dT%H:%M:%SZ')
+        activity_data['start_date_local'] = datetime.strptime(activity_data["start_date_local"], '%Y-%m-%dT%H:%M:%SZ')
+
+        if self.exists(activity_data["activity_id"], group_id):
+            return
+
+        StravaActivity(**activity_data).save()
 
     def list_sports(self, group_id, start_date, end_date):
         return StravaActivity.objects(

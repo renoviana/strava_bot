@@ -37,7 +37,7 @@ def sync_all_activities(group_id: int):
         if not activities:
             continue
         last_activity = activities[-1]
-        member_data["last_activity_date"] = datetime.strptime(last_activity["start_date_local"], '%Y-%m-%dT%H:%M:%SZ')
+        member_data["last_activity_date"] = last_activity["start_date_local"]
         group.membros[member_name] = member_data
     
     group.save()
