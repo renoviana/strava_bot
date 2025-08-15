@@ -39,7 +39,7 @@ def handle_medal_command(group_id: int) -> str:
         medalhas_list.append((user["id"], medalhas_str))
 
     return create_rank(
-        f"Ranking de Medalhas",
+        "Ranking de Medalhas",
         medalhas_list,
         group
     )
