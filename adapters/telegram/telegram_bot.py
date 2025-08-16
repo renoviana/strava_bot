@@ -35,12 +35,12 @@ def frequency_command_handler(message):
 @bot.message_handler(commands=['yfrequency'])
 def year_frequency_command_handler(message):
     group_id = message.chat.id
-    bot.reply_to(message, handle_year_frequency_command(group_id), parse_mode='HTML', disable_web_page_preview=True)
+    bot.send_message(group_id, handle_year_frequency_command(group_id), parse_mode='HTML', disable_web_page_preview=True)
 
 @bot.message_handler(commands=['medalhas'])
 def medal_command_handler(message):
     group_id = message.chat.id
-    bot.reply_to(message, handle_medal_command(group_id), parse_mode='HTML', disable_web_page_preview=True)
+    bot.send_message(group_id, handle_medal_command(group_id), parse_mode='HTML', disable_web_page_preview=True)
 
 @bot.message_handler(commands=['rank', 'yrank'])
 def rank_command_handler(message):
@@ -61,15 +61,14 @@ def rank_command_handler(message):
 @bot.message_handler(commands=['streak'])
 def streak_command_handler(message):
     group_id = message.chat.id
-    bot.reply_to(message, handle_streak_command(group_id), parse_mode='HTML', disable_web_page_preview=True)
+    bot.send_message(group_id, handle_streak_command(group_id), parse_mode='HTML', disable_web_page_preview=True)
 
 @bot.message_handler(commands=['link'])
 def link_command_handler(message):
     group_id = message.chat.id
     strava_client_id = STRAVA_CLIENT_ID
     redirect_uri = REDIRECT_URI.format(group_id)
-    bot.reply_to(
-        message,
+    bot.send_message(group_id,
         f"https://www.strava.com/oauth/authorize?client_id={strava_client_id}&redirect_uri={redirect_uri}&response_type=code&scope=activity:read"
     )
 
@@ -77,14 +76,14 @@ def link_command_handler(message):
 def rank_month_callback_handler(call):
     group_id = call.message.chat.id
     sport_type = call.data.split('_')[1]
-    bot.reply_to(call.message, handle_rank_month_command(group_id, sport_type), parse_mode='HTML', disable_web_page_preview=True)
+    bot.send_message(group_id, handle_rank_month_command(group_id, sport_type), parse_mode='HTML', disable_web_page_preview=True)
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('yrank_'))
 def rank_year_callback_handler(call):
     group_id = call.message.chat.id
     sport_type = call.data.split('_')[1]
-    bot.reply_to(call.message, handle_rank_year_command(group_id, sport_type), parse_mode='HTML', disable_web_page_preview=True)
+    bot.send_message(group_id, handle_rank_year_command(group_id, sport_type), parse_mode='HTML', disable_web_page_preview=True)
 
 def start_bot():
     bot.polling()
