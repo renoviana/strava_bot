@@ -50,5 +50,5 @@ def get_medalhas(user_id:int, group, sport_type:Optional[str] = None):
     for medalha, count in medalha_dict.items():
         if count == 0:
             continue
-        medalhas_str += f"{emoji_dict.get(medalha, '')}{count} "
+        medalhas_str += f"{emoji_dict.get(medalha, '')}{count}"
     return medalhas_str.strip()
