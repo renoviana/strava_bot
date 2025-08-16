@@ -29,7 +29,7 @@ def rank_command_menu(group_id :int, command :str, start :datetime, end :datetim
 @bot.message_handler(commands=['frequency'])
 def frequency_command_handler(message):
     group_id = message.chat.id
-    bot.reply_to(message, handle_month_frequency_command(group_id), parse_mode='HTML', disable_web_page_preview=True)
+    bot.send_message(group_id, handle_month_frequency_command(group_id), parse_mode='HTML', disable_web_page_preview=True)
 
 
 @bot.message_handler(commands=['yfrequency'])
