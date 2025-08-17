@@ -12,7 +12,7 @@ def handle_streak_command(group_id: int) -> str:
     group = group_repo.get_group(group_id)
 
     sync_all_activities(group_id)
-    start = datetime.now() - timedelta(days=30)
+    start = datetime.now() - timedelta(days=40)
     end = datetime.now()
     streak_service = StreakService(activity_repo.get_activities(group_id, start, end))
     streak_result = streak_service.calculate()
