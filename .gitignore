@@ -1,4 +1,5 @@
 secure.py
+config.py
 venv/
 __pycache__/
 .python-version

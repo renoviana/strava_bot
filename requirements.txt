@@ -1,4 +1,14 @@
-requests
-pyTelegramBotAPI
+certifi
+charset-normalizer
+dnspython
+idna
+iniconfig
 mongoengine
-python-dateutil
+packaging
+pluggy
+Pygments
+pymongo
+pytest
+requests
+urllib3
+pyTelegramBotAPI
