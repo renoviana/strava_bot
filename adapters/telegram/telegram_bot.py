@@ -15,6 +15,7 @@ from application.commands.rank import (
 )
 from application.commands.medal import handle_medal_command
 from config import MONGO_URI, REDIRECT_URI, STRAVA_CLIENT_ID, TELEGRAM_TOKEN
+from application.commands.admin import handle_admin_command
 
 
 mongoengine.connect(host=MONGO_URI)
@@ -25,6 +26,22 @@ def rank_command_menu(group_id :int, command :str, start :datetime, end :datetim
     markup_dict = {x:{'callback_data': f'{command}_{x}'} for x in sport_type_list}
     markup = quick_markup(markup_dict, row_width=1)
     bot.send_message(group_id, "Selecione o tipo de esporte:", reply_markup=markup)
+
+@bot.message_handler(commands=['admin'])
+def admin_command_handler(message):
+    group_id = message.chat.id
+    member_list = handle_admin_command(group_id)
+    markup_dict = {}
+    for member in member_list:
+        member_name, member_id = member
+        markup_dict[member_name] = {
+            'callback_data': f''
+        }
+        markup_dict["X"] = {
+            'callback_data': f'admin_{member_id}'
+        }
+    markup = quick_markup(markup_dict, row_width=2)
+    bot.send_message(group_id, "Selecione um membro:", reply_markup=markup)
 
 @bot.message_handler(commands=['frequency'])
 def frequency_command_handler(message):

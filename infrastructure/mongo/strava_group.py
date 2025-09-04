@@ -6,7 +6,7 @@ class StravaGroup(Document):
     ignored_activities = ListField()
     ignored_activities_rank = ListField()
     metas = DictField(default={})
-    membros = DictField(default=[])
+    membros = DictField(default={})
     segments_ids = ListField(required=False, default=[])
     medalhas = DictField(default={}, required=False)
     cache_data = ListField(required=False, default=[])
