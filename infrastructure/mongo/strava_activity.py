@@ -88,14 +88,14 @@ class StravaActivity(Document):
     segment_leaderboard_opt_out = BooleanField(required=False)
     leaderboard_opt_out = BooleanField(required=False)
 
-    def get_activities(self, group_id: int, start: datetime, end: datetime, member_id:Optional[int] = None, sort = "-start_date_local"):
+    def get_activities(self, group_id: int, start: datetime, end: datetime, member_id_list:Optional[list] = None, sort = "-start_date_local"):
         query = {
             "group_id": group_id,
             "start_date_local": {"$gte": start, "$lt": end}
         }
 
-        if member_id:
-            query["athlete.id"] = member_id
+        if member_id_list:
+            query["athlete.id"] = {"$in": member_id_list}
 
         return StravaActivity.objects(
             __raw__=query

@@ -10,11 +10,26 @@ def handle_streak_command(group_id: int) -> str:
     activity_repo = StravaActivity()
     group_repo = StravaGroup()
     group = group_repo.get_group(group_id)
-
     sync_all_activities(group_id)
-    start = datetime.now() - timedelta(days=60)
-    end = datetime.now()
-    streak_service = StreakService(activity_repo.get_activities(group_id, start, end))
+
+    today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    tomorrow = today + timedelta(days=1)
+    last_60_days = today - timedelta(days=60)
+
+    today_activity_list = activity_repo.get_activities(group_id, today, tomorrow)
+    today_athlete_id_list = list(set(map(lambda x: x["athlete"]["id"], today_activity_list)))
+
+    if not today_athlete_id_list:
+        return "Ninguem fez atividade hoje"
+
+    activity_list = activity_repo.get_activities(
+        group_id,
+        last_60_days,
+        today,
+        member_id_list=today_athlete_id_list
+    )
+
+    streak_service = StreakService(activity_list)
     streak_result = streak_service.calculate()
 
     return create_rank("Sequencia de dias ativos", streak_result, group)
