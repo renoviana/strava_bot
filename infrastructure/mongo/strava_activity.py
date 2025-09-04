@@ -120,10 +120,18 @@ class StravaActivity(Document):
 
         StravaActivity(**activity_data).save()
 
-    def list_sports(self, group_id, start_date, end_date):
+    def list_sports(self, group_id:int, start_date:datetime, end_date:datetime) -> list[str]:
         return StravaActivity.objects(
             __raw__={
                 "group_id": group_id,
                 "start_date_local": {"$gte": start_date, "$lt": end_date}
             }
         ).only("sport_type").distinct("sport_type")
+
+    def remove_activity_member(self, group_id: int, member_id: int):
+        StravaActivity.objects(
+            __raw__={
+                "group_id": group_id,
+                "athlete.id": member_id
+            }
+        ).delete()

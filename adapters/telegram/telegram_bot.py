@@ -15,7 +15,7 @@ from application.commands.rank import (
 )
 from application.commands.medal import handle_medal_command
 from config import MONGO_URI, REDIRECT_URI, STRAVA_CLIENT_ID, TELEGRAM_TOKEN
-from application.commands.admin import handle_admin_command
+from application.commands.admin import handle_admin_callback, handle_admin_command
 
 
 mongoengine.connect(host=MONGO_URI)
@@ -35,13 +35,10 @@ def admin_command_handler(message):
     for member in member_list:
         member_name, member_id = member
         markup_dict[member_name] = {
-            'callback_data': f''
-        }
-        markup_dict["X"] = {
             'callback_data': f'admin_{member_id}'
         }
     markup = quick_markup(markup_dict, row_width=2)
-    bot.send_message(group_id, "Selecione um membro:", reply_markup=markup)
+    bot.send_message(group_id, "Selecione um membro pra remover:", reply_markup=markup)
 
 @bot.message_handler(commands=['frequency'])
 def frequency_command_handler(message):
@@ -101,6 +98,13 @@ def rank_year_callback_handler(call):
     group_id = call.message.chat.id
     sport_type = call.data.split('_')[1]
     bot.send_message(group_id, handle_rank_year_command(group_id, sport_type), parse_mode='HTML', disable_web_page_preview=True)
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith('admin_'))
+def admin_callback_handler(call):
+    group_id = call.message.chat.id
+    member_id = int(call.data.split('_')[1])
+    user_name_admin = call.from_user.first_name or call.from_user.username
+    bot.send_message(group_id, handle_admin_callback(group_id, member_id, user_name_admin), parse_mode='HTML', disable_web_page_preview=True)
 
 def start_bot():
     bot.polling()
