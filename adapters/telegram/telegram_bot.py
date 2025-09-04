@@ -14,9 +14,11 @@ from application.commands.rank import (
   handle_rank_menu
 )
 from application.commands.medal import handle_medal_command
+from application.commands.admin import (
+  handle_admin_callback,
+  handle_admin_command
+)
 from config import MONGO_URI, REDIRECT_URI, STRAVA_CLIENT_ID, TELEGRAM_TOKEN
-from application.commands.admin import handle_admin_callback, handle_admin_command
-
 
 mongoengine.connect(host=MONGO_URI)
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
