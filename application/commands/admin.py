@@ -1,3 +1,4 @@
+from datetime import datetime
 from infrastructure.mongo.strava_group import StravaGroup
 from infrastructure.mongo.strava_activity import StravaActivity
 
@@ -47,6 +48,6 @@ def handle_reset_command(group_id:int) -> str:
     group = group_repo.get_group(group_id)
     for membro_name in group.membros:
         if "last_activity_date" in group.membros[membro_name]:
-            del group.membros[membro_name]["last_activity_date"]
+            group.membros[membro_name]["last_activity_date"] = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0, day=1)
     group.save()
     return "Ranking resetado com sucesso."
