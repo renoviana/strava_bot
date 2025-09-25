@@ -16,7 +16,8 @@ from application.commands.rank import (
 from application.commands.medal import handle_medal_command
 from application.commands.admin import (
   handle_admin_callback,
-  handle_admin_command
+  handle_admin_command,
+  handle_reset_command
 )
 from config import MONGO_URI, REDIRECT_URI, STRAVA_CLIENT_ID, TELEGRAM_TOKEN
 
@@ -87,6 +88,11 @@ def link_command_handler(message):
     bot.send_message(group_id,
         f"https://www.strava.com/oauth/authorize?client_id={strava_client_id}&redirect_uri={redirect_uri}&response_type=code&scope=activity:read"
     )
+
+@bot.message_handler(commands=['link'])
+def reset_command_handler(message):
+    group_id = message.chat.id
+    bot.send_message(group_id, handle_reset_command(group_id), parse_mode='HTML', disable_web_page_preview=True)
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('rank_'))
 def rank_month_callback_handler(call):

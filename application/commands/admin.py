@@ -36,3 +36,17 @@ def handle_admin_callback(group_id:int, member_id:int, autor_remocao:str) -> str
     group.save()
     activity_repo.remove_activity_member(group_id, member_id)
     return f"{member_name} removido com sucesso por {autor_remocao}."
+
+def handle_reset_command(group_id:int) -> str:
+    """
+    Reseta as medalhas do grupo.
+    Args:
+        group_id (int): O ID do grupo.
+    """
+    group_repo = StravaGroup()
+    group = group_repo.get_group(group_id)
+    for membro_name in group.membros:
+        if "last_activity_date" in group.membros[membro_name]:
+            del group.membros[membro_name]["last_activity_date"]
+    group.save()
+    return "Ranking resetado com sucesso."
