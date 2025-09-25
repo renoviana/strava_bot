@@ -47,7 +47,6 @@ def handle_reset_command(group_id:int) -> str:
     group_repo = StravaGroup()
     group = group_repo.get_group(group_id)
     for membro_name in group.membros:
-        if "last_activity_date" in group.membros[membro_name]:
-            group.membros[membro_name]["last_activity_date"] = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0, day=1)
+        group.membros[membro_name]["last_activity_date"] = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0, day=1)
     group.save()
     return "Ranking resetado com sucesso."
