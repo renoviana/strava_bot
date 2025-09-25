@@ -89,7 +89,7 @@ def link_command_handler(message):
         f"https://www.strava.com/oauth/authorize?client_id={strava_client_id}&redirect_uri={redirect_uri}&response_type=code&scope=activity:read"
     )
 
-@bot.message_handler(commands=['link'])
+@bot.message_handler(commands=['reset'])
 def reset_command_handler(message):
     group_id = message.chat.id
     bot.send_message(group_id, handle_reset_command(group_id), parse_mode='HTML', disable_web_page_preview=True)
