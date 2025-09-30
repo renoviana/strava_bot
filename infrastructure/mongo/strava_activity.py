@@ -103,8 +103,17 @@ class StravaActivity(Document):
 
     def exists(self, activity_id: str, group_id: int) -> bool:
         return StravaActivity.objects(activity_id=activity_id, group_id=group_id).count() > 0
+    
+    def rules(self, activity_data: dict) -> bool:
+        if activity_data.get("flagged"):
+            return False
+        return True
+
 
     def save_activity(self, group_id: int, activity_data: dict):
+        if not self.rules(activity_data):
+            return
+
         activity_data["group_id"] = group_id
         activity_data["activity_type"] = activity_data["type"]
         activity_data["activity_id"] = activity_data["id"]
