@@ -7,7 +7,6 @@ class StravaGroup(Document):
     membros = DictField(default={})
     segments_ids = ListField(required=False, default=[])
     medalhas = DictField(default={}, required=False)
-    cache_data = ListField(required=False, default=[])
     last_sync = DateTimeField(required=False)
 
     def get_group(self, group_id: int):
