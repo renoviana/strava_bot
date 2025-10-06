@@ -14,6 +14,9 @@ def sync_all_activities(group_id: int):
     if not group:
         return
 
+    if group.last_sync and group.last_sync > datetime.now() - timedelta(minutes=1):
+        return
+
     for member_name, member_data in group.membros.items():
         after = member_data.get("last_activity_date")
 
@@ -39,5 +42,6 @@ def sync_all_activities(group_id: int):
         last_activity = activities[-1]
         member_data["last_activity_date"] = last_activity["start_date_local"]
         group.membros[member_name] = member_data
+        group.last_sync = datetime.now()
     
     group.save()
