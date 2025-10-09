@@ -94,20 +94,20 @@ def reset_command_handler(message):
     group_id = message.chat.id
     bot.send_message(group_id, handle_reset_command(group_id), parse_mode='HTML', disable_web_page_preview=True)
 
-@bot.callback_query_handler(func=lambda call: call.data.startswith('rank_'))
+@bot.callback_query_handler(func=lambda call: call.data.startswith('rank'))
 def rank_month_callback_handler(call):
     group_id = call.message.chat.id
     sport_type = call.data.split('_')[1]
     bot.send_message(group_id, handle_rank_month_command(group_id, sport_type), parse_mode='HTML', disable_web_page_preview=True)
 
 
-@bot.callback_query_handler(func=lambda call: call.data.startswith('yrank_'))
+@bot.callback_query_handler(func=lambda call: call.data.startswith('yrank'))
 def rank_year_callback_handler(call):
     group_id = call.message.chat.id
     sport_type = call.data.split('_')[1]
     bot.send_message(group_id, handle_rank_year_command(group_id, sport_type), parse_mode='HTML', disable_web_page_preview=True)
 
-@bot.callback_query_handler(func=lambda call: call.data.startswith('admin_'))
+@bot.callback_query_handler(func=lambda call: call.data.startswith('admin'))
 def admin_callback_handler(call):
     group_id = call.message.chat.id
     member_id = int(call.data.split('_')[1])
