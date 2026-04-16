@@ -1,6 +1,9 @@
+import logging
 from datetime import datetime
 from infrastructure.mongo.strava_group import StravaGroup
 from infrastructure.mongo.strava_activity import StravaActivity
+
+logger = logging.getLogger(__name__)
 
 def handle_admin_command(group_id: int) -> list:
     """
@@ -26,9 +29,11 @@ def handle_admin_callback(group_id:int, member_id:int, autor_remocao:str) -> str
     membro_removido = list(filter(lambda x: x[1].get("athlete_id") == member_id, group.membros.items()))
 
     if not membro_removido:
-        return "Membronão encontrado."
+        logger.warning("Membro com athlete_id %s não encontrado no grupo %s", member_id, group_id)
+        return "Membro não encontrado."
 
     member_name = membro_removido[0][0]
+    logger.info("Removendo membro %s (athlete_id=%s) do grupo %s por %s", member_name, member_id, group_id, autor_remocao)
     del group.membros[membro_removido[0][0]]
     for month, sport_dict in group.medalhas.items():
         for sport_name, sport_data in sport_dict.items():

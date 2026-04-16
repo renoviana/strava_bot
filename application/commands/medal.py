@@ -1,4 +1,7 @@
+import logging
 from infrastructure.mongo.strava_group import StravaGroup
+
+logger = logging.getLogger(__name__)
 from domain.services.medal_service import MedalService
 from shared.rank import create_rank
 from shared.user import get_user
@@ -12,6 +15,7 @@ def handle_medal_command(group_id: int) -> str:
     service = MedalService(group)
     medal_result = service.calculate()
 
+    logger.info("Calculando medalhas para grupo %s", group_id)
     if not medal_result:
         return "Nenhuma medalha conquistada"
 

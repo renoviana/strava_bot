@@ -1,6 +1,9 @@
+import logging
 from datetime import datetime
 
 from application.sync_activities import sync_all_activities
+
+logger = logging.getLogger(__name__)
 from domain.services.frequency_service import FrequencyService
 from infrastructure.mongo.strava_activity import StravaActivity
 from infrastructure.mongo.strava_group import StravaGroup
@@ -10,6 +13,7 @@ def handle_frequency_command(group_id: int, start:datetime, end:datetime) -> lis
     activity_repo = StravaActivity()
     sync_all_activities(group_id)
     activities = activity_repo.get_activities(group_id, start, end)
+    logger.info("Calculando frequência para grupo %s (%d atividades)", group_id, len(activities))
     service = FrequencyService(activities)
     return service.calculate()
 

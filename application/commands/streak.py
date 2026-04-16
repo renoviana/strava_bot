@@ -1,6 +1,9 @@
+import logging
 from datetime import datetime, timedelta
 
 from application.sync_activities import sync_all_activities
+
+logger = logging.getLogger(__name__)
 from domain.services.streak_service import StreakService
 from infrastructure.mongo.strava_activity import StravaActivity
 from infrastructure.mongo.strava_group import StravaGroup
@@ -20,6 +23,7 @@ def handle_streak_command(group_id: int) -> str:
     today_athlete_id_list = list(set(map(lambda x: x["athlete"]["id"], today_activity_list)))
 
     if not today_athlete_id_list:
+        logger.info("Nenhuma atividade hoje para grupo %s", group_id)
         return "Ninguem fez atividade hoje"
 
     activity_list = activity_repo.get_activities(
@@ -29,6 +33,7 @@ def handle_streak_command(group_id: int) -> str:
         member_id_list=today_athlete_id_list
     )
 
+    logger.info("Calculando streak para %d membros ativos no grupo %s", len(today_athlete_id_list), group_id)
     streak_service = StreakService(activity_list)
     streak_result = streak_service.calculate()
 

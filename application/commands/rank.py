@@ -1,6 +1,9 @@
+import logging
 from datetime import datetime
 
 from application.sync_activities import sync_all_activities
+
+logger = logging.getLogger(__name__)
 from domain.services.rank_service import RankService
 from infrastructure.mongo.strava_activity import StravaActivity
 from infrastructure.mongo.strava_group import StravaGroup
@@ -14,10 +17,12 @@ def handle_rank_command(group_id: int, sport_type: str, start: datetime, end: da
 
     sync_all_activities(group_id)
     activities = activity_repo.get_activities(group_id, start, end)
+    logger.info("Calculando rank de %s para grupo %s (%d atividades)", sport_type, group_id, len(activities))
     service = RankService(activities)
     rank_result = service.calculate(sport_type)
 
     if not rank_result:
+        logger.info("Nenhuma atividade de %s encontrada para o grupo %s", sport_type, group_id)
         return "Nenhuma atividade registrada este mês."
 
     return create_rank(

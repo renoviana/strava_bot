@@ -1,7 +1,11 @@
+import logging
 import requests
 from datetime import datetime
 
 from config import STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET
+
+logger = logging.getLogger(__name__)
+
 
 class StravaClient:
     BASE_URL = "https://www.strava.com/api/v3"
@@ -27,9 +31,12 @@ class StravaClient:
             "page": 1
         }
 
+        logger.info("Buscando atividades do Strava após %s", after)
         response = requests.get(url, headers=headers, params=params, timeout=40)
         response.raise_for_status()
-        return response.json()
+        data = response.json()
+        logger.info("Recebidas %d atividades do Strava", len(data))
+        return data
   
     def refresh_access_token(self, refresh_token):
         """
@@ -45,7 +52,9 @@ class StravaClient:
             "refresh_token": refresh_token,
             "grant_type": "refresh_token",
         }
+        logger.info("Renovando access token do Strava")
         response = requests.post(url, params=params, timeout=40)
         response.raise_for_status()
+        logger.info("Token renovado com sucesso")
         return response.json()
         
