@@ -1,94 +1,39 @@
-# Arquitetura
+# Arquitetura do Strava Bot
 
-## Visão geral
+O `strava_bot` é o projeto mais estruturado do ecossistema Assistant em termos de separação de responsabilidades, utilizando uma variante da **Clean Architecture** (Arquitetura Limpa).
 
-O projeto segue uma arquitetura em camadas com separação clara de responsabilidades, inspirada em Clean Architecture.
+## Camadas da Aplicação
 
-```
-┌────────────────────────────────────────────┐
-│              adapters/                     │
-│  telegram_bot.py     strava_client.py      │
-│  (entrada de comandos)  (chamadas API)     │
-└──────────────────┬─────────────────────────┘
-                   │
-┌──────────────────▼─────────────────────────┐
-│             application/                   │
-│  commands/           sync_activities.py    │
-│  (orquestração)      (sincronização)       │
-└──────────────────┬─────────────────────────┘
-                   │
-┌──────────────────▼─────────────────────────┐
-│               domain/                      │
-│  rank_service  frequency_service           │
-│  streak_service  medal_service             │
-│  (regras de negócio puras)                 │
-└──────────────────┬─────────────────────────┘
-                   │
-┌──────────────────▼─────────────────────────┐
-│           infrastructure/                  │
-│  StravaActivity  StravaGroup  Athlete      │
-│  (persistência MongoDB)                    │
-└────────────────────────────────────────────┘
-```
+### 1. Domínio (`domain/`)
+O coração do bot. Contém a lógica de cálculo puro que não depende de como os dados são buscados ou exibidos.
+- `RankService`: Algoritmos de ordenação por distância, ganho de elevação e tempo.
+- `MedalService`: Regras para atribuição de medalhas de ouro, prata e bronze.
+- `StreakService`: Lógica de detecção de sequências de dias ativos.
+- `FrequencyService`: Cálculos de assiduidade.
 
-## Camadas
+### 2. Aplicação (`application/`)
+Orquestra o fluxo de dados entre o usuário e o domínio.
+- `commands/`: Implementação dos comandos de chat (ex: `/rank`, `/medalhas`). Transforma as intenções do usuário em chamadas aos serviços de domínio.
+- `sync_activities.py`: Caso de uso responsável por buscar dados novos na API do Strava e salvar no banco de dados local.
 
-### adapters/
-Integra o bot com sistemas externos. Não contém regras de negócio.
+### 3. Infraestrutura (`infrastructure/`)
+Implementações de baixo nível e acesso a recursos externos.
+- `mongo/`: Repositórios para acesso ao MongoDB, utilizando `assistant_model` como base para os documentos.
 
-- `telegram_bot.py` — registra handlers de comandos e callbacks do Telegram, delega para `application/`
-- `strava_client.py` — encapsula chamadas HTTP para a API do Strava
+### 4. Adaptadores (`adapters/`)
+A "borda" da aplicação que lida com frameworks externos.
+- `telegram/`: O driver do `pyTelegramBotAPI`. Mapeia mensagens recebidas para os comandos na camada de aplicação e envia as respostas de volta para a rede.
 
-### application/
-Orquestra o fluxo de cada funcionalidade: sincroniza dados, chama serviços de domínio, formata resposta.
+## Diagrama de Fluxo
 
-- `sync_activities.py` — busca atividades novas no Strava e persiste no banco
-- `commands/rank.py` — prepara e formata ranking por distância/tempo
-- `commands/frequency.py` — prepara e formata ranking de frequência
-- `commands/streak.py` — prepara e formata sequência de dias ativos
-- `commands/medal.py` — prepara e formata placar de medalhas
-- `commands/admin.py` — gerencia membros do grupo
-
-### domain/
-Contém apenas lógica de cálculo, sem dependências externas. Recebe listas de atividades e retorna métricas calculadas.
-
-- `RankService` — soma distância ou tempo por usuário por modalidade
-- `FrequencyService` — conta dias únicos com atividade por usuário
-- `StreakService` — calcula sequência de dias consecutivos de hoje para trás
-- `MedalService` — agrega medalhas e calcula pontuação
-
-### infrastructure/
-Modelos MongoEngine que representam as coleções do banco.
-
-- `StravaActivity` — atividade individual do Strava
-- `StravaGroup` — grupo do Telegram com membros, credenciais e medalhas
-- `Athlete` — documento embarcado com ID do atleta
-
-### shared/
-Utilitários reutilizáveis entre camadas.
-
-- `rank.py` — formata string de ranking em HTML para o Telegram
-- `user.py` — busca membro pelo ID ou nome
-
-## Fluxo de dados (exemplo: /rank)
-
-```
-Telegram → /rank
-    ↓ telegram_bot.py
-    ↓ handle_rank_month_command()
-    ↓ sync_all_activities()        ← busca atividades novas no Strava
-    ↓ StravaActivity.get_activities()  ← lê banco
-    ↓ RankService.calculate()      ← calcula ranking
-    ↓ create_rank()                ← formata HTML
-    ↓ bot.send_message()           → Telegram
+```mermaid
+graph LR
+    TG[Telegram] <--> Adapter[Adapters/Telegram]
+    Adapter <--> App[Application/Commands]
+    App <--> Domain[Domain/Services]
+    App <--> Repo[Infrastructure/Mongo]
+    Repo <--> DB[(MongoDB)]
 ```
 
-## Decisões de design
-
-**Serviços de domínio stateless**: cada serviço recebe a lista de atividades no construtor e calcula via `calculate()`. Facilita testes unitários sem dependência de banco.
-
-**Sincronização antes de cada consulta**: `sync_all_activities` é chamado antes de qualquer ranking. Tem proteção de rate-limit (ignora se sincronizou há menos de 1 minuto).
-
-**Refresh automático de token**: quando a API do Strava retorna 401, o cliente renova o token e repete a requisição automaticamente.
-
-**Medalhas como dado persistido**: o placar de medalhas é armazenado no documento do grupo (`StravaGroup.medalhas`), não calculado dinamicamente a partir das atividades.
+## Por que Clean Architecture?
+Esta escolha permite que as regras de ranking sejam testadas de forma exaustiva sem a necessidade de um bot rodando ou um banco de dados real. Além disso, se no futuro o bot precisar ser migrado para Discord ou Slack, basta substituir a camada de `Adapters`.
