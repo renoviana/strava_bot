@@ -1,4 +1,4 @@
 FROM assistant-base-python:latest
-ADD . /app
 WORKDIR /app
-RUN pip install -r requirements.txt
+# Todas as dependencias (libs git + PyPI) ja estao assadas na imagem base.
+COPY . .
