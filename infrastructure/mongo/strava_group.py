@@ -8,6 +8,9 @@ class StravaGroup(Document):
     segments_ids = ListField(required=False, default=[])
     medalhas = DictField(default={}, required=False)
     last_sync = DateTimeField(required=False)
+    meta = {
+        'strict': False
+    }
 
     def get_group(self, group_id: int):
         return StravaGroup.objects(telegram_group_id=group_id).first()

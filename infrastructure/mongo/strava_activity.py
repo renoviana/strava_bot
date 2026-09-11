@@ -88,7 +88,10 @@ class StravaActivity(Document):
     segment_leaderboard_opt_out = BooleanField(required=False)
     leaderboard_opt_out = BooleanField(required=False)
     id_str = StringField(required=False)
-
+    meta = {
+        'strict': False
+    }
+    
     def get_activities(self, group_id: int, start: datetime, end: datetime, member_id_list:Optional[list] = None, sort = "-start_date_local"):
         query = {
             "group_id": group_id,
