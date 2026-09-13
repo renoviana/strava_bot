@@ -1,1 +1,7 @@
-# Todas as dependencias diretas estao na imagem base (assistant-base-python)
+# Em produção todas as dependências vêm da imagem base (assistant-base-python).
+# Para dev local, instale estas e os pacotes irmãos em modo editável:
+#   pip install -r requirements.txt -e ../assistant_model -e ../assistant_util
+pyTelegramBotAPI
+mongoengine
+requests
+pytest

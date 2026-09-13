@@ -10,7 +10,7 @@ Ao executar, o bot mostra um menu inline com as modalidades que tiveram atividad
 
 **Exemplo de resposta:**
 ```
-Ranking Run - Abril 2026
+Ranking de Run - Abril/2026
 
 1º - João Silva 🥇1 - 85.3km
 2º - Maria Souza - 72.1km
@@ -21,7 +21,9 @@ Ranking Run - Abril 2026
 
 ## /yrank
 
-Mesmo comportamento do `/rank`, mas considera o ano inteiro (1º de janeiro até hoje).
+Mesmo comportamento do `/rank`, mas considera o ano inteiro (1º de janeiro até hoje). O título leva o ano, por exemplo "Ranking de Run - 2026".
+
+Os esportes sem distância (futebol, tênis, crossfit, musculação, yoga etc.) são ranqueados por tempo em movimento. A lista fica em `assistant_util.strava.SPORTS_RANKED_BY_TIME` e é a mesma usada no fechamento das medalhas.
 
 ---
 
@@ -50,7 +52,7 @@ Frequência do ano inteiro: dias únicos treinados / total de dias no ano.
 
 Sequência de dias consecutivos com atividade, contando de hoje para trás.
 
-Só exibe membros que treinaram hoje. Calcula quantos dias consecutivos (sem pular nenhum) cada um tem.
+Só exibe membros que treinaram hoje (no horário de Brasília). Calcula quantos dias consecutivos (sem pular nenhum) cada um tem, olhando até 365 dias para trás.
 
 **Exemplo de resposta:**
 ```
@@ -92,6 +94,8 @@ O link direciona para a página de autorização do Strava com o `group_id` embu
 
 ## /admin
 
+**Só administradores do grupo** (ou o próprio usuário, em chat privado).
+
 Exibe um menu inline para remover um membro do grupo.
 
 Ao selecionar um membro:
@@ -103,14 +107,17 @@ Ao selecionar um membro:
 
 ## /reset
 
-Redefine o campo `last_activity_date` de todos os membros para o dia 1º do mês atual ao meio-dia.
+**Só administradores do grupo.**
 
-Útil quando o bot precisa re-sincronizar as atividades do mês desde o início.
+Re-sincroniza com o Strava as atividades do mês inteiro, ignorando o intervalo mínimo entre syncs. Se algum membro falhar (por exemplo, token revogado), a resposta diz quem.
 
 ---
 
 ## Notas gerais
 
-- Todos os rankings sincronizam atividades do Strava antes de calcular (com proteção de rate-limit de 1 minuto entre sincronizações).
-- As respostas usam HTML para formatação (links clicáveis para perfis do Strava).
-- O bot opera em modo polling (não webhook).
+- Todos os rankings sincronizam atividades do Strava antes de calcular, com intervalo mínimo de 1 minuto entre sincronizações do mesmo grupo.
+- As respostas usam HTML para formatação (links clicáveis para perfis do Strava), e os nomes são escapados.
+- O bot opera em modo polling (`infinity_polling`, não webhook).
+- Uma exceção num comando é registrada via `tratar_error` (origem `strava_bot`). O chat recebe "Não consegui processar o comando agora", e o bot continua de pé.
+- Em grupo não cadastrado, os comandos respondem "Grupo não cadastrado. Use /link para conectar o Strava."
+- `/rank@nome_do_bot` funciona: o sufixo é removido por `extract_command`.

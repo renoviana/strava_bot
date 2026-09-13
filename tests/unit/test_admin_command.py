@@ -1,67 +1,73 @@
-from unittest.mock import patch, MagicMock
 from datetime import datetime
+from types import SimpleNamespace
+from unittest.mock import MagicMock, patch
+
 from application.commands.admin import (
-    handle_admin_command,
     handle_admin_callback,
+    handle_admin_command,
     handle_reset_command,
 )
+from application.common import GRUPO_NAO_CADASTRADO
 from tests.unit.conftest import make_group
 
 
-@patch("application.commands.admin.StravaGroup")
-def test_admin_command_returns_member_list(mock_group_repo):
-    group = make_group()
-    mock_group_repo.return_value.get_group.return_value = group
+def _repo(group=None, removido=None):
+    repo = MagicMock()
+    repo.get_group.return_value = group
+    repo.remove_member.return_value = removido
+    return repo
 
-    result = handle_admin_command(123)
 
+def test_admin_command_returns_member_list():
+    result = handle_admin_command(123, repo=_repo(make_group()))
     assert ("Joao", 1) in result
     assert ("Maria", 2) in result
 
 
-@patch("application.commands.admin.StravaActivity")
-@patch("application.commands.admin.StravaGroup")
-def test_admin_callback_removes_member(mock_group_repo, mock_activity_repo):
-    group = make_group(
-        membros={"Joao": {"athlete_id": 1, "access_token": "t", "refresh_token": "r", "last_activity_date": None}},
-        medalhas={"2025-01": {"Run": {"Joao": 1}}}
-    )
-    mock_group_repo.return_value.get_group.return_value = group
-
-    result = handle_admin_callback(123, member_id=1, autor_remocao="Admin")
-
-    assert "Joao" not in group.membros
-    assert "Joao" not in group.medalhas["2025-01"]["Run"]
-    assert "removido com sucesso" in result
-    mock_activity_repo.return_value.remove_activity_member.assert_called_once_with(123, 1)
-    group.save.assert_called_once()
+def test_admin_command_ignora_membro_sem_athlete_id():
+    group = make_group(membros={"Joao": {"athlete_id": 1}, "Quebrado": {}})
+    assert handle_admin_command(123, repo=_repo(group)) == [("Joao", 1)]
 
 
-@patch("application.commands.admin.StravaActivity")
-@patch("application.commands.admin.StravaGroup")
-def test_admin_callback_member_not_found(mock_group_repo, mock_activity_repo):
-    group = make_group()
-    mock_group_repo.return_value.get_group.return_value = group
-
-    result = handle_admin_callback(123, member_id=999, autor_remocao="Admin")
-
-    assert "não encontrado" in result.lower() or "nao encontrado" in result.lower()
-    mock_activity_repo.return_value.remove_activity_member.assert_not_called()
+def test_admin_command_grupo_nao_cadastrado():
+    assert handle_admin_command(123, repo=_repo(None)) is None
 
 
-@patch("application.commands.admin.StravaGroup")
-def test_reset_command_sets_first_of_month(mock_group_repo):
-    group = make_group()
-    mock_group_repo.return_value.get_group.return_value = group
+def test_admin_callback_removes_member():
+    repo = _repo(removido="Joao")
 
-    result = handle_reset_command(123)
+    result = handle_admin_callback(123, member_id=1, autor_remocao="Admin", repo=repo)
 
-    now = datetime.now()
-    for member_data in group.membros.values():
-        reset_date = member_data["last_activity_date"]
-        assert reset_date.day == 1
-        assert reset_date.month == now.month
-        assert reset_date.year == now.year
+    repo.remove_member.assert_called_once_with(123, 1)
+    assert result == "Joao removido com sucesso por Admin."
 
-    assert "sucesso" in result.lower()
-    group.save.assert_called_once()
+
+def test_admin_callback_escapa_html():
+    result = handle_admin_callback(123, 1, "<b>Ana</b>", repo=_repo(removido="João & Maria"))
+    assert result == "João &amp; Maria removido com sucesso por &lt;b&gt;Ana&lt;/b&gt;."
+
+
+def test_admin_callback_member_not_found():
+    assert handle_admin_callback(123, member_id=999, autor_remocao="Admin", repo=_repo()) == "Membro não encontrado."
+
+
+@patch("application.common.agora_brasilia", return_value=datetime(2026, 9, 12, 22, 0))
+def test_reset_resincroniza_o_mes(_agora):
+    sync = MagicMock(return_value=SimpleNamespace(falhas=[]))
+
+    result = handle_reset_command(123, repo=_repo(make_group()), sync=sync)
+
+    sync.assert_called_once_with(123, since=datetime(2026, 9, 1), force=True)
+    assert result == "Atividades do mês re-sincronizadas."
+
+
+def test_reset_avisa_quem_falhou():
+    sync = MagicMock(return_value=SimpleNamespace(falhas=["Joao"]))
+    result = handle_reset_command(123, repo=_repo(make_group()), sync=sync)
+    assert "Não consegui sincronizar: Joao" in result
+
+
+def test_reset_grupo_nao_cadastrado():
+    sync = MagicMock()
+    assert handle_reset_command(123, repo=_repo(None), sync=sync) == GRUPO_NAO_CADASTRADO
+    sync.assert_not_called()

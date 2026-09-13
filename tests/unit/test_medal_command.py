@@ -1,54 +1,42 @@
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock
+
 from application.commands.medal import handle_medal_command
+from application.common import GRUPO_NAO_CADASTRADO
 from tests.unit.conftest import make_group
 
 
-@patch("application.commands.medal.StravaGroup")
-def test_medal_no_medals(mock_group_repo):
-    mock_group_repo.return_value.get_group.return_value = make_group(medalhas={})
-
-    with patch("application.commands.medal.MedalService") as mock_service:
-        mock_service.return_value.calculate.return_value = {}
-        result = handle_medal_command(123)
-
-    assert result == "Nenhuma medalha conquistada"
+def _repo(group):
+    repo = MagicMock()
+    repo.get_group.return_value = group
+    return repo
 
 
-@patch("application.commands.medal.StravaGroup")
-def test_medal_formats_correctly(mock_group_repo):
-    group = make_group(
-        membros={"Joao": {"athlete_id": 1, "access_token": "t", "refresh_token": "r", "last_activity_date": None}},
-        medalhas={"2025-01": {"Run": {"Joao": 1}}}
-    )
-    mock_group_repo.return_value.get_group.return_value = group
-
-    with patch("application.commands.medal.MedalService") as mock_service:
-        mock_service.return_value.calculate.return_value = {
-            "Joao": {1: 2, 2: 1, 3: 0, "points": 8}
-        }
-        with patch("application.commands.medal.create_rank") as mock_create_rank:
-            mock_create_rank.return_value = "rank_result"
-            result = handle_medal_command(123)
-
-    assert result == "rank_result"
-    mock_create_rank.assert_called_once()
-    rank_data = mock_create_rank.call_args[0][1]
-    assert len(rank_data) == 1
-    assert rank_data[0][0] == 1
+def test_grupo_nao_cadastrado():
+    assert handle_medal_command(123, repo=_repo(None)) == GRUPO_NAO_CADASTRADO
 
 
-@patch("application.commands.medal.StravaGroup")
-def test_medal_skips_unknown_members(mock_group_repo):
-    group = make_group(membros={}, medalhas={})
-    mock_group_repo.return_value.get_group.return_value = group
+def test_sem_medalhas():
+    assert handle_medal_command(123, repo=_repo(make_group(medalhas={}))) == "Nenhuma medalha conquistada"
 
-    with patch("application.commands.medal.MedalService") as mock_service:
-        mock_service.return_value.calculate.return_value = {
-            "GhostUser": {1: 1, 2: 0, 3: 0, "points": 3}
-        }
-        with patch("application.commands.medal.create_rank") as mock_create_rank:
-            mock_create_rank.return_value = "rank_result"
-            handle_medal_command(123)
 
-    rank_data = mock_create_rank.call_args[0][1]
-    assert rank_data == []
+def test_formata_e_aceita_chave_por_id_e_por_nome():
+    group = make_group(medalhas={
+        "7_2026": {"Ride": {"Joao": 1, "Maria": 2}},  # legado: por nome
+        "8_2026": {"Ride": {"1": 1}, "Run": {"2": 1}},  # atual: por athlete_id
+    })
+
+    result = handle_medal_command(123, repo=_repo(group))
+
+    linhas = result.splitlines()
+    assert linhas[0] == "Ranking de Medalhas"
+    assert "Joao" in linhas[1] and linhas[1].endswith("🥇2 🥈0 🥉0 | 6pts")
+    assert "Maria" in linhas[2] and linhas[2].endswith("🥇1 🥈1 🥉0 | 5pts")
+
+
+def test_ex_membro_fica_de_fora():
+    group = make_group(medalhas={"8_2026": {"Ride": {"999": 1, "Ex Membro": 1, "1": 2}}})
+
+    result = handle_medal_command(123, repo=_repo(group))
+
+    assert len(result.splitlines()) == 2
+    assert "Joao" in result

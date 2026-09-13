@@ -1,40 +1,46 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import date, datetime, time, timedelta
+from typing import Optional
 
+from application.common import GRUPO_NAO_CADASTRADO
 from application.sync_activities import sync_all_activities
-
-logger = logging.getLogger(__name__)
+from assistant_util.strava import agora_brasilia
 from domain.services.streak_service import StreakService
-from infrastructure.mongo.strava_activity import StravaActivity
-from infrastructure.mongo.strava_group import StravaGroup
+from infrastructure.strava_repository import StravaRepository
 from shared.rank import create_rank
 
-def handle_streak_command(group_id: int) -> str:
-    activity_repo = StravaActivity()
-    group_repo = StravaGroup()
-    group = group_repo.get_group(group_id)
-    sync_all_activities(group_id)
+logger = logging.getLogger(__name__)
 
-    today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-    tomorrow = today + timedelta(days=1)
-    last_60_days = today - timedelta(days=60)
+#: Até quantos dias para trás a sequência é contada.
+JANELA_DIAS = 365
 
-    today_activity_list = activity_repo.get_activities(group_id, today, tomorrow)
-    today_athlete_id_list = list(set(map(lambda x: x["athlete"]["id"], today_activity_list)))
 
-    if not today_athlete_id_list:
+def handle_streak_command(group_id: int, repo=None, sync=None, hoje: Optional[date] = None) -> str:
+    """
+    Sequência de dias seguidos com atividade, de hoje para trás, de quem treinou hoje.
+    """
+    repo = repo or StravaRepository()
+    group = repo.get_group(group_id)
+    if not group:
+        return GRUPO_NAO_CADASTRADO
+
+    (sync or sync_all_activities)(group_id)
+
+    hoje = hoje or agora_brasilia().date()
+    inicio_hoje = datetime.combine(hoje, time.min)
+    amanha = inicio_hoje + timedelta(days=1)
+
+    ativos_hoje = sorted({act.athlete.id for act in repo.list_activities(group_id, inicio_hoje, amanha)})
+    if not ativos_hoje:
         logger.info("Nenhuma atividade hoje para grupo %s", group_id)
-        return "Ninguem fez atividade hoje"
+        return "Ninguém fez atividade hoje"
 
-    activity_list = activity_repo.get_activities(
-        group_id,
-        last_60_days,
-        today,
-        member_id_list=today_athlete_id_list
+    # A janela vai até amanhã: o dia de hoje precisa estar nos dados, é dele
+    # que a contagem parte.
+    activity_list = repo.list_activities(
+        group_id, inicio_hoje - timedelta(days=JANELA_DIAS), amanha, athlete_ids=ativos_hoje
     )
 
-    logger.info("Calculando streak para %d membros ativos no grupo %s", len(today_athlete_id_list), group_id)
-    streak_service = StreakService(activity_list)
-    streak_result = streak_service.calculate()
-
-    return create_rank("Sequencia de dias ativos", streak_result, group)
+    logger.info("Calculando streak para %d membros ativos no grupo %s", len(ativos_hoje), group_id)
+    streak_result = StreakService(activity_list, today=hoje).calculate()
+    return create_rank("Sequência de dias ativos", streak_result, group)

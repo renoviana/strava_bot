@@ -1,60 +1,51 @@
+"""
+Caso de uso de sync do bot: limite de frequência + o sync compartilhado.
+
+O sync em si (janela de 7 dias, paginação, upsert, token) é o
+`assistant_util.strava.sync_group`, o mesmo usado pelo strava_schedule.
+"""
 import logging
 from datetime import datetime, timedelta
+from typing import Optional
 
-from requests import HTTPError
-from adapters.strava_client import StravaClient
-from infrastructure.mongo.strava_activity import StravaActivity
-from infrastructure.mongo.strava_group import StravaGroup
+from assistant_util.strava import StravaClient, SyncResult, agora_utc, sync_group
+from config import STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET
+from infrastructure.strava_repository import StravaRepository
 
 logger = logging.getLogger(__name__)
 
+#: Intervalo mínimo entre syncs do mesmo grupo disparados por comando.
+INTERVALO_MINIMO = timedelta(minutes=1)
 
-def sync_all_activities(group_id: int):
-    group_repo = StravaGroup()
-    activity_repo = StravaActivity()
-    strava_client = StravaClient()
-    group = group_repo.get_group(group_id)
 
+def sync_all_activities(
+    group_id: int,
+    since: Optional[datetime] = None,
+    force: bool = False,
+    repo: Optional[StravaRepository] = None,
+    client: Optional[StravaClient] = None,
+) -> Optional[SyncResult]:
+    """
+    Sincroniza o grupo, respeitando o intervalo mínimo entre syncs.
+
+    Args:
+        group_id (int): grupo do Telegram
+        since (datetime | None): rebusca desde esta data (Brasília), além da janela padrão
+        force (bool): ignora o intervalo mínimo
+        repo, client: dependências (injetáveis nos testes)
+
+    Returns:
+        SyncResult | None: None se o grupo não existe ou o sync foi pulado
+    """
+    repo = repo or StravaRepository()
+    group = repo.get_group(group_id)
     if not group:
         logger.warning("Grupo %s não encontrado, sync ignorado", group_id)
-        return
+        return None
 
-    if group.last_sync and group.last_sync > datetime.now() - timedelta(minutes=1):
+    if not force and group.last_sync and group.last_sync > agora_utc() - INTERVALO_MINIMO:
         logger.debug("Grupo %s sincronizado há menos de 1 minuto, ignorando", group_id)
-        return
+        return None
 
-    logger.info("Iniciando sync do grupo %s (%d membros)", group_id, len(group.membros))
-
-    for member_name, member_data in group.membros.items():
-        after = member_data.get("last_activity_date")
-
-        if not after:
-            after = datetime.now().replace(hour=12, minute=0, second=0, microsecond=0) - timedelta(days=1)
-
-        try:
-            activities = strava_client.fetch_activities(member_data["access_token"], after)
-        except HTTPError as e:
-            if e.response.status_code != 401:
-                logger.error("Erro HTTP %s ao buscar atividades de %s", e.response.status_code, member_name)
-                raise e
-            logger.warning("Token expirado para %s, renovando...", member_name)
-            response = strava_client.refresh_access_token(member_data["refresh_token"])
-            member_data["access_token"] = response["access_token"]
-            member_data["refresh_token"] = response["refresh_token"]
-            group.membros[member_name] = member_data
-            activities = strava_client.fetch_activities(member_data["access_token"], after)
-
-        logger.info("Membro %s: %d atividades encontradas", member_name, len(activities))
-
-        for activity in activities:
-            activity_repo.save_activity(group_id, activity)
-
-        if not activities:
-            continue
-        last_activity = activities[-1]
-        member_data["last_activity_date"] = last_activity["start_date_local"]
-        group.membros[member_name] = member_data
-        group.last_sync = datetime.now()
-
-    logger.info("Sync do grupo %s concluído", group_id)
-    group.save()
+    client = client or StravaClient(STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET)
+    return sync_group(group_id, client, since=since, origem="strava_bot")
