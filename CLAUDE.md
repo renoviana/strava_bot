@@ -30,6 +30,21 @@ acrescentam regras específicas deste projeto; em conflito, vale a mais restriti
    quando os projetos consumidores estão consistentes. Libs mantêm compatibilidade
    retroativa: campo novo entra com `default`, e nada é removido ou renomeado sem
    migração.
+   - **Nome público é contrato.** Document, coleção, módulo, função e campo de
+     lib já existentes nunca são reaproveitados para outro propósito: entidade
+     nova ganha nome novo (`Gasto` de viagem sobrescreveu o `/gastos` do bot e
+     derrubou o bot em 2026-11-01).
+   - **Busca de consumidores no plano.** Antes de mudar, remover, renomear ou
+     reescrever um nome público, busque os usos em todos os repos do ecossistema
+     (`gh api -X GET search/code -f q='<nome> user:renoviana'` ou grep nos
+     clones) e liste no plano cada uso encontrado e o que acontece com ele. Plano
+     sem essa busca não está pronto para aprovação.
+   - **Módulo existente só ganha.** Em arquivo de lib que outro projeto importa,
+     acrescente; não troque o conteúdo. Função removida, renomeada ou com
+     assinatura incompatível exige a migração dos consumidores no mesmo plano.
+   - **Import quebrado falha no CI, não em produção.** Todo consumidor tem teste
+     que importa todos os seus módulos (comandos, routers, jobs), e a lib tem
+     teste do contrato que cada consumidor importa.
 5. **Commits direto na `main`**, sem branch nem PR, depois de os testes passarem.
    - Um commit por repositório afetado.
    - Mensagem em português no estilo do histórico:
