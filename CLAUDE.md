@@ -70,7 +70,9 @@ acrescentam regras específicas deste projeto; em conflito, vale a mais restriti
        `assistant_util`.
    - `api`, `bot`, `mcp` e `schedule` só orquestram e aplicam regra de negócio.
      `assistant_ui` só consome a API.
-   - Publicar ou enviar (Telegram, Bluesky, Discord) não é extração.
+   - Publicar ou enviar (Telegram, Bluesky, Discord) não é extração. Compor
+     mídia (vídeo, mosaico, PDF em imagem, upload em CDN) também não: é do
+     serviço que usa, e dependência pesada de um serviço só fica fora da base.
    - **Exceção única:** o `assistant_promotion` é um sistema à parte, com scrap e
      models próprios.
    - **Coleção declarada em mais de um projeto** (espelhos do `assistant_promotion`,
