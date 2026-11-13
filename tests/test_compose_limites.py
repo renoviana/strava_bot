@@ -38,3 +38,10 @@ def test_dockerignore_tira_o_git_do_contexto_do_build():
     # sem isto o .git inteiro ia para a imagem a cada deploy (plano 2026-11-13_imagens_em_camadas_e_redeploy_seletivo)
     linhas = (COMPOSE.parent / ".dockerignore").read_text(encoding="utf-8").splitlines()
     assert ".git/" in linhas
+
+
+def test_deploy_dispara_em_segundo_plano_e_ignora_doc_e_teste():
+    # o runner do GitHub só dispara; o Pi constrói (plano 2026-11-13_deploy_sem_segurar_o_runner)
+    deploy = (COMPOSE.parent / ".github" / "workflows" / "deploy.yml").read_text(encoding="utf-8")
+    assert "scripts/em_segundo_plano.sh" in deploy
+    assert "paths-ignore:" in deploy and "- '**/*.md'" in deploy and "- 'docs/**'" in deploy

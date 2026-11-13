@@ -4,13 +4,18 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      # commit só de doc ou de teste não muda a imagem (.dockerignore): sem deploy (2026-11-13)
+      - '**/*.md'
+      - 'docs/**'
+      - 'tests/**'
   workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    # deploy travado falha sozinho (07/10/2026 um build ficou 1h43 parado); o script também limita cada passo
-    timeout-minutes: 40
+    # o runner só dispara o deploy em segundo plano no servidor (scripts/em_segundo_plano.sh): termina em segundos
+    timeout-minutes: 10
     steps:
       - name: Deploy via SSH
         uses: nekiro/ssh-job@main
@@ -21,6 +26,11 @@ jobs:
           command: |
             set -e
             cd assistant_project/strava_bot
+            # Em segundo plano no servidor (plano 2026-11-13_deploy_sem_segurar_o_runner): o runner do GitHub só
+            # dispara e termina. Falha chega no tópico de erros do Telegram; o log fica em ~/deploy_logs no servidor.
+            git -C ../assistant_bot pull -q || true
+            bash ../assistant_bot/scripts/em_segundo_plano.sh strava_bot <<'DEPLOY'
+            set -e
             git pull
             docker network inspect webnet >/dev/null 2>&1 || docker network create webnet
             # Espaço, build e só depois `up -d`, sem `down` (build que falha deixa os containers no ar), pelo script único
@@ -28,3 +38,4 @@ jobs:
             # desistir (cache de build, containers parados e imagens sem uso; nunca a base nem volumes).
             git -C ../assistant_bot pull -q || true
             bash ../assistant_bot/scripts/deploy_compose.sh .
+            DEPLOY
