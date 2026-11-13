@@ -32,3 +32,9 @@ def test_todo_servico_tem_limite_de_memoria():
     servicos = _servicos()
     assert servicos
     assert [nome for nome, limitado in servicos.items() if not limitado] == []
+
+
+def test_dockerignore_tira_o_git_do_contexto_do_build():
+    # sem isto o .git inteiro ia para a imagem a cada deploy (plano 2026-11-13_imagens_em_camadas_e_redeploy_seletivo)
+    linhas = (COMPOSE.parent / ".dockerignore").read_text(encoding="utf-8").splitlines()
+    assert ".git/" in linhas

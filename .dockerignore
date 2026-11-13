@@ -1,0 +1,17 @@
+# Fora do contexto do build (2026-11-13, plano imagens_em_camadas_e_redeploy_seletivo): sem isto o .git inteiro
+# ia para a imagem a cada deploy (no assistant_schedule, 151 MB em cada uma das 3 imagens). Nada aqui é lido em
+# tempo de execução; os serviços que montam o repo (.:/app) continuam vendo tudo pelo volume.
+.git/
+.github/
+tests/
+docs/
+**/__pycache__/
+**/*.pyc
+.pytest_cache/
+pytest-cache-files-*/
+.venv/
+venv/
+**/node_modules/
+.env
+.env.*
+*.log
