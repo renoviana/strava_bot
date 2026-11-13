@@ -1,5 +1,6 @@
 services:
   strava_bot:
+    mem_limit: 256m
     restart: always
     env_file:
       - ../.env
