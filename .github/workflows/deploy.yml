@@ -18,12 +18,13 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Deploy via SSH
-        uses: nekiro/ssh-job@main
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2  # v1.2.5
         with:
           host: ${{ secrets.HOST }}
           key: ${{ secrets.KEY }}
-          user: ${{ secrets.USER }}
-          command: |
+          username: ${{ secrets.USER }}
+          command_timeout: 5m
+          script: |
             set -e
             cd assistant_project/strava_bot
             # Em segundo plano no servidor (plano 2026-11-13_deploy_sem_segurar_o_runner): o runner do GitHub só
