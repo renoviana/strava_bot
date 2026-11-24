@@ -81,6 +81,13 @@ acrescentam regras específicas deste projeto; em conflito, vale a mais restriti
      com os mesmos tipos e defaults, sem `indexes` (índice é do dono). Campo novo
      entra no dono e em todos os espelhos no mesmo plano. Rename, remoção, troca de
      tipo, `db_alias` ou nome da coleção mudam em todas as declarações juntas.
+   - **Não reacoplar** (api e schedule desacoplados em 2026-11-23). Pedido pequeno
+     não justifica atalho: serviço não lê site nem API de terceiro (nem pelo
+     `get_request` direto), não desmonta com regex o texto que o scrap devolveu,
+     não faz `.objects()`/`_get_collection()` e não manda Telegram fora dos senders.
+     Faltou função no scrap ou CRUD no model? Ela entra no plano, que tem a seção
+     "Competência" dizendo onde mora cada pedaço. Exceções (HTTP de saída) e
+     checklist em "Não reacoplar", no `CLAUDE.md` da pasta raiz.
 8. **Problema encontrado é problema nosso.** Todo o ecossistema foi feito por
    nós: não existe "já estava quebrado". Teste falhando, erro de coleta, bug
    ou código com problema encontrado em qualquer tarefa entra no levantamento,
